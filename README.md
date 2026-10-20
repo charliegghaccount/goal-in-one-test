@@ -24,6 +24,23 @@ Browser tests use `/usr/bin/chromium` if present. Otherwise install Playwright's
 
 For static hosting, upload the contents of `dist/` to any static web host. No backend is needed. Vite's default build targets the host root; use `npm run build -- --base=./` for a relative asset base when deploying under a subdirectory.
 
+## Play online / GitHub Pages
+
+The public game address is **https://charliegghaccount.github.io/goal-in-one-test/** once GitHub Pages is enabled.
+
+The source lives on `main`; the static production site is published separately to `gh-pages`. No gameplay code changes are needed for hosting.
+
+One-time repository setting: open **Settings → Pages**, choose **Deploy from a branch**, select **gh-pages** and **/ (root)**, then **Save**. GitHub usually finishes deployment within a few minutes. GitHub Pages is free for public repositories; private repositories may require a paid GitHub plan. Publishing the site does not change repository visibility.
+
+To update the hosted game after future source changes:
+
+```sh
+npm ci
+npm run deploy:pages
+```
+
+This builds with the `/goal-in-one-test/` asset base and pushes only `dist/` to the `gh-pages` branch. It preserves your checkout, working files, and source branch, and uses a normal fast-forward push. It requires Git push access to this repository. Use `node scripts/publish-pages.mjs --dry-run` after `npm run build:pages` to check push permission without publishing. Never put secrets in a static website build.
+
 ## Play
 
 - Click or touch the **ball**, drag **backwards**, then release. Pull farther for more power. Dots show your initial flight path; obstacles and spring pads can change it.

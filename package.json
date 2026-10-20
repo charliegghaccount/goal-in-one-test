@@ -11,7 +11,9 @@
     "test:browser": "playwright test",
     "solve": "tsx tests/solve.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "build:pages": "npm run build -- --base=/goal-in-one-test/",
+    "deploy:pages": "npm run build:pages && node scripts/publish-pages.mjs"
   },
   "dependencies": {
     "matter-js": "0.20.0"
