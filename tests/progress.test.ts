@@ -34,3 +34,8 @@ test('malformed, corrupt, or unavailable browser storage does not break play', (
     false,
   );
 });
+test('football progression is separate from obsolete level scores but keeps the sound preference', () => {
+  const legacy = '{"best":{"1":1,"2":1},"sound":false}';
+  const p = readProgress({ getItem: (key) => (key === 'goal-in-one:v1' ? legacy : null) });
+  assert.deepEqual(p, { best: {}, sound: false });
+});

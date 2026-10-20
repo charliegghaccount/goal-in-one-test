@@ -1,8 +1,15 @@
 export type Progress = { best: Record<string, number>; sound: boolean };
-const KEY = 'goal-in-one:v1';
+const KEY = 'goal-in-one:football:v2';
 export function readProgress(storage?: Pick<Storage, 'getItem'>): Progress {
   try {
-    const raw = JSON.parse((storage ?? localStorage).getItem(KEY) || '{}');
+    const store = storage ?? localStorage;
+    const saved = store.getItem(KEY);
+    const raw = JSON.parse(saved || '{}');
+    // Old scores belong to different levels. Keep only the old sound preference.
+    if (!saved) {
+      const legacy = JSON.parse(store.getItem('goal-in-one:v1') || '{}');
+      raw.sound = legacy?.sound !== false;
+    }
     const best: Record<string, number> = {};
     if (raw && typeof raw.best === 'object' && raw.best)
       for (const [k, v] of Object.entries(raw.best))

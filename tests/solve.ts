@@ -1,47 +1,66 @@
-import { GolfSimulation, MAX_PULL } from '../src/simulation';
-import { levels, type Point } from '../src/levels';
-function shot(
-  id: number,
-  angle: number,
-  power: number,
-  prior: { angle: number; power: number }[] = [],
-) {
-  const sim = new GolfSimulation(levels[id - 1]);
-  for (const s of [...prior, { angle, power }]) {
-    const a = (s.angle * Math.PI) / 180;
-    sim.shoot({
-      x: (-Math.cos(a) * MAX_PULL * s.power) / 100,
-      y: (Math.sin(a) * MAX_PULL * s.power) / 100,
-    });
-    let i = 0;
-    while (sim.phase !== 'ready' && sim.phase !== 'won' && i++ < 3500) sim.step();
+// Searches legal drag vectors using exactly the runtime simulation; no body relocation.
+import { FootballSimulation, MAX_PULL } from '../src/simulation';
+import { levels } from '../src/levels';
+export type Kick = { angle: number; power: number; wait?: number };
+export function playRoute(id: number, route: Kick[]) {
+  const sim = new FootballSimulation(levels[id - 1]);
+  for (let i = 0; i < 12; i++) sim.step();
+  for (const k of route) {
+    for (let i = 0; i < (k.wait ?? 0) * 120; i++) sim.step();
+    const a = (k.angle * Math.PI) / 180;
+    if (
+      !sim.shoot({
+        x: (-Math.cos(a) * MAX_PULL * k.power) / 100,
+        y: (Math.sin(a) * MAX_PULL * k.power) / 100,
+      })
+    )
+      break;
+    for (let i = 0; i < 1200 && sim.phase !== 'won' && sim.phase !== 'failed'; i++) sim.step();
+    if (sim.phase === 'won' || sim.phase === 'failed') break;
   }
-  const x = sim.ball.position.x,
-    y = sim.ball.position.y;
-  const result = {
-    win: sim.phase === 'won',
-    x,
-    y,
-    score: Math.hypot(x - sim.level.cup.x, (y - (sim.level.cup.y - 9)) * 1.8),
-    phase: sim.phase,
-  };
-  sim.destroy();
-  return result;
+  return sim;
 }
-for (const id of process.argv.slice(2).map(Number).length
-  ? process.argv.slice(2).map(Number)
-  : levels.map((l) => l.id)) {
-  let best = { score: Infinity, angle: 0, power: 0, x: 0, y: 0 };
-  let won = false;
-  outer: for (let angle = 15; angle <= 75; angle += 3)
-    for (let power = 40; power <= 100; power += 2) {
-      const s = shot(id, angle, power);
-      if (s.score < best.score) best = { ...s, angle, power };
-      if (s.win) {
-        console.log(JSON.stringify({ id, route: [{ angle, power }], result: s }));
-        won = true;
-        break outer;
+if (process.argv[1]?.endsWith('solve.ts')) {
+  const ids = process.argv.slice(2).map(Number);
+  const chosen = ids.length ? ids : levels.map((l) => l.id);
+  for (const id of chosen) {
+    const level = levels[id - 1];
+    let beam: { route: Kick[]; score: number; x: number; y: number }[] = [
+      { route: [], score: 1e6, x: level.start.x, y: level.start.y },
+    ];
+    let found: Kick[] | null = null;
+    for (let depth = 1; depth <= Math.min(3, level.par) && !found; depth++) {
+      const states: typeof beam = [];
+      outer: for (const base of beam)
+        for (let angle = 9; angle <= 78; angle += 3)
+          for (let power = 28; power <= 100; power += 4) {
+            const route = [...base.route, { angle, power }];
+            const s = playRoute(id, route);
+            if (s.phase === 'won') {
+              found = route;
+              s.destroy();
+              break outer;
+            }
+            const { x, y } = s.ball.position;
+            if (s.phase === 'ready' && x > base.x + 35 && x < level.goal.x + 5) {
+              const score = Math.hypot(level.goal.x - x, (level.goal.y - 12 - y) * 1.5);
+              states.push({ route, score, x, y });
+            }
+            s.destroy();
+          }
+      states.sort((a, b) => a.score - b.score);
+      const used = new Set<string>();
+      beam = [];
+      for (const s of states) {
+        const key = `${Math.round(s.x / 55)},${Math.round(s.y / 35)}`;
+        if (!used.has(key)) {
+          used.add(key);
+          beam.push(s);
+        }
+        if (beam.length >= 10) break;
       }
+      if (!found) console.log(JSON.stringify({ id, depth, best: beam.slice(0, 3) }));
     }
-  if (!won) console.log(JSON.stringify({ id, best }));
+    console.log(JSON.stringify({ id, solution: found }));
+  }
 }

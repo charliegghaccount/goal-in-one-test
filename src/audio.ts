@@ -35,6 +35,12 @@ export class Audio {
   }
   play(type: string) {
     if (type === 'shot') this.tone(600, 0.13, 'triangle', 0.09);
+    if (type === 'post') this.tone(1100, 0.22, 'sine', 0.06);
+    if (type === 'net') {
+      this.tone(210, 0.25, 'triangle', 0.035);
+      this.tone(380, 0.15, 'sine', 0.02, 0.07);
+    }
+    if (type === 'fail') this.tone(140, 0.3, 'triangle', 0.04);
     if (type === 'hit') this.tone(190, 0.065, 'sine', 0.025);
     if (type === 'bounce') {
       this.tone(340, 0.14, 'triangle');

@@ -1,93 +1,86 @@
-# Goal In One ⛳
+# Goal In One ⚽
 
-A complete, browser-based, side-view golf puzzle game. Ten handmade courses take you from open meadows to spring-pad jumps, island crossings, moving gates, and a highland finale. Built from scratch with TypeScript, HTML5 Canvas, Matter.js, and Vite. No external art, font, audio, API, or credential dependencies at runtime.
+A complete **football physics puzzle game** inspired by Phantasmagor's 2006 Flash game, made with TypeScript, HTML5 Canvas, Matter.js, and Vite. Launch a small black-and-white football across stepped terrain, walls, gaps, springs, and moving gates. Score through the open mouth of a visible soccer net before your kick budget runs out.
+
+**Play:** https://charliegghaccount.github.io/goal-in-one-test/
+
+The visual and mechanical specification is the user-supplied corrective PDF. Read [the reference audit and design decisions](docs/DESIGN.md) for source provenance, blocked original screenshots, and the first-level visual baseline. These are newly designed levels, not a claim to reproduce the exact original level sequence.
 
 ## Run
 
-Use **Node.js 24** (see `.nvmrc`; Node 22.12+ is supported).
+Use **Node.js 24** (`.nvmrc`; Node 22.12+ supported).
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open the address Vite prints in your browser. The development server listens on all interfaces; its default port is **5173**. In the cloud checkout, run these commands from `/workspace/goal-in-one-test`.
+Open the address Vite prints. Default port: **5173**. In this cloud checkout, run from `/workspace/goal-in-one-test`. If a previously running Vite instance reports stale optimized dependencies after installation, restart it with `npm run dev -- --force`.
 
 ```sh
-npm run build       # TypeScript checks and production build → dist/
-npm run preview     # Serve the production build, default port 4173
-npm test            # Physics, course completion, hazards, and persistence tests
-npm run test:browser # Chromium end-to-end tests
+npm run build         # TypeScript check + production assets in dist/
+npm run preview       # Serve the built game, port 4173
+npm test              # Goal validity, all levels, budgets, physics, and saves
+npm run test:browser  # Actual browser drag kicks, touch, camera, menus, failure, pause
+npm run format:check  # Formatting
+npm run solve -- 8    # Search legal kick routes using unchanged runtime physics
 ```
 
-Browser tests use `/usr/bin/chromium` if present. Otherwise install Playwright's browser once with `npx playwright install chromium` (or `npx playwright install --with-deps chromium` on a supported Linux system). Browser tests start Vite automatically if it is not already running. Browser downloads are not needed to play or build the game.
+Browser tests use `/usr/bin/chromium` when available. Otherwise run `npx playwright install chromium` once (`--with-deps` on supported Linux systems if system libraries are missing). Browser tests start Vite automatically when needed. Play/build requires no browser download, backend, API key, external assets, or fonts.
 
-For static hosting, upload the contents of `dist/` to any static web host. No backend is needed. Vite's default build targets the host root; use `npm run build -- --base=./` for a relative asset base when deploying under a subdirectory.
+## Play
 
-## Play online / GitHub Pages
+1. Press the **football**, drag **backwards** to aim, then release to kick. Pull farther for power. The arrow and dots show your intended launch; collision/spring effects can change the flight.
+2. Wait for movement **and spin** to settle before the next kick.
+3. Enter the net through its **open left side**. The whole ball must cross the mouth within its frame. Touching the roof, backside, or a nearby area is insufficient.
+4. **PAR is a hard kick limit.** The last legal kick can still score. If it stops without a goal, retry. Every attempt into water uses its kick; with kicks remaining, the ball returns to the previous kick's location.
+5. Orange springs boost upward when hit from above. Striped gates move while you aim. All ten levels are open.
 
-The public game address is **https://charliegghaccount.github.io/goal-in-one-test/** once GitHub Pages is enabled.
+Each level displays maximum and remaining kicks plus its star targets. Best scores and mute preference save in this browser. Redesigned football levels use a separate save version; old scores from the previous implementation are not valid. If storage is disabled, play works but scores last only for the visit.
 
-The source lives on `main`; the static production site is published separately to `gh-pages`. No gameplay code changes are needed for hosting.
+**Controls:** Mouse and touch drag share the same physics. **Precise aim** provides sliders and a kick button. With the canvas focused: **↑/↓** angle, **←/→** power, **Space** kick, **Escape** cancel, **A/D** pan, **P** pause, **R** retry, **L** levels. Direction 0° is right, 90° up, 180° left. Top-right pause freezes the ball and gates. Camera buttons pan, show the whole level, or resume following the ball. Aiming locks the camera.
 
-One-time repository setting: open **Settings → Pages**, choose **Deploy from a branch**, select **gh-pages** and **/ (root)**, then **Save**. GitHub usually finishes deployment within a few minutes. GitHub Pages is free for public repositories; private repositories may require a paid GitHub plan. Publishing the site does not change repository visibility.
+## Ten levels
 
-To update the hosted game after future source changes:
+| #   | Level            | Kick limit | 3 stars / 2 stars | Challenge                                                  |
+| --- | ---------------- | ---------- | ----------------- | ---------------------------------------------------------- |
+| 1   | First touch      | 3          | ≤1 / ≤2           | Stepped approach to a raised net                           |
+| 2   | Up for it        | 4          | ≤2 / ≤3           | A goal 235 units above the start platform                  |
+| 3   | Wall play        | 4          | ≤1 / ≤2           | A tall wall and alternate stepping ledge                   |
+| 4   | Mind the gap     | 4          | ≤2 / ≤3           | Water crossings and a safe island                          |
+| 5   | On the rise      | 4          | ≤1 / ≤2           | A collision slope and raised finish                        |
+| 6   | The right moment | 4          | ≤1 / ≤2           | A moving gate beneath a rail                               |
+| 7   | Spring loaded    | 4          | ≤1 / ≤2           | A spring-assisted flight to a high net                     |
+| 8   | The long game    | 5          | ≤2 / ≤3           | A 2,200-unit world, islands and camera scouting            |
+| 9   | Thread the net   | 4          | ≤1 / ≤2           | A narrow 74-unit mouth with colliding frame                |
+| 10  | Top corner       | 5          | ≤2 / ≤3           | Wall, spring, high shelf, moving gate, and elevated finish |
+
+One star is earned by scoring within the remaining legal budget. Every three-star target has an input-only solution using the same simulation as the game; see `tests/solutions.ts`. The browser suite executes actual pointer drags for all ten. It uses a controlled animation clock for repeatable moving-gate phases, plus separate real-time mouse and portrait-touch goal checks. Test counts alone do not establish the intended visual identity; see the screenshot evidence and validation report.
+
+## Architecture
+
+- `src/levels.ts` — terrain, goal/frame coordinates, width, hazards, movers, and scoring thresholds.
+- `src/simulation.ts` — Matter.js at 120 Hz; rest detection, kick budget, plane crossing, frame collisions, capture, and recovery.
+- `src/render.ts` — football panels, mesh/frame, bright layered landscapes, particles, flight guides, responsive smooth camera, shared input transform.
+- `src/main.ts` — menus, pointer/keyboard input, pause, success/failure, HUD, modal focus, and progression.
+- `src/progress.ts` — versioned, validated, failure-tolerant storage and best scores.
+- `src/audio.ts` — interaction-unlocked kick, collision, post, spring, net, success, and failure tones.
+- `tests/` — goal counterexamples, legal route regressions, scoring/save tests, and Chromium input tests.
+- `docs/evidence/` — actual browser screenshots, including the first visual baseline and each scored level.
+
+No application physics or state setters are exposed to browser tests. The Canvas has read-only rendering diagnostics for verifying camera position and locating the rendered ball; tests still press, drag, and release through browser input.
+
+## Publish / update GitHub Pages
+
+Source is on **main**; static hosting uses **gh-pages**. To publish a tested update:
 
 ```sh
 npm ci
 npm run deploy:pages
 ```
 
-This builds with the `/goal-in-one-test/` asset base and pushes only `dist/` to the `gh-pages` branch. It preserves your checkout, working files, and source branch, and uses a normal fast-forward push. It requires Git push access to this repository. Use `node scripts/publish-pages.mjs --dry-run` after `npm run build:pages` to check push permission without publishing. Never put secrets in a static website build.
+This builds with `/goal-in-one-test/` asset paths and fast-forward-pushes only `dist/`, preserving the source checkout and user changes. It uses existing Git authentication. It does not upload credentials. `node scripts/publish-pages.mjs --dry-run` checks the push without publishing after `npm run build:pages`.
 
-## Play
+Pages is already configured for this repository. For a fresh repository, enable **Settings → Pages → Deploy from a branch → gh-pages → / (root) → Save**. GitHub Pages is free for public repositories. For other static hosts, upload `dist/` from the normal build (or use `npm run build -- --base=./` for relative paths).
 
-- Click or touch the **ball**, drag **backwards**, then release. Pull farther for more power. Dots show your initial flight path; obstacles and spring pads can change it.
-- Wait for the ball to stop before shooting again. The cup has a real opening: the ball must fall into it.
-- Water returns the ball to where you took your last shot. The attempted stroke still counts; there is no additional stroke penalty.
-- Coral pads give an upward boost. Striped gates move continuously, so watch your timing.
-- Complete at or below par for **3 stars**, within two over par for **2 stars**, or finish with **1 star**. All courses are open from the start.
-- Your best score per course and sound preference are saved locally in this browser. Clearing site data resets them. Play remains available when storage is disabled, but progress will not persist.
-
-**Precise aim** offers direction and power sliders with a shot button, useful on small screens or without dragging. Direction 0° is right, 90° is up, and 180° is left.
-
-With the course canvas focused, **↑ / ↓** adjust angle, **← / →** adjust power, **Space** shoots, **R** restarts, **L** opens the courses, and **Escape** cancels aiming. Tab reaches all menu and control buttons. Sound begins only after a user interaction and can be muted in the header. Reduced-motion preferences disable decorative animation.
-
-## Courses
-
-| #   | Course              | Par | Main challenge                                       |
-| --- | ------------------- | --- | ---------------------------------------------------- |
-| 1   | The first swing     | 2   | Power and putting on an open green                   |
-| 2   | A little elevation  | 3   | A slope and raised green                             |
-| 3   | Mind the gap        | 2   | Clear the pond                                       |
-| 4   | Over & under        | 3   | A wall and an alternate stepping platform            |
-| 5   | Spring in your step | 3   | A spring pad and elevated finish                     |
-| 6   | Perfect timing      | 3   | A moving gate                                        |
-| 7   | Island hopping      | 4   | Two water crossings and a safe central island        |
-| 8   | The scenic route    | 4   | Ramps, a high shelf, and a raised finish             |
-| 9   | Between a rock…     | 4   | A low ceiling, barrier, and spring-assisted crossing |
-| 10  | The grand finale    | 5   | Islands, a spring, a raised cup, and a moving gate   |
-
-Every course has a checked legal route into the physical cup. A skilled shot can finish each in one; you can also take intermediate landing shots. The two moving-gate courses require timing. `npm run solve -- 5` searches coarse one-shot routes for a chosen course from its initial obstacle phase; `npm run solve` checks all ten. These routes are also retained in regression tests.
-
-## Architecture
-
-- `src/levels.ts` — declarative course geometry, par, hazards, platforms, and moving-obstacle paths.
-- `src/simulation.ts` — headless Matter.js simulation, fixed 120 Hz stepping, shot rules, collision events, physical cup pockets, and recovery. Shared by the game and tests.
-- `src/render.ts` — responsive, high-DPI Canvas rendering. Code-drawn landscapes, flags, dimples, terrain, flight dots, water, and particles; no downloaded assets.
-- `src/main.ts` — menus, Pointer Events, keyboard and precise controls, frame loop, modal focus, progression, and UI.
-- `src/audio.ts` — short synthesized Web Audio effects, activated by user gesture.
-- `src/progress.ts` — versioned, validated, failure-tolerant local storage.
-- `src/style.css` — responsive clubhouse-style interface and reduced-motion treatment.
-- `tests/` — simulation/storage regressions, a course solver, and Playwright browser tests.
-
-All courses fit a single desktop viewport, so a scrolling camera is unnecessary. Resizing preserves world coordinates and pointer accuracy. Live processes must be started again in a new cloud task; dependencies and the production build are retained on disk.
-
-## Validation and limits
-
-Automated checks cover all ten physical cup completions, shot capping, repeat shots, water recovery, springs, moving geometry, star ratings, and corrupted/unavailable storage. Browser tests cover navigation through all ten courses, pointer shooting, aiming controls, keyboard controls, help focus, sound preference, completion, persistence after reload, touch cancellation, and responsive layout. A full browser run also completes all ten courses with a controlled animation clock so gate timing is reproducible.
-
-Validated in headless Chromium on Linux. Firefox, Safari, physical phones, subjective audio quality, and deployment to a public host have not been verified. There are no ads, analytics, multiplayer, accounts, or cloud saves.
-
-Matter.js is © Liam Brummitt, MIT licensed; its license is distributed with the installed package. All game artwork is drawn with Canvas or inline SVG, and all effects are synthesized in-browser.
+Validated on Linux Chromium; Safari, Firefox, and physical phones are unverified. All artwork is original Canvas/SVG; synthesized audio needs no media files. Matter.js is © Liam Brummitt, MIT licensed (license included with the installed package).
