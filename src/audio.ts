@@ -42,11 +42,11 @@ export class Audio {
     }
     if (type === 'fail') this.tone(140, 0.3, 'triangle', 0.04);
     if (type === 'hit') this.tone(190, 0.065, 'sine', 0.025);
-    if (type === 'bounce') {
+    if (type === 'boost') {
       this.tone(340, 0.14, 'triangle');
       this.tone(680, 0.2, 'sine', 0.05, 0.06);
     }
-    if (type === 'water')
+    if (type === 'reset')
       for (let i = 0; i < 5; i++) this.tone(150 + i * 65, 0.15, 'sine', 0.04, i * 0.04);
     if (type === 'win')
       [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>

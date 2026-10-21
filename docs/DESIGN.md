@@ -1,50 +1,47 @@
-# Football remake: design and reference audit
+# PDF arena trace and current rules
 
-## Source of truth
+## Source priority
 
-The user's nine-page **Goal_In_One_Codex_Remake_Brief.pdf** was read in full, including its annotated scene composition and ten level schematics. It identifies the inspiration as **Phantasmagor's Goal In One (2006), Newgrounds portal 324126**: a side-view football launch puzzle with goals and a limited number of shots.
+The user's October 21 request and **Goal In One Levels 1–10 Designs PDF.pdf** define this version. All ten pages were read and rendered for inspection. These specific designs replace the older open-platform courses. The user explicitly overrides the earlier brief's shot budgets and wait-for-rest rule: kicks are unlimited and can add momentum mid-flight.
 
-The PDF explicitly labels its drawings as **illustrative concept diagrams, not original screenshots**. The remake follows their scene structure and gameplay requirements; it does not claim to recreate the original ten levels or original art exactly.
+The earlier remake brief still establishes the football identity, side-view goal and net-entry objective. Neither document is treated as an instruction to reproduce golf visuals or to invent substitute layouts.
 
-## External references attempted
+## Reference access
 
-All six links embedded in the PDF were requested on 20 October 2026. Every request returned HTTP 403 in this environment. Neither original screenshot could be viewed, and the original Flash gameplay was not personally verified. These failures were reported during development; they were not treated as permission to guess a different genre.
+Both current original-game URLs were requested on October 21, 2026:
 
-| Reference                    | URL                                                                 | Result                 |
-| ---------------------------- | ------------------------------------------------------------------- | ---------------------- |
-| Newgrounds release           | https://www.newgrounds.com/portal/view/324126                       | HTTP 403; not viewable |
-| Armor Games instructions     | https://armorgames.com/goal-in-one-game/363                         | HTTP 403; not viewable |
-| POG listing                  | https://www.pog.com/game/goal-in-one-12353                          | HTTP 403; not viewable |
-| Original POG screenshot      | https://www.pog.com/assets/game-thumbs/c4/goal-in-one-12353.webp    | HTTP 403; not viewable |
-| Original Miniplay screenshot | https://www4.minijuegosgratis.com/v3/games/thumbnails/6481_7_sq.jpg | HTTP 403; not viewable |
-| Y8 listing                   | https://www.y8.com/games/goal_in_one                                | HTTP 403; not viewable |
+- https://armorgames.com/goal-in-one-game/363 — HTTP 403, not viewable.
+- https://funkypotato.com/goal-in-one/ — HTTP 403, not viewable.
 
-## Audit and reuse
+The previous brief's original screenshot/listing URLs were also unavailable in the earlier task. The game is informed by the supplied drawings and explicit requirements; no claim is made to have played or visually verified the original Flash game in this environment. Physics tuning is a remake implementation decision, not a claim of exact original parameters.
 
-Reused: Matter.js integration, fixed 120 Hz physics, Pointer Events and pointer capture, drag power clamping, browser test tooling, menu/modal structure and focus handling, local-storage validation, synthesized audio infrastructure, Vite/TypeScript, and GitHub Pages publishing.
+## Geometry trace
 
-Replaced: entity identity and art, cup capture, all ten layouts, unlimited-stroke rules, star thresholds, flat viewport assumptions, terrain palette, copy, navigation, and completion feedback. Football scores use a new versioned save key; obsolete scores do not count for redesigned levels. The old sound preference is retained.
+The new PDF is vector-based. Its black polylines and filled polygons were inspected directly with PyMuPDF, along with all ten rendered pages. `fromPDF(x,y)` applies the same translation and uniform 1.6× scale to every layout. There is no per-level stretch or generated geometry.
 
-## Visual baseline
+- The floor, left wall, roof contours, right wall and goal mouth share common source coordinates. Upper-corner and sloped-roof joins use connected endpoints rather than leaving the small overlaps/undershoots in the sketches.
+- Solid triangular obstacles use the traced source vertices. Their bases meet the actual floor; the small source gaps hidden by the floor stroke are welded.
+- Level 4's supported flat/downhill structure is a filled trapezoid. Its closed outline and the floor enclose the same inaccessible interior as the drawing.
+- Level 8's two substantial triangles and narrow opening are retained, including the hanging triangle sharing the roof plateau.
+- Level 9 preserves the rectangular arena and the source rectangle's width/height and horizontal position. Its eight-second vertical cycle uses the illustrated travel range. A trapped football physically blocks the mover near a roof/floor, and it resumes smoothly once clear; this prevents crushing through a boundary without adding invisible walls or reducing the designed range.
+- Level 5 and 6 arrow strips become directional contact sensors over the solid floor. Level 10's red strip uses the traced horizontal span.
+- The goal is the drawn trapezoidal extension on the right, with a horizontal roof, sloping back, extended floor, green frame and visible mesh. Its vertical mouth is an opening, not a solid upright blocking entry.
+- Ball starts remain bottom-left, with the more rightward start from the Level 9 drawing. The football is a small readable 16-unit-radius sprite placed above the floor; the diagram's pasted ball image is not used as an asset.
 
-The first implementation was **First touch**, with a black-and-white football, a visible elevated mesh net, hard-edged grass-topped steps, and a kick-direction arrow. It was captured and inspected before implementing the other nine layouts. A real mouse drag/release completed that first level.
+## Matching drawing and collision
 
-![Initial baseline, before the other nine levels](evidence/baseline-level-01.png)
+`segments(level)` supplies every rendered wall and corresponding rigid collider. A black line is a solid 10.4-unit-wide capsule: a rotated rectangle and round endpoint caps. Adjacent caps overlap at corners. Goal roof/back boundaries use the same construction and green visible strokes. The single continuous floor extends under the goal.
 
-The completed game's menu, elevated aiming scene, flight, and per-level goal screenshots are in [evidence](evidence/). All art is drawn in Canvas or SVG; no outside graphics or fonts are downloaded.
+Obstacle rendering and convex Matter.js bodies share the same vertices. No offscreen rectangular cage, position clamp or silent out-of-bounds reset makes an open scene appear enclosed. The adaptive physics substeps limit travel per collision step for very fast accumulated kicks. The only intentional positional reset is the red surface.
 
-## Rules and modern implementation decisions
+## Kicking and presentation
 
-- A 12-unit-radius black-and-white football has gravity, restitution, friction, and angular motion. It is a small, distinct object in a side-view platform world.
-- Press the football and drag backward. Release applies a capped kick; a six-unit dead zone, Escape, pointer cancellation, and lost capture cancel safely.
-- Next kick requires both linear speed below 0.18 and angular speed below 0.025 for 42 physics steps (0.35 seconds). A ball disturbed by scenery returns to the moving state.
-- The net faces left. The **whole football** must cross its open front plane from left to right, with its entire circular extent inside the mouth's vertical bounds. Position is interpolated at the crossing. High-speed discontinuities, nearby balls, starting inside, and back/roof contacts alone cannot score.
-- The crossbar, back post, and mouth end caps collide. The side-profile mouth itself is open, not an invisible wall. The visible white mesh and frame share the same world coordinates as the physics.
-- A valid entry starts a short net capture/rustle animation before success. No proximity disappearance or arbitrary rectangular goal trigger is used.
-- PAR is a **hard kick budget**. The last legal kick can score while it is moving. If it comes to rest or goes out of play without scoring, the level fails. Failing never improves a saved score.
-- Water/out-of-world attempts consume their kick, then return to the last kick's start when a budget remains. Retry recreates all physics, obstacle phases, camera, counters, and particles.
-- Three-star and two-star kick thresholds are explicit level data, strictly ordered and below the maximum budget. Legal tested routes meet every three-star target.
-- The camera smoothly follows the ball on wide levels. Overview, pan, and follow controls allow scouting. Portrait view uses a closer 900-unit viewport. Camera motion is locked during aiming and pause; coordinate transforms remain shared with input.
-- Pause/help stop physics. Audio starts only after interaction. Reduced motion disables particles and decorative animation while retaining essential ball/camera motion.
+Drag anywhere to make fast balls easy to target on mouse and touch. The pointer delta is relative to its press location; indicators follow the moving ball and include its current velocity. Physics continues during aiming. A kick is a capped additional velocity/angular impulse, never a replacement for existing momentum. There is no wait, cooldown, par check or maximum-shot gate.
 
-These are modern engineering choices guided by the PDF, not claims about undocumented details of the Flash implementation.
+The full arena is always fitted with uniform scaling and no tracking/pan. Landscape and portrait use the same physics. Boundary art is dark and solid; a faint clipped grid stays clearly decorative. Menus, mute, pause, keyboard/precise controls and best-score persistence remain.
+
+Par and stars reward efficiency only. Every eventual goal completes; over-threshold attempts earn one star. Red contact resets to the original start with zero velocity but preserves the count exactly. Automatic boost contacts never increment it.
+
+## Current evidence
+
+Use [arena-evidence](arena-evidence/) and the [validation report](VALIDATION.md) for the actual screenshots, PDF comparison sheets and input-tested completions. The earlier `evidence/` directory is historical and does not describe the current levels.

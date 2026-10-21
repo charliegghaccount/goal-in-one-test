@@ -1,61 +1,53 @@
-# Football remake — validation evidence
+# PDF arena redesign — validation evidence
 
-Validated in Linux Chromium on 20 October 2026. This is the corrected football/net/platform game described in the user's nine-page PDF. Reference provenance and the first-level baseline are recorded in [DESIGN.md](DESIGN.md).
+Validated in Linux Chromium on **21 October 2026**. The current ten levels follow all ten pages of the user's **Goal In One Levels 1–10 Designs PDF.pdf**. These results supersede the historical open-platform/budget evidence in `docs/evidence/`.
 
-## What was actually exercised
+## Executed checks
 
-- **25 headless simulation/storage tests passed** using the runtime Matter.js simulation.
-- **8 full-suite Chromium browser tests passed**; after adding short-landscape layout and initial storage detection, the three affected/new checks (identity/persistence, blocked storage/keyboard, landscape drag goal) also passed. That is **9 distinct browser checks**, with no remaining failed check.
-- **All ten levels scored through actual browser mouse press → drag → release input**, within budget, earning three stars. Browser input never sets ball position, velocity, scores, or success state.
-- Full ten-level runs used a controlled animation clock to reproduce moving-gate timing. Separate **real-time mouse** and **real-time portrait touch** runs scored level 1 without a mocked clock.
-- Portrait touch cancellation spent no kick; the subsequent real touch drag scored. Landscape layout kept the full game surface visible and scored through drag input.
-- The wide-level check used overview, pan, and follow controls, then kicked normally; after the long first flight the camera had moved more than 600 world units. Level 8 completed after two browser drags.
-- Failure was exercised by using all three kicks without scoring. The last kick was allowed to finish, failure appeared, and retry reset shots and remaining budget.
-- Pause froze a moving ball and gate simulation. Resume continued movement. Mid-flight kick controls were disabled.
-- Saved scores survived reload, all ten completion marks persisted, and the browser displayed 30 stars. Old level scores are not migrated; the previous sound preference is.
-- Goal counterexamples exercise roof/post and backside hits, nearby balls, starting inside the net, and invalid discontinuous crossings. None counts as a goal. A valid whole-ball mouth crossing scores even on the final legal kick.
-- The finale route is checked across five initial settling durations and tiny pointer-coordinate variations. This was added after a headless route proved sensitive in browser input; the corrected route was then browser-drag verified.
+- **59 headless physics/storage tests passed** (`npm test`), using the actual runtime Matter.js simulation.
+- **10 Chromium browser tests passed** (`npm run test:browser`). After removing a redundant in-arena hint and correcting static control/metadata copy, the screenshot check was rerun to refresh all ten arena captures. No physics changed after the complete suite.
+- **All ten levels completed through actual browser mouse press → drag → release input**, earning three stars and persisting 30 stars after reload. The browser tests never assign ball position, velocity, shot count or success state.
+- The reproducible all-ten playthrough uses Playwright's animation clock, including moving-obstacle timing. Separate real-time mouse and touch runs exercised kicks while moving, pointer cancellation and a landscape goal without a controlled clock.
+- A second drag was started during flight; the ball continued moving while aiming, and releasing added horizontal velocity to the existing momentum. Precise controls stayed enabled. The simulation also checks the exact additive impulse.
+- **20 browser kicks followed by a 21st-kick goal** completed normally with one star. The simulation accepts 100 consecutive kicks, checks enclosure at the resulting high speeds and confirms an over-par completion. There is no shot-limit failure state.
+- Browser contact checks confirmed positive/rightward velocity from the green surface and negative/leftward velocity from orange. Boosts spend no shots.
+- Browser red-pad contact returned the ball to its original start without changing the shot count, and the next kick completed Level 10. A headless regression checks the reset after 21 shots and accepts shot 22.
+- Every reachable wall/ceiling/floor/goal-boundary segment, every exposed obstacle face and reachable welded boundary joint was hit in targeted simulation tests. Full-ball containment checks and bank-shot stress runs found no escape in all ten arenas. Solid obstacle interiors were checked. Browser-input bank-shot stress also covered all ten.
+- Level 9's mover was tested for vertical travel, contacts and retry reset. Separate roof/floor crushing regressions verify that a trapped ball blocks the mover rather than being forced outside. The source rectangle and travel range are preserved.
+- Goal counterexamples cover roof/post/backside impacts, proximity, a ball starting inside the net and invalid crossings. Only a valid whole-ball crossing through the open mouth triggers net capture and completion.
+- Pause, resume, keyboard/precise controls, sound preference, blocked local storage, help focus, reload persistence and pointer cancellation passed. Portrait and short landscape viewports keep the complete fixed arena fitted without horizontal page overflow.
 
-## Confirmed browser-drag completions
+## Confirmed browser-drag completions and geometry comparison
 
-These counts came from actual Chromium input and the visible goal-completion UI, not direct state assignment. Each screenshot is from that run.
+All ten full-size arena screenshots and all ten side-by-side comparison panels were opened and visually inspected against the corresponding PDF page. The comparison sheets retain the PDF drawing alongside the rendered game, using a common source crop; they are review evidence, not runtime assets.
 
-| Level | Name             | Actual kicks | Maximum | Stars | Evidence                                                                                    |
-| ----- | ---------------- | ------------ | ------- | ----- | ------------------------------------------------------------------------------------------- |
-| 01    | First touch      | 1            | 3       | 3     | [Scored](evidence/level-01-goal.png)                                                        |
-| 02    | Up for it        | 2            | 4       | 3     | [Scored](evidence/level-02-goal.png) / [ball entering net](evidence/level-02-net-entry.png) |
-| 03    | Wall play        | 1            | 4       | 3     | [Scored](evidence/level-03-goal.png)                                                        |
-| 04    | Mind the gap     | 2            | 4       | 3     | [Scored](evidence/level-04-goal.png)                                                        |
-| 05    | On the rise      | 1            | 4       | 3     | [Scored](evidence/level-05-goal.png)                                                        |
-| 06    | The right moment | 1            | 4       | 3     | [Scored](evidence/level-06-goal.png)                                                        |
-| 07    | Spring loaded    | 1            | 4       | 3     | [Scored](evidence/level-07-goal.png)                                                        |
-| 08    | The long game    | 2            | 5       | 3     | [Scored](evidence/level-08-goal.png) / [wide overview](evidence/level-08-overview.png)      |
-| 09    | Thread the net   | 1            | 4       | 3     | [Scored](evidence/level-09-goal.png)                                                        |
-| 10    | Top corner       | 2            | 5       | 3     | [Scored](evidence/level-10-goal.png)                                                        |
+| Level | Layout confirmed against drawing                                  | Kicks | Stars | Arena / PDF comparison                      | Actual browser goal                  |
+| ----- | ----------------------------------------------------------------- | ----- | ----- | ------------------------------------------- | ------------------------------------ |
+| 01    | Enclosed rectangle, angled upper corners                          | 1     | 3     | [Compare](arena-evidence/comparison-01.png) | [Scored](arena-evidence/goal-01.png) |
+| 02    | Tall peak and solid rising floor triangle                         | 1     | 3     | [Compare](arena-evidence/comparison-02.png) | [Scored](arena-evidence/goal-02.png) |
+| 03    | Tall peak and reversed floor triangle                             | 1     | 3     | [Compare](arena-evidence/comparison-03.png) | [Scored](arena-evidence/goal-03.png) |
+| 04    | Stepped/sloping roof and supported flat/downhill structure        | 1     | 3     | [Compare](arena-evidence/comparison-04.png) | [Scored](arena-evidence/goal-04.png) |
+| 05    | Enclosed arena and green forward strip                            | 1     | 3     | [Compare](arena-evidence/comparison-05.png) | [Scored](arena-evidence/goal-05.png) |
+| 06    | Enclosed arena and orange backward strip                          | 2     | 3     | [Compare](arena-evidence/comparison-06.png) | [Scored](arena-evidence/goal-06.png) |
+| 07    | Low roof, opposing floor triangles with high ends inward          | 1     | 3     | [Compare](arena-evidence/comparison-07.png) | [Scored](arena-evidence/goal-07.png) |
+| 08    | Plateau peak, substantial roof/floor triangles and narrow passage | 1     | 3     | [Compare](arena-evidence/comparison-08.png) | [Scored](arena-evidence/goal-08.png) |
+| 09    | Rectangular enclosure and vertically moving rectangle             | 1     | 3     | [Compare](arena-evidence/comparison-09.png) | [Scored](arena-evidence/goal-09.png) |
+| 10    | Enclosed arena and red reset strip                                | 1     | 3     | [Compare](arena-evidence/comparison-10.png) | [Scored](arena-evidence/goal-10.png) |
 
-## Visual review
+Combined visual reviews: [Levels 1–5](arena-evidence/comparisons-01-05.png) and [Levels 6–10](arena-evidence/comparisons-06-10.png). Full UI captures are `arena-evidence/level-01.png` through `level-10.png`; canvas-only captures are `arena-01.png` through `arena-10.png`.
 
-The first-level screenshot was shown before designing the remaining nine. The following actual browser images were opened and visually inspected against the PDF's annotated concept diagram:
+The trace preserves the source contours, obstacle positions and proportions. Small overlapping/open stroke joins are welded, triangle bases meet the floor, and Level 4's closed supported structure is filled. The football is smaller than the diagrams' pasted illustration. These deliberate interpretations and shared rendering/collision geometry are described in [DESIGN.md](DESIGN.md).
 
-- [First visual baseline](evidence/baseline-level-01.png): small black-and-white football, launch arrow, solid stepped terrain, raised visible net and kick budget.
-- [Menu](evidence/menu.png): football branding and a net/platform illustration.
-- [Simple-level aiming](evidence/level-01-aim.png).
-- [Elevated-goal aiming](evidence/level-02-elevated-aim.png): the net sits significantly above the start; this is the brief's primary visual sign-off example.
-- [Elevated goal entry](evidence/level-02-net-entry.png): the football is visibly inside the open mouth, with goal feedback before the overlay.
-- [Wide-level overview](evidence/level-08-overview.png): separate platforms, water gaps, ramp, high shelf and far goal.
-- [Finale completion](evidence/level-10-goal.png), [portrait touch completion](evidence/phone-goal.png), and [landscape layout](evidence/phone-landscape-level.png).
-- [All levels and 30 stars](evidence/levels-complete.png), [out-of-shots overlay](evidence/out-of-shots.png).
+Additional actual browser evidence: [mid-flight aim](arena-evidence/mid-flight-aim.png), [21-kick completion](arena-evidence/21-kicks-completed.png), [forward boost](arena-evidence/boost-5.png), [backward boost](arena-evidence/boost-6.png), [red-pad reset](arena-evidence/red-pad-reset.png), [landscape touch](arena-evidence/landscape-touch.png), [portrait fit](arena-evidence/portrait-arena.png) and [landscape fit](arena-evidence/landscape-arena.png).
 
-The art matches the football/platform/net identity of the PDF. There are no putting cups, flags, clubs, or dimpled-ball assets in the game. The original external screenshots could **not** be inspected: all six reference requests returned HTTP 403. The concept diagrams were used as labelled, not presented as genuine original screenshots.
+## Build and publication checks
 
-## Builds and production-path check
+- `npm run build:pages`: passed TypeScript and Vite production build with the `/goal-in-one-test/` asset base.
+- `npm run format:check` and `git diff --check`: passed formatting and whitespace checks.
+- Production-path smoke: passed under the exact Pages subpath. HTTP 200, all assets loaded, and a real-time mouse drag completed Level 1 in one kick with three stars. No page errors or failed requests. [Production goal screenshot](arena-evidence/production-pages-goal.png). GitHub deployment status is reported separately in the final delivery.
 
-- `npm run build`: passed TypeScript and Vite production build.
-- `npm run build:pages`: passed with the `/goal-in-one-test/` asset base.
-- `npm run format:check`: passed.
-- `git diff --check`: passed.
-- The Pages build was served under its real subpath in Chromium: HTTP 200, all scripts/styles loaded, football title present, and a real mouse drag entered the net and completed level 1 without page errors or failed asset requests.
+## Remaining limits
 
-## Limits
+Both requested original-game sites returned HTTP 403, so the original Flash presentation, controls and exact physics could not be directly inspected. Geometry was compared against the supplied PDF; no claim of an exact original-game physics match is made.
 
-No human player session is claimed; the confirmed playthroughs are browser-input driven. This does not establish subjective difficulty or audio quality. Safari, Firefox, physical iPhones/Android devices, and long-term player balancing remain unverified. Phone evidence is Chromium viewport/touch emulation. All original reference URLs were blocked. Public-site checks depend on the environment's network policy; GitHub deployment status is reported separately from local browser validation.
+These are automated browser-input playthroughs, not human playtesting. Subjective feel/difficulty, audio quality, Safari, Firefox and physical iPhone/Android devices remain unverified. Touch evidence uses Chromium emulation. Finite collision stress tests cannot mathematically prove containment for arbitrary repeated impulses, although adaptive substeps and shared solid boundaries cover the tested fast shots without an invisible cage or position clamp. Public Pages access is restricted from this environment; GitHub deployment status and local production-path validation are reported separately.

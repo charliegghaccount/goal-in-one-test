@@ -1,13 +1,14 @@
 import { test, expect, type Page } from '@playwright/test';
 import { solutions } from '../solutions';
-import { levels } from '../../src/levels';
+import { levels, arenaPolygon } from '../../src/levels';
+import { viewBounds } from '../../src/render';
 import { mkdirSync } from 'node:fs';
-const evidence = 'docs/evidence';
+const evidence = 'docs/arena-evidence';
 mkdirSync(evidence, { recursive: true });
 async function frozen(page: Page) {
-  const time = new Date('2026-10-20T12:00:00Z');
-  await page.clock.install({ time });
-  await page.clock.pauseAt(new Date(time.getTime() + 1000));
+  const t = new Date('2026-10-21T12:00:00Z');
+  await page.clock.install({ time: t });
+  await page.clock.pauseAt(new Date(+t + 1000));
   await page.goto('/');
 }
 async function select(page: Page, id: number) {
@@ -15,258 +16,307 @@ async function select(page: Page, id: number) {
   await page.locator(`.level-card[data-id="${id}"]`).click();
   await page.clock.runFor(100);
 }
-async function aimDrag(page: Page, angle: number, power: number) {
-  const c = page.locator('#scene');
-  await expect(c).toHaveAttribute('data-phase', 'ready');
-  const r = (await c.boundingBox())!,
-    d = await c.evaluate((e) => ({ ...e.dataset }));
-  const x = r.x + Number(d.ballScreenX),
-    y = r.y + Number(d.ballScreenY),
-    s = Number(d.scale),
+async function drag(page: Page, angle: number, power: number) {
+  const c = page.locator('#scene'),
+    r = (await c.boundingBox())!,
+    scale = Number(await c.getAttribute('data-scale'));
+  const x = r.x + r.width * 0.4,
+    y = r.y + r.height * 0.45,
     a = (angle * Math.PI) / 180;
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(
-    x - ((Math.cos(a) * 140 * power) / 100) * s,
-    y + ((Math.sin(a) * 140 * power) / 100) * s,
-    { steps: 12 },
+    x - ((Math.cos(a) * 140 * power) / 100) * scale,
+    y + ((Math.sin(a) * 140 * power) / 100) * scale,
+    { steps: 5 },
   );
-}
-async function dragKick(page: Page, angle: number, power: number) {
-  await aimDrag(page, angle, power);
   await page.mouse.up();
 }
+function inside(p: { x: number; y: number }, poly: { x: number; y: number }[]) {
+  let yes = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i],
+      b = poly[j];
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x)
+      yes = !yes;
+  }
+  return yes;
+}
 
-test('football identity, ten levels, help focus, sound, and saved progress', async ({ page }) => {
-  await page.goto('/');
-  await expect(
-    page.getByRole('heading', { name: 'ONE BALL. TEN GOALS. MAKE IT COUNT.' }),
-  ).toBeVisible();
-  expect(await page.locator('body').innerText()).not.toMatch(/golf|putt|fairway|hole in one/i);
-  await page.getByRole('button', { name: 'How to play', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'How to play' })).toBeVisible();
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'LET’S KICK IT' })).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Close instructions' })).toBeFocused();
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Mute sound' }).click();
-  await page.reload();
-  await expect(page.getByRole('button', { name: 'Enable sound' })).toBeVisible();
-  await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
-  await expect(page.locator('.level-card')).toHaveCount(10);
-});
-
-test('all TEN levels score through actual mouse drag input, with screenshots', async ({ page }) => {
-  test.setTimeout(180_000);
+test('all ten arena screenshots, menus, unlimited copy, and fixed view', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await frozen(page);
   await page.clock.runFor(100);
   await page.screenshot({ path: `${evidence}/menu.png`, fullPage: true });
-  for (const [index, route] of solutions.entries()) {
-    await select(page, index + 1);
-    for (const [j, k] of route.entries()) {
-      await dragKick(page, k.angle, k.power);
-      await page.clock.runFor(10000);
-      if (j < route.length - 1)
-        await expect(page.locator('#scene')).toHaveAttribute('data-phase', 'ready');
+  for (const l of levels) {
+    await select(page, l.id);
+    await page.screenshot({
+      path: `${evidence}/level-${String(l.id).padStart(2, '0')}.png`,
+      fullPage: true,
+    });
+    await page
+      .locator('#scene')
+      .screenshot({ path: `${evidence}/arena-${String(l.id).padStart(2, '0')}.png` });
+    expect(await page.locator('body').innerText()).not.toMatch(
+      /KICKS MAX|PAR LIMIT|REMAINING|WAIT FOR REST|golf|putt/i,
+    );
+    expect(await page.locator('#scene').getAttribute('data-camera-x')).toBe('0');
+    const r = (await page.locator('#scene').boundingBox())!,
+      s = Number(await page.locator('#scene').getAttribute('data-scale')),
+      bounds = viewBounds(l);
+    expect(bounds.w * s).toBeLessThanOrEqual(r.width + 1);
+    expect(bounds.h * s).toBeLessThanOrEqual(r.height + 1);
+  }
+  await page.getByRole('button', { name: 'Back to levels', exact: true }).click();
+  await expect(page.locator('.level-card')).toHaveCount(10);
+  await page.screenshot({ path: `${evidence}/level-select.png`, fullPage: true });
+  expect(errors).toEqual([]);
+});
+test('every PDF arena completes through real browser drag kicks', async ({ page }) => {
+  test.setTimeout(180_000);
+  await frozen(page);
+  for (const [i, route] of solutions.entries()) {
+    await select(page, i + 1);
+    for (const k of route) {
+      await drag(page, k.angle, k.power);
+      await page.clock.runFor(12000);
     }
     const dialog = page.getByRole('dialog', { name: 'Goal scored' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByLabel('3 out of 3 stars')).toBeVisible();
     await page.screenshot({
-      path: `${evidence}/level-${String(index + 1).padStart(2, '0')}-goal.png`,
+      path: `${evidence}/goal-${String(i + 1).padStart(2, '0')}.png`,
       fullPage: true,
     });
-    if (index === 7) {
-      const camera = Number(await page.locator('#scene').getAttribute('data-camera-x'));
-      expect(camera).toBeGreaterThan(800);
-    }
     await dialog.getByRole('button', { name: 'BACK TO LEVELS', exact: true }).click();
   }
   await expect(page.locator('.completed-mark')).toHaveCount(10);
   await expect(page.locator('.progress-card')).toContainText('30');
-  await page.screenshot({ path: `${evidence}/levels-complete.png`, fullPage: true });
   await page.reload();
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
   await expect(page.locator('.completed-mark')).toHaveCount(10);
-  expect(errors).toEqual([]);
 });
-
-test('baseline and elevated-goal aiming screenshots show actual drag guides', async ({ page }) => {
+test('mid-flight dragging follows the ball and the next kick ADDS momentum', async ({ page }) => {
   await frozen(page);
   await select(page, 1);
-  await aimDrag(page, 42, 100);
-  await page.clock.runFor(16);
-  await expect(page.locator('#power-label')).toContainText('KICK POWER');
-  await page.screenshot({ path: `${evidence}/level-01-aim.png`, fullPage: true });
-  await page.keyboard.press('Escape');
-  await page.mouse.up();
-  await expect(page.locator('#shots')).toHaveText('0');
-  await page.getByRole('button', { name: 'Back to levels' }).click();
-  await select(page, 2);
-  await aimDrag(page, 54, 100);
-  await page.clock.runFor(16);
-  await page.screenshot({ path: `${evidence}/level-02-elevated-aim.png`, fullPage: true });
-  await page.mouse.up();
-  await page.clock.runFor(1200);
-  await page.screenshot({ path: `${evidence}/level-02-flight.png`, fullPage: true });
-  await page.clock.runFor(8800);
-  await dragKick(page, 54, 72);
-  for (
-    let i = 0;
-    i < 160 && (await page.locator('#scene').getAttribute('data-phase')) !== 'scoring';
-    i++
-  )
-    await page.clock.runFor(50);
-  await expect(page.locator('#scene')).toHaveAttribute('data-phase', 'scoring');
-  await page.screenshot({ path: `${evidence}/level-02-net-entry.png`, fullPage: true });
-});
-
-test('last kick resolves before failure, retry resets, pause freezes motion and gates', async ({
-  page,
-}) => {
-  await frozen(page);
-  await select(page, 6);
-  await dragKick(page, 40, 65);
-  await page.clock.runFor(500);
-  await page.getByRole('button', { name: 'Pause game (P)' }).click();
-  const before = await page.locator('#scene').getAttribute('data-ball-screen-x');
-  await page.clock.runFor(4000);
-  expect(await page.locator('#scene').getAttribute('data-ball-screen-x')).toBe(before);
-  await page.getByRole('button', { name: 'RESUME' }).click();
-  await page.clock.runFor(500);
-  expect(await page.locator('#scene').getAttribute('data-ball-screen-x')).not.toBe(before);
-  await page.getByRole('button', { name: 'Back to levels' }).click();
-  await select(page, 1);
-  for (let i = 0; i < 3; i++) {
-    await dragKick(page, 60, 8);
-    await page.clock.runFor(20);
-    await expect(page.locator('#shots')).toHaveText(String(i + 1));
-    await expect(page.getByRole('dialog', { name: 'Out of shots' })).toHaveCount(0);
-    await page.clock.runFor(10000);
-  }
-  await expect(page.getByRole('dialog', { name: 'Out of shots' })).toBeVisible();
-  await page.screenshot({ path: `${evidence}/out-of-shots.png`, fullPage: true });
-  await page.getByRole('button', { name: 'RETRY LEVEL', exact: true }).click();
-  await page.clock.runFor(100);
-  await expect(page.locator('#shots')).toHaveText('0');
-  await expect(page.locator('#remaining')).toHaveText('3');
-});
-
-test('wide camera overview and pan preserve drag coordinates and follow the ball', async ({
-  page,
-}) => {
-  await frozen(page);
-  await select(page, 8);
-  await page.getByRole('button', { name: 'Toggle full level view' }).click();
-  await page.clock.runFor(100);
-  await page.screenshot({ path: `${evidence}/level-08-overview.png`, fullPage: true });
-  const overviewScale = Number(await page.locator('#scene').getAttribute('data-scale'));
-  await page.getByRole('button', { name: 'Follow ball', exact: true }).click();
-  await page.clock.runFor(100);
-  expect(Number(await page.locator('#scene').getAttribute('data-scale'))).toBeGreaterThan(
-    overviewScale,
-  );
-  await page.getByRole('button', { name: 'Pan camera right (D)' }).click();
-  await page.clock.runFor(1000);
-  expect(Number(await page.locator('#scene').getAttribute('data-camera-x'))).toBeGreaterThan(200);
-  await page.getByRole('button', { name: 'Follow ball', exact: true }).click();
-  await page.clock.runFor(1200);
-  await dragKick(page, 30, 100);
-  await page.clock.runFor(10000);
-  await expect(page.locator('#shots')).toHaveText('1');
-  expect(Number(await page.locator('#scene').getAttribute('data-camera-x'))).toBeGreaterThan(600);
-});
-
-test('real-time browser drag scores without a mocked clock and rejects mid-flight kicks', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'KICK OFF', exact: true }).click();
-  await expect(page.locator('#scene')).toHaveAttribute('data-phase', 'ready');
-  await dragKick(page, 42, 100);
-  await expect(page.locator('#shots')).toHaveText('1');
-  await page.getByRole('button', { name: 'PRECISE AIM' }).click();
-  await expect(page.getByRole('button', { name: 'KICK', exact: true })).toBeDisabled();
-  await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible({ timeout: 15000 });
-});
-
-test('touch drag cancels safely, then scores on a portrait phone', async ({ page, context }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
-  await page.getByRole('button', { name: 'KICK OFF', exact: true }).click();
-  await expect(page.locator('#scene')).toHaveAttribute('data-phase', 'ready');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await drag(page, 55, 60);
+  await page.clock.runFor(250);
   const c = page.locator('#scene'),
     r = (await c.boundingBox())!,
-    d = await c.evaluate((e) => ({ ...e.dataset })),
-    x = r.x + Number(d.ballScreenX),
-    y = r.y + Number(d.ballScreenY),
-    s = Number(d.scale),
-    a = (42 * Math.PI) / 180,
-    cdp = await context.newCDPSession(page);
-  const start = () =>
-      cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] }),
-    move = () =>
-      cdp.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
-        touchPoints: [{ x: x - Math.cos(a) * 140 * s, y: y + Math.sin(a) * 140 * s }],
-      });
-  await start();
-  await move();
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
-  await expect(page.locator('#shots')).toHaveText('0');
-  await start();
-  await move();
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await expect(page.locator('#shots')).toHaveText('1');
-  await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible({ timeout: 15000 });
-  await page.screenshot({ path: `${evidence}/phone-goal.png`, fullPage: true });
+    s = Number(await c.getAttribute('data-scale')),
+    x = r.x + r.width * 0.45,
+    y = r.y + r.height * 0.45,
+    before = await c.getAttribute('data-ball-screen-y');
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 56 * s, y, { steps: 5 });
+  await page.clock.runFor(100);
+  expect(await c.getAttribute('data-ball-screen-y')).not.toBe(before);
+  await expect(page.locator('#power-label')).toContainText('KICK POWER');
+  const vx = Number(await c.getAttribute('data-velocity-x'));
+  await page.screenshot({ path: `${evidence}/mid-flight-aim.png`, fullPage: true });
+  await page.mouse.up();
+  await page.clock.runFor(16);
+  await expect(page.locator('#shots')).toHaveText('2');
+  expect(Number(await c.getAttribute('data-velocity-x'))).toBeGreaterThan(vx + 5);
+  await page.getByRole('button', { name: 'PRECISE AIM' }).click();
+  await expect(page.getByRole('button', { name: 'KICK', exact: true })).toBeEnabled();
 });
-
-test('keyboard, dead-zone cancellation, and blocked storage do not break play', async ({
+test('twenty kicks are allowed, then an over-par goal still completes and saves one star', async ({
+  page,
+}) => {
+  await frozen(page);
+  await select(page, 1);
+  for (let i = 0; i < 20; i++) await drag(page, 90, 6);
+  await page.clock.runFor(12000);
+  await expect(page.locator('#shots')).toHaveText('20');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await drag(page, 0, 70);
+  await page.clock.runFor(12000);
+  const modal = page.getByRole('dialog', { name: 'Goal scored' });
+  await expect(modal).toBeVisible();
+  await expect(modal.getByLabel('1 out of 3 stars')).toBeVisible();
+  await expect(page.locator('#shots')).toHaveText('21');
+  await page.screenshot({ path: `${evidence}/21-kicks-completed.png`, fullPage: true });
+});
+test('browser contacts trigger forward and backward boosts in their drawn directions', async ({
+  page,
+}) => {
+  await frozen(page);
+  for (const [id, power, dir] of [
+    [5, 45, 1],
+    [6, 75, -1],
+  ]) {
+    await select(page, id);
+    await drag(page, 0, power);
+    let boosted = false;
+    for (let j = 0; j < 240; j++) {
+      await page.clock.runFor(50);
+      const v = Number(await page.locator('#scene').getAttribute('data-velocity-x'));
+      if (v * dir > 11) {
+        boosted = true;
+        break;
+      }
+    }
+    expect(boosted).toBe(true);
+    await expect(page.locator('#shots')).toHaveText('1');
+    await page.screenshot({ path: `${evidence}/boost-${id}.png`, fullPage: true });
+    if (await page.getByRole('dialog').count())
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: 'BACK TO LEVELS', exact: true })
+        .click();
+  }
+});
+test('red pad resets position, retains kicks, and the player can immediately kick again', async ({
+  page,
+}) => {
+  await frozen(page);
+  await select(page, 10);
+  const c = page.locator('#scene'),
+    x = Number(await c.getAttribute('data-ball-screen-x'));
+  await drag(page, 0, 70);
+  await page.clock.runFor(4000);
+  expect(Number(await c.getAttribute('data-resets'))).toBeGreaterThan(0);
+  await expect(page.locator('#shots')).toHaveText('1');
+  expect(Math.abs(Number(await c.getAttribute('data-ball-screen-x')) - x)).toBeLessThan(4);
+  await page.screenshot({ path: `${evidence}/red-pad-reset.png`, fullPage: true });
+  await drag(page, 10, 100);
+  await page.clock.runFor(12000);
+  await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+  await expect(page.locator('#shots')).toHaveText('2');
+});
+test('real-time mouse and touch both kick a moving ball without waiting', async ({
+  page,
+  context,
+}) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'KICK OFF', exact: true }).click();
+  const c = page.locator('#scene');
+  await expect(c).toHaveAttribute('data-scale', /.+/);
+  let r = (await c.boundingBox())!;
+  expect(r.y + r.height).toBeLessThanOrEqual(390);
+  const s = Number(await c.getAttribute('data-scale')),
+    x = r.x + r.width * 0.45,
+    y = r.y + r.height * 0.4,
+    cdp = await context.newCDPSession(page);
+  await drag(page, 60, 30);
+  await expect(page.locator('#shots')).toHaveText('1');
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: x - 80 * s, y: y + 30 * s }],
+  });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+  await expect(page.locator('#shots')).toHaveText('1');
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: x - 80 * s, y: y + 30 * s }],
+  });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page.locator('#shots')).toHaveText('2');
+  await page.screenshot({ path: `${evidence}/landscape-touch.png`, fullPage: true });
+  await page.getByRole('button', { name: 'Retry level (R)' }).click();
+  await drag(page, 0, 70);
+  await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible({ timeout: 20000 });
+});
+test('pause, keyboard, dead zone, sound, and disabled storage retain working menus', async ({
   page,
 }) => {
   await page.addInitScript(() =>
     Object.defineProperty(window, 'localStorage', {
       get() {
-        throw new DOMException('Storage disabled', 'SecurityError');
+        throw new DOMException('blocked', 'SecurityError');
       },
     }),
   );
   await frozen(page);
   await page.getByRole('button', { name: 'Mute sound' }).click();
-  await select(page, 1);
-  await aimDrag(page, 30, 1);
-  await page.mouse.up();
+  await select(page, 9);
+  await drag(page, 55, 30);
+  await page.clock.runFor(200);
+  await page.getByRole('button', { name: 'Pause game (P)' }).click();
+  const y = await page.locator('#scene').getAttribute('data-ball-screen-y');
+  await page.clock.runFor(3000);
+  expect(await page.locator('#scene').getAttribute('data-ball-screen-y')).toBe(y);
+  await page.getByRole('button', { name: 'RESUME' }).click();
+  await page.getByRole('button', { name: 'Retry level (R)' }).click();
+  await page.clock.runFor(100);
+  await drag(page, 30, 1);
+  await page.clock.runFor(20);
   await expect(page.locator('#shots')).toHaveText('0');
   await page.locator('#scene').focus();
   await page.keyboard.press('ArrowUp');
-  await expect(page.locator('#angle-value')).toHaveText('37°');
   await page.keyboard.press('Space');
   await page.clock.runFor(20);
   await expect(page.locator('#shots')).toHaveText('1');
-  await page.getByRole('button', { name: 'Retry level (R)' }).click();
-  await page.clock.runFor(100);
-  await dragKick(page, 42, 100);
-  await page.clock.runFor(10000);
-  await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
-  await expect(
-    page.getByText('Browser storage is unavailable. Progress lasts for this visit.'),
-  ).toBeVisible();
+  await page.getByRole('button', { name: 'How to play', exact: true }).click();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'LET’S KICK IT' })).toBeFocused();
+  await page.keyboard.press('Escape');
 });
-test('landscape phone keeps the ball visible and supports a complete drag kick', async ({
+test('fixed scaling shows the full arena in portrait and landscape without overflow', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 844, height: 390 });
   await frozen(page);
-  await select(page, 1);
-  const rect = (await page.locator('#scene').boundingBox())!;
-  expect(rect.y + rect.height).toBeLessThanOrEqual(390);
-  await page.screenshot({ path: `${evidence}/phone-landscape-level.png`, fullPage: true });
-  await dragKick(page, 42, 100);
-  await page.clock.runFor(10000);
-  await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+  for (const size of [
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(size);
+    await select(page, 8);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    const c = page.locator('#scene'),
+      r = (await c.boundingBox())!,
+      s = Number(await c.getAttribute('data-scale')),
+      b = viewBounds(levels[7]);
+    expect(b.w * s).toBeLessThanOrEqual(r.width + 1);
+    expect(b.h * s).toBeLessThanOrEqual(r.height + 1);
+    await page.screenshot({
+      path: `${evidence}/${size.width === 390 ? 'portrait' : 'landscape'}-arena.png`,
+      fullPage: true,
+    });
+    await drag(page, 0, 90);
+    await page.clock.runFor(12000);
+    await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'BACK TO LEVELS', exact: true })
+      .click();
+  }
+});
+test('browser bank shots remain within the PDF boundary polygons across all arenas', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await frozen(page);
+  for (const l of levels) {
+    await select(page, l.id);
+    for (const a of [120, 60, -80, 185]) {
+      if (await page.getByRole('dialog').count()) break;
+      await drag(page, a, 100);
+      for (let k = 0; k < 5; k++) {
+        await page.clock.runFor(100);
+        const c = page.locator('#scene'),
+          r = (await c.boundingBox())!,
+          d = await c.evaluate((e) => ({ ...e.dataset })),
+          s = Number(d.scale),
+          b = viewBounds(l),
+          ox = (r.width - b.w * s) / 2 - b.x * s,
+          oy = (r.height - b.h * s) / 2 - b.y * s,
+          p = { x: (Number(d.ballScreenX) - ox) / s, y: (Number(d.ballScreenY) - oy) / s };
+        expect(inside(p, arenaPolygon(l))).toBe(true);
+      }
+    }
+    if (await page.getByRole('dialog').count())
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: 'BACK TO LEVELS', exact: true })
+        .click();
+  }
 });
