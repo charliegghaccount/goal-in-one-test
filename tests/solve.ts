@@ -1,10 +1,10 @@
 // Input-only route search: the same additive kick and collision simulation as play.
 import { FootballSimulation, MAX_PULL } from '../src/simulation';
 import { levels } from '../src/levels';
-export type Kick = { angle: number; power: number; after?: number };
-export function playRoute(id: number, route: Kick[]) {
+export type Kick = { angle: number; power: number; after?: number; flight?: number };
+export function playRoute(id: number, route: Kick[], settle = 12) {
   const s = new FootballSimulation(levels[id - 1]);
-  for (let i = 0; i < 12; i++) s.step();
+  for (let i = 0; i < settle; i++) s.step();
   for (const k of route) {
     for (let i = 0; i < (k.after ?? 0) * 120; i++) s.step();
     const a = (k.angle * Math.PI) / 180;
@@ -12,7 +12,7 @@ export function playRoute(id: number, route: Kick[]) {
       x: (-Math.cos(a) * MAX_PULL * k.power) / 100,
       y: (Math.sin(a) * MAX_PULL * k.power) / 100,
     });
-    for (let i = 0; i < 1440 && s.phase !== 'won'; i++) s.step();
+    for (let i = 0; i < (k.flight ?? 12) * 120 && s.phase !== 'won'; i++) s.step();
     if (s.phase === 'won') break;
   }
   return s;
@@ -29,7 +29,7 @@ if (process.argv[1]?.endsWith('solve.ts')) {
     for (let depth = 1; depth <= 3 && !found; depth++) {
       const next: typeof beam = [];
       outer: for (const base of beam)
-        for (let angle = 0; angle <= 80; angle += 5)
+        for (let angle = 0; angle <= 180; angle += 5)
           for (let power = 20; power <= 100; power += 5) {
             const route = [...base.route, { angle, power }],
               s = playRoute(id, route);

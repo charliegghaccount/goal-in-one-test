@@ -1,47 +1,17 @@
-# PDF arena trace and current rules
+# Designer-authored levels, October 24 revision
 
-## Source priority
+The latest `Goal_In_One_First_10_Level_Blueprints.json` and `Goal_In_One_First_10_Level_Designs.pdf` supersede the October 21 rough contours. All JSON fields and all eleven PDF pages were inspected, including the layout drawings. The original supplied JSON is retained as `src/blueprints.json`; the visual source is `docs/specifications/levels-v2.pdf`. Embedded design suggestions are treated as specifications, with the user's scope and rules taking precedence.
 
-The user's October 21 request and **Goal In One Levels 1–10 Designs PDF.pdf** define this version. All ten pages were read and rendered for inspection. These specific designs replace the older open-platform courses. The user explicitly overrides the earlier brief's shot budgets and wait-for-rest rule: kicks are unlimited and can add momentum mid-flight.
+The runtime imports the JSON directly, using one uniform mapping from bottom-left design units into Canvas coordinates: x=40+12x, y=740−12y. Rectangles, shelf pads, start positions and movers use that mapping. The existing football radius, kick impulse, restitution, gravity and friction are unchanged. A fixed full-arena view fits the enclosure independently of goal elevation.
 
-The earlier remake brief still establishes the football identity, side-view goal and net-entry objective. Neither document is treated as an instruction to reproduce golf visuals or to invent substitute layouts.
+The rectangular enclosure is closed on all four sides. Its visible strokes and colliders share segments, using the existing welded rounded-wall construction. The existing 10.4-unit stroke is retained instead of the schematic's suggested 24-unit border, avoiding an unnecessary physics change. Internal goals have a roof, back and floor. Their open mouth is directional: positive travel for the right-side goals and negative travel for Level 5. Goal art mirrors the net mesh as well as the frame. A whole-ball crossing through the mouth is required; spawning inside or striking the outside does not count.
 
-## Reference access
+Goal markers in the PDF are interpreted as centers of eight-unit-wide, eight-unit-tall nets resting at the specified goal height. Level 10's goal base is lowered one design unit to meet the high deck (top y=39), rather than leaving an unsupported y=40 lip. This preserves the high-goal challenge and makes rolling entries fair. Left/right goal meanings follow the intended travel direction stated by the designer.
 
-Both current original-game URLs were requested on October 21, 2026:
+Level 2's low wall is reduced from 15 to 10 design units after only 2/15 nearby one-kick samples succeeded at the authored height; 7/15 succeeded after tuning. Level 9's red strip is narrowed symmetrically from x=61…79 to 64…76, improving recovery around the ledge while retaining visible risk.
 
-- https://armorgames.com/goal-in-one-game/363 — HTTP 403, not viewable.
-- https://funkypotato.com/goal-in-one/ — HTTP 403, not viewable.
+Level 7's gate travel is shortened to bottom-edge y=5…12 instead of 5…24 so the 21-unit-tall block does not pass through the ceiling shelf at y=36. A trapped ball blocks the descending gate at the floor. Other moving-object ranges and periods remain authored, including Level 9's horizontal sweeper. No new mechanic, world, UI system or engine is introduced.
 
-The previous brief's original screenshot/listing URLs were also unavailable in the earlier task. The game is informed by the supplied drawings and explicit requirements; no claim is made to have played or visually verified the original Flash game in this environment. Physics tuning is a remake implementation decision, not a claim of exact original parameters.
+Par values remain 1,1,2,2,2,2,2,3,3,3: practical routes fit them, with extra allowance in later combinations for recovery. Two-star thresholds are par+2; all later completions earn one star. Unlimited additive kicks, mid-flight aiming, immediate retry, red reset preserving shots, menus and local saves remain. A new designer:v4 namespace avoids presenting scores from replaced levels as current records; previous sound preference is retained and old keys are untouched.
 
-## Geometry trace
-
-The new PDF is vector-based. Its black polylines and filled polygons were inspected directly with PyMuPDF, along with all ten rendered pages. `fromPDF(x,y)` applies the same translation and uniform 1.6× scale to every layout. There is no per-level stretch or generated geometry.
-
-- The floor, left wall, roof contours, right wall and goal mouth share common source coordinates. Upper-corner and sloped-roof joins use connected endpoints rather than leaving the small overlaps/undershoots in the sketches.
-- Solid triangular obstacles use the traced source vertices. Their bases meet the actual floor; the small source gaps hidden by the floor stroke are welded.
-- Level 4's supported flat/downhill structure is a filled trapezoid. Its closed outline and the floor enclose the same inaccessible interior as the drawing.
-- Level 8's two substantial triangles and narrow opening are retained, including the hanging triangle sharing the roof plateau.
-- Level 9 preserves the rectangular arena and the source rectangle's width/height and horizontal position. Its eight-second vertical cycle uses the illustrated travel range. A trapped football physically blocks the mover near a roof/floor, and it resumes smoothly once clear; this prevents crushing through a boundary without adding invisible walls or reducing the designed range.
-- Level 5 and 6 arrow strips become directional contact sensors over the solid floor. Level 10's red strip uses the traced horizontal span.
-- The goal is the drawn trapezoidal extension on the right, with a horizontal roof, sloping back, extended floor, green frame and visible mesh. Its vertical mouth is an opening, not a solid upright blocking entry.
-- Ball starts remain bottom-left, with the more rightward start from the Level 9 drawing. The football is a small readable 16-unit-radius sprite placed above the floor; the diagram's pasted ball image is not used as an asset.
-
-## Matching drawing and collision
-
-`segments(level)` supplies every rendered wall and corresponding rigid collider. A black line is a solid 10.4-unit-wide capsule: a rotated rectangle and round endpoint caps. Adjacent caps overlap at corners. Goal roof/back boundaries use the same construction and green visible strokes. The single continuous floor extends under the goal.
-
-Obstacle rendering and convex Matter.js bodies share the same vertices. No offscreen rectangular cage, position clamp or silent out-of-bounds reset makes an open scene appear enclosed. The adaptive physics substeps limit travel per collision step for very fast accumulated kicks. The only intentional positional reset is the red surface.
-
-## Kicking and presentation
-
-Drag anywhere to make fast balls easy to target on mouse and touch. The pointer delta is relative to its press location; indicators follow the moving ball and include its current velocity. Physics continues during aiming. A kick is a capped additional velocity/angular impulse, never a replacement for existing momentum. There is no wait, cooldown, par check or maximum-shot gate.
-
-The full arena is always fitted with uniform scaling and no tracking/pan. Landscape and portrait use the same physics. Boundary art is dark and solid; a faint clipped grid stays clearly decorative. Menus, mute, pause, keyboard/precise controls and best-score persistence remain.
-
-Par and stars reward efficiency only. Every eventual goal completes; over-threshold attempts earn one star. Red contact resets to the original start with zero velocity but preserves the count exactly. Automatic boost contacts never increment it.
-
-## Current evidence
-
-Use [arena-evidence](arena-evidence/) and the [validation report](VALIDATION.md) for the actual screenshots, PDF comparison sheets and input-tested completions. The earlier `evidence/` directory is historical and does not describe the current levels.
+Current evidence and limitations are in [VALIDATION.md](VALIDATION.md). Older screenshot folders record superseded layouts and are not current validation.

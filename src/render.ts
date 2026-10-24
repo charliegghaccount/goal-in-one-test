@@ -17,7 +17,7 @@ type Particle = {
 };
 export function viewBounds(l: Level) {
   const y = Math.min(...l.outline.map((p) => p.y)) - 65;
-  return { x: 25, y, w: 1250, h: l.goal.y - y + 55 };
+  return { x: 25, y, w: 1250, h: Math.max(...l.outline.map((p) => p.y)) - y + 55 };
 }
 export class Renderer {
   ctx: CanvasRenderingContext2D;
@@ -276,7 +276,7 @@ export class Renderer {
       ripple = !reduced && t >= 0 && t < 1.4 ? Math.sin(t * 24) * Math.exp(-t * 3) * 4 : 0;
     c.strokeStyle = '#53aa8588';
     c.lineWidth = 1.3;
-    for (let x = g.x; x < g.x + g.w; x += 13) {
+    for (let x = Math.min(g.x, g.x + g.w); x < Math.max(g.x, g.x + g.w); x += 13) {
       c.beginPath();
       c.moveTo(x, g.y - g.h);
       c.quadraticCurveTo(x + ripple, g.y - g.h / 2, x, g.y);

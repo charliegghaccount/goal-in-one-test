@@ -69,10 +69,16 @@ export class FootballSimulation {
       Composite.add(this.engine.world, body);
     }
     for (const m of level.movers) {
-      const body = Bodies.rectangle(m.x, m.y + m.travel, m.w, m.h, {
-        ...material,
-        label: 'moving-block',
-      });
+      const body = Bodies.rectangle(
+        m.x + (m.axis === 'x' ? m.travel : 0),
+        m.y + (m.axis === 'x' ? 0 : m.travel),
+        m.w,
+        m.h,
+        {
+          ...material,
+          label: 'moving-block',
+        },
+      );
       this.movers.push({ body, definition: m });
       Composite.add(this.engine.world, body);
     }
@@ -87,7 +93,7 @@ export class FootballSimulation {
     }
     const g = level.goal;
     this.goalSensor = Bodies.rectangle(
-      g.x + BALL_RADIUS + 1,
+      g.x + (g.direction ?? 1) * (BALL_RADIUS + 1),
       g.y - g.h / 2,
       2,
       g.h - 2 * BALL_RADIUS,
@@ -168,30 +174,27 @@ export class FootballSimulation {
     for (let n = 0; n < substeps; n++) {
       this.time += dt / 1000;
       for (const { body, definition: m } of this.movers) {
-        const oldY = body.position.y;
-        const desired = m.y + Math.cos((this.time * Math.PI * 2) / m.period) * m.travel;
+        const axis = m.axis ?? 'y';
+        const old = body.position[axis];
+        const desired = m[axis] + Math.cos((this.time * Math.PI * 2) / m.period) * m.travel;
         const limit = (((m.travel * Math.PI * 2) / m.period) * dt) / 1000;
-        let nextY = oldY + Math.max(-limit, Math.min(limit, desired - oldY));
-        const ball = this.ball.position,
-          roof = Math.min(...this.level.outline.map((p) => p.y));
-        // A kinematic block must stop against a trapped football rather than
-        // squeeze it through a physical wall. Resume smoothly when it clears.
-        if (Math.abs(ball.x - m.x) < m.w / 2 + BALL_RADIUS + 2) {
+        let next = old + Math.max(-limit, Math.min(limit, desired - old));
+        if (axis === 'y') {
+          const p = this.ball.position,
+            floor = Math.max(...this.level.outline.map((p) => p.y));
           if (
-            nextY > oldY &&
-            oldY + m.h / 2 <= ball.y - BALL_RADIUS + 2 &&
-            ball.y + BALL_RADIUS >= this.level.goal.y - WALL_WIDTH / 2 - 3
+            Math.abs(p.x - m.x) < m.w / 2 + BALL_RADIUS + 2 &&
+            next > old &&
+            old + m.h / 2 <= p.y - BALL_RADIUS + 2 &&
+            p.y + BALL_RADIUS >= floor - WALL_WIDTH / 2 - 3
           )
-            nextY = Math.max(oldY, Math.min(nextY, ball.y - BALL_RADIUS - m.h / 2 - 1));
-          if (
-            nextY < oldY &&
-            oldY - m.h / 2 >= ball.y + BALL_RADIUS - 2 &&
-            ball.y - BALL_RADIUS <= roof + WALL_WIDTH / 2 + 3
-          )
-            nextY = Math.min(oldY, Math.max(nextY, ball.y + BALL_RADIUS + m.h / 2 + 1));
+            next = Math.max(old, Math.min(next, p.y - BALL_RADIUS - m.h / 2 - 1));
         }
-        Body.setPosition(body, { x: m.x, y: nextY });
-        Body.setVelocity(body, { x: 0, y: ((nextY - oldY) * (1000 / 60)) / dt });
+        Body.setPosition(body, { ...body.position, [axis]: next });
+        Body.setVelocity(body, {
+          x: axis === 'x' ? ((next - old) * (1000 / 60)) / dt : 0,
+          y: axis === 'y' ? ((next - old) * (1000 / 60)) / dt : 0,
+        });
       }
       const previous = { ...this.ball.position };
       Engine.update(this.engine, dt);
@@ -208,10 +211,11 @@ export class FootballSimulation {
       const { x, y } = this.ball.position,
         g = this.level.goal;
       if (this.canKick) {
-        const before = previous.x - BALL_RADIUS,
-          now = x - BALL_RADIUS;
-        if (before <= g.x && now > g.x && x > previous.x) {
-          const t = (g.x + BALL_RADIUS - previous.x) / (x - previous.x),
+        const dir = g.direction ?? 1;
+        const before = dir * (previous.x - g.x) - BALL_RADIUS,
+          now = dir * (x - g.x) - BALL_RADIUS;
+        if (before <= 0 && now > 0 && dir * (x - previous.x) > 0) {
+          const t = (g.x + dir * BALL_RADIUS - previous.x) / (x - previous.x),
             cy = previous.y + (y - previous.y) * t;
           if (
             cy - BALL_RADIUS > g.y - g.h + WALL_WIDTH / 2 &&

@@ -1,12 +1,12 @@
 # Goal In One ⚽ — enclosed arena edition
 
-A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. The ten arenas are traced from the user's **Goal In One Levels 1–10 Designs PDF**. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
+A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. The ten arenas use the latest designer-authored **First Ten Level Blueprints JSON and Designs PDF**. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
 
-**Play:** https://charliegghaccount.github.io/goal-in-one-test/
+**This revision is local only.** The existing public Pages site still serves the previous version; this update has not been pushed or deployed.
 
 **Current rules:** unlimited kicks, including mid-flight. A kick adds to the ball's existing momentum. Par affects stars only; it never ends a level or disables another kick. These rules supersede the original Flash game's shot limit and the previous remake's rest requirement.
 
-See [design and reference notes](docs/DESIGN.md), [validation evidence](docs/VALIDATION.md), and [current arena screenshots](docs/arena-evidence/). The older `docs/evidence/` directory records the superseded October 20 build.
+See [design and reference notes](docs/DESIGN.md), [validation evidence](docs/VALIDATION.md), and [current arena screenshots](docs/designer-evidence/). The older `docs/evidence/` directory records the superseded October 20 build.
 
 ## Run and develop
 
@@ -35,41 +35,22 @@ Playwright uses `/usr/bin/chromium` when available; otherwise run `npx playwrigh
 - **Drag anywhere in the arena**, then release to kick. Longer pull adds a stronger impulse. You can begin a drag away from a fast-moving ball; the guide follows the ball while the drag vector stays anchored to your finger/mouse gesture.
 - Keep kicking while rolling, bouncing, falling, or travelling quickly. Kicks add velocity and spin; they do not zero existing momentum. A six-unit dead zone, Escape, touch cancellation, or loss of pointer capture cancels the drag.
 - Arrow and trajectory dots use the current velocity plus the pending kick. Collision surfaces can change the predicted flight.
-- Enter the open **left side of the goal**. The whole ball must cross the goal plane inside the mouth; post/backside contact alone does not score.
+- Enter the open mouth of the goal (from the right in reversed Level 5). The whole ball must cross the goal plane inside the mouth; post/backside contact alone does not score.
 - **There is no maximum shot count and no over-par failure.** Par is the three-star target; the level data also specifies the two-star threshold. Complete with more shots for one star, even after 20 or 100 kicks.
-- The green Level 5 surface accelerates/throws right; the orange Level 6 surface throws left. Arrow marks show the direction. These automatic contacts do not count as extra player kicks.
-- The red Level 10 strip instantly restores the original ball start and zeroes its motion. It preserves every kick already taken and adds no free or penalty shot.
+- The green surfaces accelerates/throws right; the orange surfaces throws left. Arrow marks show the direction. These automatic contacts do not count as extra player kicks.
+- The red strips in Levels 6, 9 and 10 instantly restores the original ball start and zeroes its motion. It preserves every kick already taken and adds no free or penalty shot.
 - Retry resets the level, moving-block phase, position, count and effects. Pause/help freeze physics.
 - The complete arena remains visible in a **fixed, uniformly scaled view**. Resizing never changes physics coordinates. There is no scrolling camera or accidental panning while aiming.
 
 **Precise aim** offers sliders and a kick button usable while moving. Keyboard when the canvas is focused: ↑/↓ angle, ←/→ power, Space kick, R retry, P pause, L levels, Escape cancel. Every essential action also has a mouse/touch control. Landscape and portrait layouts are supported; physical iPhones are unverified.
 
-Best scores and mute preference save locally. The redesigned arenas use the `goal-in-one:arenas:v3` namespace, so scores from old geometry are not presented as new-arena records. Old save keys remain intact and their sound preference is reused. If storage is blocked, play continues with session-only scores.
+Best scores and mute preference save locally. The redesigned arenas use the `goal-in-one:designer:v4` namespace, so scores from old geometry are not presented as new-arena records. Old save keys remain intact and their sound preference is reused. If storage is blocked, play continues with session-only scores.
 
-## PDF layouts
+## Current levels
 
-| #   | Arena            | Geometry / special surface                                               | 3 stars | 2 stars |
-| --- | ---------------- | ------------------------------------------------------------------------ | ------- | ------- |
-| 1   | First touch      | Enclosed flat arena, angled upper corners                                | ≤1      | ≤3      |
-| 2   | Up the ramp      | Tall peaked roof; solid rising floor triangle                            | ≤1      | ≤3      |
-| 3   | Over the edge    | Same roof; reversed falling floor triangle                               | ≤1      | ≤3      |
-| 4   | Under one roof   | Stepped/sloped roof; vertical support, flat platform and descending ramp | ≤1      | ≤3      |
-| 5   | Full speed ahead | Simple enclosed arena; green right boost                                 | ≤1      | ≤3      |
-| 6   | Against the flow | Simple enclosed arena; orange left boost                                 | ≤2      | ≤4      |
-| 7   | Double trouble   | Low roof; opposing triangles with tall faces inward                      | ≤1      | ≤3      |
-| 8   | Thread the gap   | Peaked arena; roof and floor triangles form a narrow passage             | ≤1      | ≤3      |
-| 9   | Moving target    | Rectangular arena; slowly travelling vertical block                      | ≤1      | ≤3      |
-| 10  | The red line     | Simple enclosed arena; red position-reset surface                        | ≤1      | ≤3      |
+First Touch; The Loft; High Ground; Fast Lane; Counterflow (leftward goal); Red Alert; The Window; Boost and Brake; Red Light, Green Light; The Final Trick.
 
-All completions above the two-star threshold still earn one star. `tests/solutions.ts` contains legal kick inputs; browser tests use real press/drag/release events, not injected success state.
-
-## Geometry and physics
-
-`src/levels.ts` stores the PDF trace in its original coordinate space and maps it with a single uniform 1.6× transform. Rendering and physics consume the same contour, segment and polygon data. Black borders are rounded capsule colliders of exactly the visible stroke width; overlapping endpoint caps weld all corners. Goal roof/back segments and the extended floor close the net enclosure, leaving its mouth open.
-
-Solid triangle/trapezoid bodies use their drawn vertices. No invisible rectangle replaces a shaped arena. The narrow Level 8 passage remains open at the specified points. The Level 9 block has the drawn dimensions and range, with a collision-aware stop to prevent crushing a ball through a ceiling/floor, and resumes smoothly without teleporting.
-
-The shared simulation runs at 120 Hz with adaptive collision substeps for fast accumulated kicks. This prevents tunnelling while preserving additive momentum. Goal validation interpolates the whole-ball mouth crossing; a separate sensor marks its plane. Decoration is a faint grid inside the arena and does not look like collision geometry.
+The designer JSON lives in `src/blueprints.json`. The PDF, mapping, adjustments and gameplay evidence are documented in `docs/DESIGN.md` and `docs/VALIDATION.md`. Runtime geometry is produced by `src/levels.ts`. Rendering and collision use the same walls/polygons; the full enclosed arena stays visible, including raised goals.
 
 ## Publish
 

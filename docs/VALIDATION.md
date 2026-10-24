@@ -1,53 +1,43 @@
-# PDF arena redesign — validation evidence
+# Designer levels — October 24 validation
 
-Validated in Linux Chromium on **21 October 2026**. The current ten levels follow all ten pages of the user's **Goal In One Levels 1–10 Designs PDF.pdf**. These results supersede the historical open-platform/budget evidence in `docs/evidence/`.
+This report supersedes the October 21 rough-layout report. Source: the newly supplied eleven-page PDF and structured JSON. See [DESIGN.md](DESIGN.md) for interpretation and every geometry adjustment. The previous `arena-evidence/` and `evidence/` folders describe older versions.
 
-## Executed checks
+## Actual checks
 
-- **59 headless physics/storage tests passed** (`npm test`), using the actual runtime Matter.js simulation.
-- **10 Chromium browser tests passed** (`npm run test:browser`). After removing a redundant in-arena hint and correcting static control/metadata copy, the screenshot check was rerun to refresh all ten arena captures. No physics changed after the complete suite.
-- **All ten levels completed through actual browser mouse press → drag → release input**, earning three stars and persisting 30 stars after reload. The browser tests never assign ball position, velocity, shot count or success state.
-- The reproducible all-ten playthrough uses Playwright's animation clock, including moving-obstacle timing. Separate real-time mouse and touch runs exercised kicks while moving, pointer cancellation and a landscape goal without a controlled clock.
-- A second drag was started during flight; the ball continued moving while aiming, and releasing added horizontal velocity to the existing momentum. Precise controls stayed enabled. The simulation also checks the exact additive impulse.
-- **20 browser kicks followed by a 21st-kick goal** completed normally with one star. The simulation accepts 100 consecutive kicks, checks enclosure at the resulting high speeds and confirms an over-par completion. There is no shot-limit failure state.
-- Browser contact checks confirmed positive/rightward velocity from the green surface and negative/leftward velocity from orange. Boosts spend no shots.
-- Browser red-pad contact returned the ball to its original start without changing the shot count, and the next kick completed Level 10. A headless regression checks the reset after 21 shots and accepts shot 22.
-- Every reachable wall/ceiling/floor/goal-boundary segment, every exposed obstacle face and reachable welded boundary joint was hit in targeted simulation tests. Full-ball containment checks and bank-shot stress runs found no escape in all ten arenas. Solid obstacle interiors were checked. Browser-input bank-shot stress also covered all ten.
-- Level 9's mover was tested for vertical travel, contacts and retry reset. Separate roof/floor crushing regressions verify that a trapped ball blocks the mover rather than being forced outside. The source rectangle and travel range are preserved.
-- Goal counterexamples cover roof/post/backside impacts, proximity, a ball starting inside the net and invalid crossings. Only a valid whole-ball crossing through the open mouth triggers net capture and completion.
-- Pause, resume, keyboard/precise controls, sound preference, blocked local storage, help focus, reload persistence and pointer cancellation passed. Portrait and short landscape viewports keep the complete fixed arena fitted without horizontal page overflow.
+- `npm test`: **50 runtime physics/storage checks passed**. These execute Matter.js, not static geometry inspection. All ten recorded input-only routes reach a goal within the current par. Tests also exercise 100 additive mid-flight kicks, over-par completion, both boost directions, every red surface retaining 21 shots, both goal directions, mover travel/contact, targeted arena-edge and exposed shelf-top impacts, all-level bank-shot containment stress, and local-storage behavior.
+- `npm run test:browser`: **4 tests passed**, covering browser press/drag/release playthroughs, saved stars after reload, 21-shot completion, moving-ball second kick, instant restart, and a separate real-time landscape touch goal. All ten levels completed with three stars and all ten records survived reload. All-ten playthroughs use a controlled animation clock; touch uses real time. Browser tests do not set ball position, velocity or completion state.
+- The first code-only routes failed browser testing in Levels 3, 7 and 9. They were replaced with actual input-tested routes; Level 7's gate clearance and Level 9's red strip were tuned. A simulation solution alone was not accepted as browser evidence.
+- Forgiveness sampling (`npx tsx tests/forgiveness.ts`): Level 1 completed 9/12 sampled nearby kicks, Level 2 completed 7/15 after lowering the wall (previously 2/15), and Level 5 completed 12/12 sampled leftward kicks. This is a limited sample, not proof of human difficulty.
 
-## Confirmed browser-drag completions and geometry comparison
+## Recorded routes
 
-All ten full-size arena screenshots and all ten side-by-side comparison panels were opened and visually inspected against the corresponding PDF page. The comparison sheets retain the PDF drawing alongside the rendered game, using a common source crop; they are review evidence, not runtime assets.
+Angles are degrees above right; 180° kicks left. Unless a delay is given, allow up to 12 seconds of flight before the next kick. Routes are ordinary additive kicks from `tests/solutions.ts`. The same inputs are exercised through browser drags.
 
-| Level | Layout confirmed against drawing                                  | Kicks | Stars | Arena / PDF comparison                      | Actual browser goal                  |
-| ----- | ----------------------------------------------------------------- | ----- | ----- | ------------------------------------------- | ------------------------------------ |
-| 01    | Enclosed rectangle, angled upper corners                          | 1     | 3     | [Compare](arena-evidence/comparison-01.png) | [Scored](arena-evidence/goal-01.png) |
-| 02    | Tall peak and solid rising floor triangle                         | 1     | 3     | [Compare](arena-evidence/comparison-02.png) | [Scored](arena-evidence/goal-02.png) |
-| 03    | Tall peak and reversed floor triangle                             | 1     | 3     | [Compare](arena-evidence/comparison-03.png) | [Scored](arena-evidence/goal-03.png) |
-| 04    | Stepped/sloping roof and supported flat/downhill structure        | 1     | 3     | [Compare](arena-evidence/comparison-04.png) | [Scored](arena-evidence/goal-04.png) |
-| 05    | Enclosed arena and green forward strip                            | 1     | 3     | [Compare](arena-evidence/comparison-05.png) | [Scored](arena-evidence/goal-05.png) |
-| 06    | Enclosed arena and orange backward strip                          | 2     | 3     | [Compare](arena-evidence/comparison-06.png) | [Scored](arena-evidence/goal-06.png) |
-| 07    | Low roof, opposing floor triangles with high ends inward          | 1     | 3     | [Compare](arena-evidence/comparison-07.png) | [Scored](arena-evidence/goal-07.png) |
-| 08    | Plateau peak, substantial roof/floor triangles and narrow passage | 1     | 3     | [Compare](arena-evidence/comparison-08.png) | [Scored](arena-evidence/goal-08.png) |
-| 09    | Rectangular enclosure and vertically moving rectangle             | 1     | 3     | [Compare](arena-evidence/comparison-09.png) | [Scored](arena-evidence/goal-09.png) |
-| 10    | Enclosed arena and red reset strip                                | 1     | 3     | [Compare](arena-evidence/comparison-10.png) | [Scored](arena-evidence/goal-10.png) |
+| Level                    | Route (angle / power %) | Follow-up delay | Par |
+| ------------------------ | ----------------------- | --------------- | --- |
+| 1 First Touch            | 0/70                    | —               | 1   |
+| 2 The Loft               | 45/100                  | —               | 1   |
+| 3 High Ground            | 65/100, 45/100          | 1 second        | 2   |
+| 4 Fast Lane              | 0/40                    | —               | 2   |
+| 5 Counterflow            | 180/50                  | —               | 2   |
+| 6 Red Alert              | 35/100                  | —               | 2   |
+| 7 The Window             | 55/80                   | —               | 2   |
+| 8 Boost and Brake        | 65/100, 35/100          | 1 second        | 3   |
+| 9 Red Light, Green Light | 150/85, 30/55           | 12 seconds      | 3   |
+| 10 The Final Trick       | 65/100, 75/70           | 0.7 seconds     | 3   |
 
-Combined visual reviews: [Levels 1–5](arena-evidence/comparisons-01-05.png) and [Levels 6–10](arena-evidence/comparisons-06-10.png). Full UI captures are `arena-evidence/level-01.png` through `level-10.png`; canvas-only captures are `arena-01.png` through `arena-10.png`.
+Par values retain allowance for recovery in later combinations; they are not hard limits. Level 10's route also passed simulation with ±40 ms follow-up variation and 10/12/14 initial settling steps. There are no cooldowns, stop requirements or maximum shots.
 
-The trace preserves the source contours, obstacle positions and proportions. Small overlapping/open stroke joins are welded, triangle bases meet the floor, and Level 4's closed supported structure is filled. The football is smaller than the diagrams' pasted illustration. These deliberate interpretations and shared rendering/collision geometry are described in [DESIGN.md](DESIGN.md).
+## Screenshots and visual review
 
-Additional actual browser evidence: [mid-flight aim](arena-evidence/mid-flight-aim.png), [21-kick completion](arena-evidence/21-kicks-completed.png), [forward boost](arena-evidence/boost-5.png), [backward boost](arena-evidence/boost-6.png), [red-pad reset](arena-evidence/red-pad-reset.png), [landscape touch](arena-evidence/landscape-touch.png), [portrait fit](arena-evidence/portrait-arena.png) and [landscape fit](arena-evidence/landscape-arena.png).
+Current evidence is in [designer-evidence](designer-evidence/): `level-1.png` through `level-10.png` show arena geometry; `goal-1.png` through `goal-10.png` show actual browser completions. `touch-goal.png` records the real-time landscape touchscreen run. All ten layout captures and ten browser completions were captured and confirmed. The side-by-side [Levels 1–5](designer-evidence/comparison-1-5.png) and [Levels 6–10](designer-evidence/comparison-6-10.png) sheets were opened and visually compared with the PDF drawings.
 
-## Build and publication checks
+The source PDF is preserved at [levels-v2.pdf](specifications/levels-v2.pdf); the game imports the original structured specification from `src/blueprints.json`. Uniform mapping preserves rectangular boundaries and specified platform positions. Goals are physical directional nets rather than the PDF's labelled yellow markers. Documented differences: retained border thickness, smaller football, lower Level 2 wall, shorter Level 7 travel, narrower Level 9 red strip, and Level 10 goal resting on its deck.
 
-- `npm run build:pages`: passed TypeScript and Vite production build with the `/goal-in-one-test/` asset base.
-- `npm run format:check` and `git diff --check`: passed formatting and whitespace checks.
-- Production-path smoke: passed under the exact Pages subpath. HTTP 200, all assets loaded, and a real-time mouse drag completed Level 1 in one kick with three stars. No page errors or failed requests. [Production goal screenshot](arena-evidence/production-pages-goal.png). GitHub deployment status is reported separately in the final delivery.
+`npm run build`, `npm run format:check` and `git diff --check` passed.
 
-## Remaining limits
+## Limits
 
-Both requested original-game sites returned HTTP 403, so the original Flash presentation, controls and exact physics could not be directly inspected. Geometry was compared against the supplied PDF; no claim of an exact original-game physics match is made.
+No human playtesting, physical iPhone, Safari or Firefox testing is claimed. These are automated browser-input playthroughs. Subjective difficulty, long-term balance and all alternative solutions remain unverified; Levels 8–10 warrant human tuning, especially the final mid-flight approach. Original Flash references were previously inaccessible (HTTP 403); this revision follows the supplied PDF/JSON rather than claiming an exact original physics match. Finite stress tests cannot prove containment for every possible repeated impulse.
 
-These are automated browser-input playthroughs, not human playtesting. Subjective feel/difficulty, audio quality, Safari, Firefox and physical iPhone/Android devices remain unverified. Touch evidence uses Chromium emulation. Finite collision stress tests cannot mathematically prove containment for arbitrary repeated impulses, although adaptive substeps and shared solid boundaries cover the tested fast shots without an invisible cage or position clamp. Public Pages access is restricted from this environment; GitHub deployment status and local production-path validation are reported separately.
+This revision is committed locally only. Nothing was pushed and GitHub Pages still serves the preceding build. Launch this updated build using `npm ci` then `npm run dev`, or build and run `npm run preview`.

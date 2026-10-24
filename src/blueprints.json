@@ -1,0 +1,461 @@
+{
+  "package": "Goal In One: First Ten Levels, v0.1 (design intent)",
+  "status": "Unimplemented schematic design; positions, par and force parameters must be tuned against actual game physics",
+  "coordinate_system": {
+    "width": 100,
+    "height": 56,
+    "origin": "bottom_left",
+    "units": "normalized_design_units",
+    "boundary": "Solid 2-unit border on all sides; floor at y=4",
+    "ball_radius_suggested": 1.6
+  },
+  "integration_notes": [
+    "Treat these as designer-authored specifications, NOT validated finished gameplay.",
+    "Inspect actual project physics, velocity limits, current objects and level data before implementation.",
+    "Keep unlimited mid-flight kicks and instant restart; do not add cooldowns or shot locks.",
+    "Forward pad means boost toward right, backward pad boost toward left, loss pad immediate reset, unless the project has different semantics - adapt while keeping player-facing intent.",
+    "All geometry must fit within boundaries and should not obstruct touch UI.",
+    "Goals may face left or right; test outer goal contacts cannot trigger completion.",
+    "Tune par scores after recording practical solutions; no artificial limits on completion.",
+    "An engine level editor and data-driven authoring are preferred over hardcoded per-level geometry.",
+    "A reviewer must actually finish every level before declaring it complete.",
+    "Animations, sound, particles should not delay user inputs."
+  ],
+  "levels": [
+    {
+      "id": 1,
+      "name": "First Touch",
+      "role": "Introduce the goal and satisfying one-kick success",
+      "new_mechanic": "Aim, set power, kick",
+      "par": 1,
+      "difficulty": "Very easy",
+      "start": [12, 7],
+      "goal": [87, 4, "right"],
+      "solids": [],
+      "pads": [],
+      "hazards": [],
+      "movers": [],
+      "intended": "A single clean, obvious shot reaches the goal. The first successful kick should feel immediate.",
+      "teaching": "Show a temporary drag-to-aim illustration only if needed; hide it after the first successful shot.",
+      "quality_gate": "First-time player understands controls without a text wall."
+    },
+    {
+      "id": 2,
+      "name": "The Loft",
+      "role": "First satisfying obstacle, not a difficulty spike",
+      "new_mechanic": "Arc over a wall",
+      "par": 1,
+      "difficulty": "Easy",
+      "start": [12, 7],
+      "goal": [87, 4, "right"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 46,
+          "y": 4,
+          "w": 4,
+          "h": 15,
+          "label": "Low wall"
+        }
+      ],
+      "pads": [],
+      "hazards": [],
+      "movers": [],
+      "intended": "One well-aimed high arc clears the central wall. Additional kicks remain legal.",
+      "teaching": "Obstacle visibly blocks the straight shot while leaving a generous opening above.",
+      "quality_gate": "A one-shot solution must be achievable without pixel-perfect aiming."
+    },
+    {
+      "id": 3,
+      "name": "High Ground",
+      "role": "Teach elevation and landing on platforms",
+      "new_mechanic": "Raised goal and stepped platforms",
+      "par": 2,
+      "difficulty": "Easy",
+      "start": [12, 7],
+      "goal": [85, 30, "right"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 31,
+          "y": 14,
+          "w": 17,
+          "h": 3,
+          "label": "Step A"
+        },
+        {
+          "type": "solid_rect",
+          "x": 54,
+          "y": 22,
+          "w": 14,
+          "h": 3,
+          "label": "Step B"
+        },
+        {
+          "type": "solid_rect",
+          "x": 72,
+          "y": 27,
+          "w": 25,
+          "h": 3,
+          "label": "Goal shelf"
+        }
+      ],
+      "pads": [],
+      "hazards": [],
+      "movers": [],
+      "intended": "Use a rising sequence of platforms or an impressive single long arc; reaching the raised goal is the puzzle.",
+      "teaching": "Visually distinct shelf immediately below the goal.",
+      "quality_gate": "No ball-trapping corners; two-kick path should be forgiving."
+    },
+    {
+      "id": 4,
+      "name": "Fast Lane",
+      "role": "Introduce green forward boost through a low open corridor",
+      "new_mechanic": "Forward boost pad",
+      "par": 2,
+      "difficulty": "Easy",
+      "start": [11, 7],
+      "goal": [87, 4, "right"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 42,
+          "y": 17,
+          "w": 27,
+          "h": 3,
+          "label": "Overhead bridge"
+        },
+        {
+          "type": "solid_rect",
+          "x": 72,
+          "y": 15,
+          "w": 13,
+          "h": 3,
+          "label": "Late canopy"
+        }
+      ],
+      "pads": [
+        {
+          "type": "pad",
+          "kind": "forward",
+          "x": 27,
+          "y": 4,
+          "w": 10,
+          "h": 2,
+          "surface_normal": "up"
+        }
+      ],
+      "hazards": [],
+      "movers": [],
+      "intended": "Roll or kick onto the green pad to accelerate under an overhead canopy, then direct the ball into the goal.",
+      "teaching": "Green arrow and a short one-time pad pulse make direction unmistakable.",
+      "quality_gate": "The boost must be noticeable but not so powerful it causes unavoidable ricochets."
+    },
+    {
+      "id": 5,
+      "name": "Counterflow",
+      "role": "Introduce reverse pad with a change of direction",
+      "new_mechanic": "Backward boost pad",
+      "par": 2,
+      "difficulty": "Easy-medium",
+      "start": [83, 7],
+      "goal": [11, 4, "left"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 31,
+          "y": 17,
+          "w": 37,
+          "h": 3,
+          "label": "Low roof"
+        }
+      ],
+      "pads": [
+        {
+          "type": "pad",
+          "kind": "backward",
+          "x": 49,
+          "y": 4,
+          "w": 10,
+          "h": 2,
+          "surface_normal": "up"
+        }
+      ],
+      "hazards": [],
+      "movers": [],
+      "intended": "Player starts on the right and travels left through the underpass; the orange reverse pad helps push the ball toward the left goal.",
+      "teaching": "One intentionally reversed level establishes what backward means.",
+      "quality_gate": "Left-facing goal should register entries correctly. No ambiguity over the pad direction."
+    },
+    {
+      "id": 6,
+      "name": "Red Alert",
+      "role": "Introduce loss pads as an avoidable, readable hazard",
+      "new_mechanic": "Red ball-loss pad",
+      "par": 2,
+      "difficulty": "Medium",
+      "start": [12, 7],
+      "goal": [87, 4, "right"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 24,
+          "y": 17,
+          "w": 22,
+          "h": 3,
+          "label": "Safe island A"
+        },
+        {
+          "type": "solid_rect",
+          "x": 55,
+          "y": 17,
+          "w": 20,
+          "h": 3,
+          "label": "Safe island B"
+        }
+      ],
+      "pads": [],
+      "hazards": [
+        {
+          "type": "loss_pad",
+          "x": 37,
+          "y": 4,
+          "w": 28,
+          "h": 2
+        }
+      ],
+      "movers": [],
+      "intended": "Cross the red floor strip with a lofted shot, optionally bouncing from raised safe islands.",
+      "teaching": "Red region is visible well before the first shot; touching it resets immediately.",
+      "quality_gate": "No unavoidable deaths due to spawn placement; retry is instantaneous."
+    },
+    {
+      "id": 7,
+      "name": "The Window",
+      "role": "First timing challenge, with safe clear space",
+      "new_mechanic": "Vertical moving obstacle",
+      "par": 2,
+      "difficulty": "Medium",
+      "start": [12, 7],
+      "goal": [87, 4, "right"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 37,
+          "y": 36,
+          "w": 28,
+          "h": 3,
+          "label": "Ceiling shelf"
+        }
+      ],
+      "pads": [],
+      "hazards": [],
+      "movers": [
+        {
+          "type": "moving_rect",
+          "x": 49,
+          "y": 5,
+          "w": 4,
+          "h": 21,
+          "axis": "y",
+          "range_start": 5,
+          "range_end": 24,
+          "period_seconds": 2.8
+        }
+      ],
+      "intended": "Observe the gate movement, then kick when the low corridor is open or arc above it.",
+      "teaching": "Obstacle motion is periodic and visibly telegraphed before input.",
+      "quality_gate": "Gate timing is fair; one near-miss should encourage a retry, not frustration."
+    },
+    {
+      "id": 8,
+      "name": "Boost and Brake",
+      "role": "Combine two learned pads without introducing new hazards",
+      "new_mechanic": "Forward and backward pads together",
+      "par": 3,
+      "difficulty": "Medium",
+      "start": [12, 7],
+      "goal": [88, 27, "right"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 55,
+          "y": 18,
+          "w": 22,
+          "h": 3,
+          "label": "Transfer shelf"
+        },
+        {
+          "type": "solid_rect",
+          "x": 73,
+          "y": 24,
+          "w": 24,
+          "h": 3,
+          "label": "Goal shelf"
+        }
+      ],
+      "pads": [
+        {
+          "type": "pad",
+          "kind": "forward",
+          "x": 27,
+          "y": 4,
+          "w": 10,
+          "h": 2,
+          "surface_normal": "up"
+        },
+        {
+          "type": "pad",
+          "kind": "backward",
+          "x": 59,
+          "y": 21,
+          "w": 9,
+          "h": 2,
+          "surface_normal": "up"
+        }
+      ],
+      "hazards": [],
+      "movers": [],
+      "intended": "Accelerate early, then solve the elevated approach while accounting for a reverse pad on the transfer shelf.",
+      "teaching": "Two differently coloured pad types are visible simultaneously.",
+      "quality_gate": "There must be multiple possible recoveries; reverse-pad contact cannot softlock the ball."
+    },
+    {
+      "id": 9,
+      "name": "Red Light, Green Light",
+      "role": "Combine timing, boost and loss risk",
+      "new_mechanic": "Moving sweeper plus forward boost plus red zone",
+      "par": 3,
+      "difficulty": "Medium-hard",
+      "start": [12, 7],
+      "goal": [87, 4, "right"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 56,
+          "y": 23,
+          "w": 18,
+          "h": 3,
+          "label": "Upper escape ledge"
+        }
+      ],
+      "pads": [
+        {
+          "type": "pad",
+          "kind": "forward",
+          "x": 27,
+          "y": 4,
+          "w": 9,
+          "h": 2,
+          "surface_normal": "up"
+        }
+      ],
+      "hazards": [
+        {
+          "type": "loss_pad",
+          "x": 61,
+          "y": 4,
+          "w": 18,
+          "h": 2
+        }
+      ],
+      "movers": [
+        {
+          "type": "moving_rect",
+          "x": 43,
+          "y": 8,
+          "w": 4,
+          "h": 17,
+          "axis": "x",
+          "range_start": 41,
+          "range_end": 53,
+          "period_seconds": 3.4
+        }
+      ],
+      "intended": "Use a boost, time movement past the sweeper, and clear the red section to finish.",
+      "teaching": "Player can see both timing and danger zones from the start.",
+      "quality_gate": "No blind hazard, impossible deadline or mandatory rapid-fire input."
+    },
+    {
+      "id": 10,
+      "name": "The Final Trick",
+      "role": "End chapter with a memorable, flexible multi-mechanic level",
+      "new_mechanic": "Mastery combination (no brand-new feature)",
+      "par": 3,
+      "difficulty": "Challenging",
+      "start": [11, 7],
+      "goal": [86, 40, "right"],
+      "solids": [
+        {
+          "type": "solid_rect",
+          "x": 23,
+          "y": 16,
+          "w": 17,
+          "h": 3,
+          "label": "Lower landing"
+        },
+        {
+          "type": "solid_rect",
+          "x": 57,
+          "y": 22,
+          "w": 25,
+          "h": 3,
+          "label": "Transfer deck"
+        },
+        {
+          "type": "solid_rect",
+          "x": 71,
+          "y": 36,
+          "w": 26,
+          "h": 3,
+          "label": "High goal deck"
+        }
+      ],
+      "pads": [
+        {
+          "type": "pad",
+          "kind": "forward",
+          "x": 22,
+          "y": 4,
+          "w": 9,
+          "h": 2,
+          "surface_normal": "up"
+        },
+        {
+          "type": "pad",
+          "kind": "backward",
+          "x": 67,
+          "y": 25,
+          "w": 9,
+          "h": 2,
+          "surface_normal": "up"
+        }
+      ],
+      "hazards": [
+        {
+          "type": "loss_pad",
+          "x": 41,
+          "y": 4,
+          "w": 22,
+          "h": 2
+        }
+      ],
+      "movers": [
+        {
+          "type": "moving_rect",
+          "x": 48,
+          "y": 18,
+          "w": 4,
+          "h": 12,
+          "axis": "y",
+          "range_start": 16,
+          "range_end": 28,
+          "period_seconds": 3.2
+        }
+      ],
+      "intended": "Reach the lower platform, clear a timed gate and a red reset zone, then climb to the elevated goal. Strong players optimise kick count.",
+      "teaching": "All elements are familiar; the challenge is their combination.",
+      "quality_gate": "3-star route must be demonstrated via playtest; an alternative multi-kick route must remain accessible."
+    }
+  ]
+}

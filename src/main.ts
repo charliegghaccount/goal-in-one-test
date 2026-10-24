@@ -98,7 +98,7 @@ function miniLevel(l: Level) {
     )
     .join(
       '',
-    )}${l.surfaces.map((s) => `<path d="M${s.x} ${s.y - 6}h${s.w}" stroke="${s.kind === 'forward' ? '#83d44b' : s.kind === 'backward' ? '#ed9e35' : '#ed4b52'}" stroke-width="8"/>`).join('')}${l.movers.map((m) => `<rect x="${m.x - m.w / 2}" y="${m.y + m.travel - m.h / 2}" width="${m.w}" height="${m.h}" fill="#26434a"/>`).join('')}<circle cx="${l.start.x}" cy="${l.start.y}" r="16" fill="#fff" stroke="#17394f" stroke-width="3"/><path d="m${l.start.x} ${l.start.y - 7} 7 5-3 8h-8l-3-8z" fill="#17394f"/></svg>`;
+    )}${l.surfaces.map((s) => `<path d="M${s.x} ${s.y - 6}h${s.w}" stroke="${s.kind === 'forward' ? '#83d44b' : s.kind === 'backward' ? '#ed9e35' : '#ed4b52'}" stroke-width="8"/>`).join('')}${l.movers.map((m) => `<rect x="${m.x + (m.axis === 'x' ? m.travel : 0) - m.w / 2}" y="${m.y + (m.axis === 'x' ? 0 : m.travel) - m.h / 2}" width="${m.w}" height="${m.h}" fill="#26434a"/>`).join('')}<circle cx="${l.start.x}" cy="${l.start.y}" r="16" fill="#fff" stroke="#17394f" stroke-width="3"/><path d="m${l.start.x} ${l.start.y - 7} 7 5-3 8h-8l-3-8z" fill="#17394f"/></svg>`;
 }
 function levelSelect() {
   cleanup();
