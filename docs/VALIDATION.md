@@ -40,4 +40,4 @@ The source PDF is preserved at [levels-v2.pdf](specifications/levels-v2.pdf); th
 
 No human playtesting, physical iPhone, Safari or Firefox testing is claimed. These are automated browser-input playthroughs. Subjective difficulty, long-term balance and all alternative solutions remain unverified; Levels 8–10 warrant human tuning, especially the final mid-flight approach. Original Flash references were previously inaccessible (HTTP 403); this revision follows the supplied PDF/JSON rather than claiming an exact original physics match. Finite stress tests cannot prove containment for every possible repeated impulse.
 
-This revision is committed locally only. Nothing was pushed and GitHub Pages still serves the preceding build. Launch this updated build using `npm ci` then `npm run dev`, or build and run `npm run preview`.
+This revision was initially committed locally, then published to the existing GitHub Pages site at the user’s request. Play at https://charliegghaccount.github.io/goal-in-one-test/. For local development use `npm ci` then `npm run dev`, or build and run `npm run preview`.

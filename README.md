@@ -2,7 +2,7 @@
 
 A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. The ten arenas use the latest designer-authored **First Ten Level Blueprints JSON and Designs PDF**. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
 
-**This revision is local only.** The existing public Pages site still serves the previous version; this update has not been pushed or deployed.
+**Play:** https://charliegghaccount.github.io/goal-in-one-test/
 
 **Current rules:** unlimited kicks, including mid-flight. A kick adds to the ball's existing momentum. Par affects stars only; it never ends a level or disables another kick. These rules supersede the original Flash game's shot limit and the previous remake's rest requirement.
 
