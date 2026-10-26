@@ -1,0 +1,142 @@
+[
+  {
+    "id": 21,
+    "name": "First Bounce",
+    "tip": "Roll onto the upward spring to clear the low wall; a mid-air kick can carry you farther.",
+    "par": 2,
+    "mechanic": "Spring pads"
+  },
+  {
+    "id": 22,
+    "name": "Angled Launch",
+    "tip": "The diagonal spring sends the ball across the arena. Bank off the roof or correct the approach.",
+    "par": 2,
+    "mechanic": "Spring pads"
+  },
+  {
+    "id": 23,
+    "name": "Double Bounce",
+    "tip": "Chain the rising spring and the forward launcher, or steer between them in flight.",
+    "par": 2,
+    "mechanic": "Spring pads"
+  },
+  {
+    "id": 24,
+    "name": "Tailwind",
+    "tip": "Enter the blue airflow low down and feel its steady push toward the net.",
+    "par": 1,
+    "mechanic": "Wind zones"
+  },
+  {
+    "id": 25,
+    "name": "Updraft",
+    "tip": "The upward fan can carry a slow approach over the wall; exit the airflow toward the goal.",
+    "par": 2,
+    "mechanic": "Wind zones"
+  },
+  {
+    "id": 26,
+    "name": "Against the Wind",
+    "tip": "Two air currents offer a low assisted route and a headwind to fight or clear.",
+    "par": 2,
+    "mechanic": "Wind zones"
+  },
+  {
+    "id": 27,
+    "name": "Breakthrough",
+    "tip": "A firm impact breaks the cracked timber barrier. A lofted shot is another option.",
+    "par": 2,
+    "mechanic": "Breakable wood"
+  },
+  {
+    "id": 28,
+    "name": "Two Routes",
+    "tip": "Break the low shortcut barrier or take the open high route above the shelf.",
+    "par": 2,
+    "mechanic": "Breakable wood"
+  },
+  {
+    "id": 29,
+    "name": "Chain Reaction",
+    "tip": "Break a sequence of three barriers, keeping control between impacts.",
+    "par": 3,
+    "mechanic": "Breakable wood"
+  },
+  {
+    "id": 30,
+    "name": "Open Sesame",
+    "tip": "Touch the blue floor switch to raise the matching gate. Its connector shows the target.",
+    "par": 2,
+    "mechanic": "Switches & doors"
+  },
+  {
+    "id": 31,
+    "name": "Timing Window",
+    "tip": "Touch the airborne switch to open an eight-second gate, then keep your momentum.",
+    "par": 2,
+    "mechanic": "Switches & doors"
+  },
+  {
+    "id": 32,
+    "name": "Two-Step Puzzle",
+    "tip": "The first floor switch opens the near gate; the second opens the exit gate.",
+    "par": 3,
+    "mechanic": "Switches & doors"
+  },
+  {
+    "id": 33,
+    "name": "Moving Paddle",
+    "tip": "Observe the slow paddle, then pass beneath it or use a deliberate rebound.",
+    "par": 2,
+    "mechanic": "Rotating wood"
+  },
+  {
+    "id": 34,
+    "name": "The Swing",
+    "tip": "The hanging timber swings over a low ramp. Use the opening or bank around it.",
+    "par": 2,
+    "mechanic": "Rotating wood"
+  },
+  {
+    "id": 35,
+    "name": "Pinball",
+    "tip": "Two slow paddles turn in opposite directions. Pick your bank or recover mid-flight.",
+    "par": 2,
+    "mechanic": "Rotating wood"
+  },
+  {
+    "id": 36,
+    "name": "Slippery Start",
+    "tip": "The pale blue strip carries rolling momentum farther. Shorter kicks may be enough.",
+    "par": 1,
+    "mechanic": "Slippery surfaces"
+  },
+  {
+    "id": 37,
+    "name": "Ice Run",
+    "tip": "Slide into the approach, then loft the low wall or use a corrective kick.",
+    "par": 2,
+    "mechanic": "Slippery surfaces"
+  },
+  {
+    "id": 38,
+    "name": "Slopes and Slides",
+    "tip": "Land on the polished downhill ramp and use gravity to carry the ball toward the net.",
+    "par": 2,
+    "mechanic": "Slippery surfaces"
+  },
+  {
+    "id": 39,
+    "name": "The Workshop",
+    "tip": "Use the spring to clear the barrier, or break through it and activate the gate switch.",
+    "par": 3,
+    "mechanic": "Combined mechanics"
+  },
+  {
+    "id": 40,
+    "name": "Grand Finale",
+    "tip": "Use spring and airflow above the shortcut barrier, or break through and open the timed exit. Recover any time.",
+    "par": 3,
+    "mechanic": "Combined mechanics"
+  }
+]

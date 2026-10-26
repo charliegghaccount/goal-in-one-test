@@ -1,5 +1,7 @@
 # Grass arenas: restoration and expansion
 
+The newer [physics/mechanics expansion](EXPANSION.md) supersedes the old physics values and twenty-level count below. This document remains historical geometry/art evidence.
+
 The October 26 request, pasted major-update brief, and newly attached **Goal In One Levels 1–10 Designs PDF.pdf** are the current specification. All ten PDF pages were rendered and inspected. These replace the October 24 designer JSON layouts. The direct request to add Levels 11–20 explicitly overrides the pasted brief's instructions to stop at ten. No additional world or monetisation system is added.
 
 ## Levels 1–10

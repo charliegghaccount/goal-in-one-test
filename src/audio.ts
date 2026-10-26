@@ -34,6 +34,16 @@ export class Audio {
     osc.stop(t + duration + 0.02);
   }
   play(type: string) {
+    if (type === 'spring') {
+      this.tone(230, 0.12, 'triangle');
+      this.tone(720, 0.18, 'sine', 0.06, 0.05);
+    }
+    if (type === 'break') {
+      this.tone(90, 0.15, 'sawtooth', 0.045);
+    }
+    if (type === 'switch') {
+      this.tone(950, 0.1, 'sine', 0.04);
+    }
     if (type === 'shot') this.tone(600, 0.13, 'triangle', 0.09);
     if (type === 'post') this.tone(1100, 0.22, 'sine', 0.06);
     if (type === 'net') {

@@ -1,5 +1,7 @@
 # Grass arenas validation — October 26
 
+The newer [physics/mechanics expansion](EXPANSION.md) supersedes the old physics values and twenty-level count below. This document remains historical geometry/art evidence.
+
 For the newer artwork-only release and current screenshots, see [Park & Treeline QA](PARK_ART.md). The physics/geometry findings below remain applicable.
 
 Current source and interpretation are documented in [DESIGN.md](DESIGN.md). Historical screenshot folders describe superseded versions; current captures are in `docs/grass-evidence/`.

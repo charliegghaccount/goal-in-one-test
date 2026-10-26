@@ -1,3 +1,5 @@
+import { drawMechanics, drawMechanicSurfaces } from './mechanics-art';
+import type { PhysicsConfig } from './physics';
 import { scenery, wood, beam, joint, turf } from './art';
 import {
   BALL_RADIUS,
@@ -65,12 +67,18 @@ export class Renderer {
     const colors =
       e.type === 'win'
         ? ['#d9f688', '#fff', '#5bbf93', '#f6b269']
-        : e.type === 'reset'
-          ? ['#fb7369', '#ffb1aa']
-          : e.type === 'boost'
-            ? ['#adf177', '#f9c36a']
-            : ['#c5a36b', '#a6d44b'];
-    for (let i = 0, n = e.type === 'win' ? 65 : 12; i < n; i++)
+        : e.type === 'break'
+          ? ['#b37a40', '#f1c789', '#775027']
+          : e.type === 'spring'
+            ? ['#d0a2ff', '#f7ddff']
+            : e.type === 'switch'
+              ? ['#56cfff', '#fff']
+              : e.type === 'reset'
+                ? ['#fb7369', '#ffb1aa']
+                : e.type === 'boost'
+                  ? ['#adf177', '#f9c36a']
+                  : ['#c5a36b', '#a6d44b'];
+    for (let i = 0, n = e.type === 'win' ? 65 : e.type === 'break' ? 25 : 12; i < n; i++)
       this.particles.push({
         x: e.x,
         y: e.y,
@@ -126,6 +134,7 @@ export class Renderer {
         { x: x - m.w / 2, y: y + m.h / 2 },
       ]);
     }
+    drawMechanics(c, sim, reduced);
     this.net(sim, reduced);
     const walls = segments(l);
     for (const s of walls) beam(c, s, WALL_WIDTH);
@@ -173,6 +182,7 @@ export class Renderer {
         }
       }
     }
+    drawMechanicSurfaces(c, sim, reduced);
     if (!menu && sim.phase === 'moving') {
       this.trail.push({ ...sim.ball.position });
       if (this.trail.length > 13) this.trail.shift();
@@ -186,7 +196,7 @@ export class Renderer {
     }
     c.globalAlpha = 1;
     const b = sim.ball;
-    if (pull && !menu) this.aim(b.position, pull, b.velocity);
+    if (pull && !menu) this.aim(b.position, pull, b.velocity, sim.config);
     if (sim.canKick && !pull && !menu) {
       c.strokeStyle = '#1d827e55';
       c.lineWidth = 1.8;
@@ -327,11 +337,11 @@ export class Renderer {
     c.fill();
     c.restore();
   }
-  private aim(b: Point, p: Point, velocity: Point) {
+  private aim(b: Point, p: Point, velocity: Point, config: PhysicsConfig) {
     const c = this.ctx,
       n = Math.hypot(p.x, p.y),
       ratio = Math.min(1, MAX_PULL / Math.max(n, 1));
-    const pts = trajectory(b, p, velocity);
+    const pts = trajectory(b, p, velocity, config);
     for (let i = 0; i < pts.length; i++) {
       c.globalAlpha = (1 - i / pts.length) * 0.95;
       c.fillStyle = '#fff';

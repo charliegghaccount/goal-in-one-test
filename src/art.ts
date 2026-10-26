@@ -75,7 +75,14 @@ export function wood(c: CanvasRenderingContext2D, points: Point[], bolts = true)
     ),
   );
   c.fillStyle = material;
-  c.fillRect(0, 0, 1400, 800);
+  const xs = points.map((p) => p.x),
+    ys = points.map((p) => p.y);
+  c.fillRect(
+    Math.min(...xs),
+    Math.min(...ys),
+    Math.max(...xs) - Math.min(...xs),
+    Math.max(...ys) - Math.min(...ys),
+  );
   // Both bevels are clipped INSIDE the collider polygon.
   c.lineJoin = 'round';
   c.lineWidth = 8;

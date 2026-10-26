@@ -1,3 +1,7 @@
+import { developerPanel } from './developer';
+import { loadPhysics, type PhysicsConfig } from './physics';
+let activePhysics = loadPhysics();
+const developerMode = new URLSearchParams(location.search).has('dev');
 const logoUrl = new URL('./assets/logo.svg', import.meta.url).href;
 const ballArtUrl = new URL('./assets/football.svg', import.meta.url).href;
 import './style.css';
@@ -82,7 +86,7 @@ function home() {
   screen = 'home';
   const completed = Object.keys(progress.best).length,
     next = levels.find((l) => !progress.best[l.id])?.id ?? 1;
-  app.innerHTML = `${header()}<main class="home park-home"><section class="hero-copy"><div class="eyebrow">PARK & TREELINE</div><h1><img class="game-logo" src="${logoUrl}" alt="Goal In One"/></h1><p>One ball. Twenty goals. Your perfect shot.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${icon('play')} ${completed ? 'CONTINUE' : 'PLAY'}</button><button class="secondary" data-action="levels">${icon('grid')} LEVEL SELECT</button><button class="secondary" data-action="settings">${icon('aim')} SETTINGS</button></div><div class="hero-note">DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS · ${totalStars()} STARS</div>` : ''}</section><img class="park-football" src="${ballArtUrl}" alt="" aria-hidden="true"/></main><footer class="site-footer"><span>20 ARENAS · UNLIMITED KICKS</span><span>ONE MORE PERFECT SHOT.</span></footer>`;
+  app.innerHTML = `${header()}<main class="home park-home"><section class="hero-copy"><div class="eyebrow">PARK & TREELINE</div><h1><img class="game-logo" src="${logoUrl}" alt="Goal In One"/></h1><p>One ball. ${levels.length} goals. Your perfect shot.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${icon('play')} ${completed ? 'CONTINUE' : 'PLAY'}</button><button class="secondary" data-action="levels">${icon('grid')} LEVEL SELECT</button><button class="secondary" data-action="settings">${icon('aim')} SETTINGS</button></div><div class="hero-note">DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS · ${totalStars()} STARS</div>` : ''}</section><img class="park-football" src="${ballArtUrl}" alt="" aria-hidden="true"/></main><footer class="site-footer"><span>20 ARENAS · UNLIMITED KICKS</span><span>ONE MORE PERFECT SHOT.</span></footer>`;
 
   bind();
 }
@@ -121,7 +125,7 @@ function play(id: number) {
   currentId = Math.max(1, Math.min(levels.length, id));
   resultShown = false;
   precise = false;
-  sim = new FootballSimulation(levels[currentId - 1]);
+  sim = new FootballSimulation(levels[currentId - 1], activePhysics);
   const l = sim.level;
   app.innerHTML = `${header()}<main class="game-page"><div class="game-heading"><div class="course-title"><button class="back-button" data-action="levels" aria-label="Back to levels">${icon('back')}</button><div><div class="eyebrow">LEVEL ${String(l.id).padStart(2, '0')} / ${String(levels.length).padStart(2, '0')} <span>·</span> FOOTBALL PHYSICS</div><h1>${l.name}</h1></div></div><div class="round-stats"><div><span>SHOTS</span><strong><b id="shots" aria-live="polite">0</b></strong></div><div><span>KICKS</span><strong class="unlimited">∞</strong></div><div class="par-stat"><span>PAR</span><strong>${l.par}</strong></div>${button('restart', 'Retry level (R)', 'restart')}${button('pause', 'Pause game (P)', 'pause')}</div></div><div class="game-stage"><canvas id="scene" tabindex="0" aria-label="Football puzzle. Drag backwards anywhere and release to kick into the net, even while moving." aria-describedby="level-tip"></canvas><div class="stage-topline"><span class="course-pill">${icon('net')} LEVEL ${String(l.id).padStart(2, '0')}</span><span class="status-pill" id="status">YOUR KICK. YOUR ANGLE.</span><button class="stage-help" data-action="help" aria-label="Show controls">${icon('mouse')}</button></div><div class="stage-bottomline"><span id="power-label">DRAG ANYWHERE TO KICK</span></div></div><div class="game-underbar"><p id="level-tip">${icon('help')} ${l.tip}</p><button class="text-button precise-toggle" data-action="precise" aria-expanded="false">${icon('aim')} PRECISE AIM</button></div><div id="precise-controls" class="precise-controls" hidden><label>Angle <input type="range" min="-30" max="210" value="35" id="angle"/><output id="angle-value">35°</output></label><label>Power <input type="range" min="5" max="100" value="75" id="power"/><output id="power-value">75%</output></label><button class="primary small" data-action="shoot" id="shoot-button">KICK ${icon('arrow')}</button></div><div class="game-footer"><div class="star-targets">${icon('star')} 3 STARS ≤ ${l.starShots[0]} ${l.starShots[0] === 1 ? 'KICK' : 'KICKS'} <span>·</span> 2 STARS ≤ ${l.starShots[1]} <span>·</span> UNLIMITED KICKS</div><nav aria-label="Levels">${levels
     .filter((x) => Math.floor((x.id - 1) / 10) === Math.floor((l.id - 1) / 10))
@@ -230,6 +234,21 @@ function action(a: string, el?: HTMLButtonElement) {
   }
   if (a === 'help') help();
   if (a === 'settings') settings();
+  if (a === 'developer') {
+    document.querySelector('.modal-backdrop')?.remove();
+    developerPanel(
+      activePhysics,
+      (c) => {
+        activePhysics = c;
+        sim?.updateConfig(c);
+      },
+      play,
+      () => {
+        levelPage = 0;
+        levelSelect();
+      },
+    );
+  }
   if (a === 'pause') pause();
   if (a === 'precise') {
     precise = !precise;
@@ -290,7 +309,7 @@ function help() {
 }
 function settings() {
   modal(
-    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this browser.</p><button class="primary" data-close>BACK TO GAME</button></div>`,
+    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this browser.</p>${developerMode ? '<button class="secondary" data-action="developer">DEVELOPER PHYSICS</button>' : ''}<button class="primary" data-close>BACK TO GAME</button></div>`,
     'Settings',
     true,
   );

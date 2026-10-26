@@ -3,7 +3,7 @@ import { solutions } from '../solutions';
 import { levels, arenaPolygon } from '../../src/levels';
 import { viewBounds } from '../../src/render';
 import { mkdirSync } from 'node:fs';
-const evidence = 'docs/park-evidence';
+const evidence = 'docs/expansion-evidence';
 mkdirSync(evidence, { recursive: true });
 async function frozen(page: Page) {
   const t = new Date('2026-10-21T12:00:00Z');
@@ -13,6 +13,10 @@ async function frozen(page: Page) {
 }
 async function select(page: Page, id: number) {
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
+  if (id > 20 && (await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).count()))
+    await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+  if (id <= 20 && (await page.getByRole('button', { name: 'PREVIOUS', exact: true }).count()))
+    await page.getByRole('button', { name: 'PREVIOUS', exact: true }).click();
   await page.locator(`.level-card[data-id="${id}"]`).click();
   await page.clock.runFor(100);
 }
@@ -43,10 +47,8 @@ function inside(p: { x: number; y: number }, poly: { x: number; y: number }[]) {
   return yes;
 }
 
-test('all twenty grass levels: screenshot, actual drag completion, stars, reload', async ({
-  page,
-}) => {
-  test.setTimeout(240000);
+test('all forty levels: screenshot, actual drag completion, stars, reload', async ({ page }) => {
+  test.setTimeout(600000);
   await frozen(page);
   await page.clock.runFor(100);
   await page.screenshot({ quality: 88, path: `${evidence}/menu.jpg`, fullPage: true });
@@ -54,7 +56,7 @@ test('all twenty grass levels: screenshot, actual drag completion, stars, reload
   await page.screenshot({ quality: 88, path: `${evidence}/select.jpg`, fullPage: true });
   for (const [i, sourceRoute] of solutions.entries()) {
     // This shot is browser-verified at the new artwork/HUD canvas fit; runtime geometry is unchanged.
-    const route = i === 2 ? [{ angle: 65, power: 90 }] : sourceRoute;
+    const route = sourceRoute;
     await select(page, i + 1);
     await page.screenshot({ quality: 88, path: `${evidence}/level-${i + 1}.jpg`, fullPage: true });
     await page
@@ -66,14 +68,14 @@ test('all twenty grass levels: screenshot, actual drag completion, stars, reload
     }
     const dialog = page.getByRole('dialog', { name: 'Goal scored' });
     await expect(dialog).toBeVisible();
-    await expect(
-      dialog.getByLabel(`${route.length === 1 ? 3 : route.length <= 3 ? 2 : 1} out of 3 stars`),
-    ).toBeVisible();
+    await expect(dialog.getByLabel('3 out of 3 stars')).toBeVisible();
     await page.screenshot({ quality: 88, path: `${evidence}/goal-${i + 1}.jpg`, fullPage: true });
     await dialog.getByRole('button', { name: 'BACK TO LEVELS', exact: true }).click();
   }
   await page.reload();
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
+  await expect(page.locator('.completed-mark')).toHaveCount(20);
+  await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
   await expect(page.locator('.completed-mark')).toHaveCount(20);
 });
 test('moving-ball drag and more than ten kicks remain enabled', async ({ page }) => {
@@ -83,7 +85,7 @@ test('moving-ball drag and more than ten kicks remain enabled', async ({ page })
   await page.clock.runFor(17);
   await expect(page.locator('#shots')).toHaveText('20');
   await page.clock.runFor(12000);
-  await drag(page, 0, 70);
+  await drag(page, 0, 80);
   await page.clock.runFor(12000);
   await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
   await expect(page.getByLabel('1 out of 3 stars')).toBeVisible();
@@ -120,7 +122,7 @@ test('real-time landscape touchscreen completes first goal', async ({ browser })
   await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
   await client.send('Input.dispatchTouchEvent', {
     type: 'touchMove',
-    touchPoints: [{ x: x - 98 * s, y }],
+    touchPoints: [{ x: x - 112 * s, y }],
   });
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible({ timeout: 15000 });
@@ -164,7 +166,7 @@ test('settings, pause, keyboard and mobile arena fit', async ({ page }) => {
 test('next-level and replay controls stay immediate', async ({ page }) => {
   await frozen(page);
   await select(page, 1);
-  await drag(page, 0, 70);
+  await drag(page, 0, 80);
   await page.clock.runFor(12000);
   await page.getByRole('button', { name: 'NEXT LEVEL', exact: true }).click();
   await page.clock.runFor(17);
@@ -175,7 +177,8 @@ test('next-level and replay controls stay immediate', async ({ page }) => {
   await expect(page.locator('#shots')).toHaveText('0');
 });
 
-test('park review captures all twenty artwork layouts', async ({ page }) => {
+test('expansion review captures all forty artwork layouts', async ({ page }) => {
+  test.setTimeout(120000);
   await frozen(page);
   await page.clock.runFor(100);
   await page.screenshot({ quality: 88, path: `${evidence}/menu.jpg`, fullPage: true });
@@ -186,4 +189,80 @@ test('park review captures all twenty artwork layouts', async ({ page }) => {
     await page.screenshot({ quality: 88, path: `${evidence}/level-${l.id}.jpg`, fullPage: true });
     await page.locator('#scene').screenshot({ quality: 88, path: `${evidence}/arena-${l.id}.jpg` });
   }
+});
+
+test('developer panel saves, restores, imports safe JSON and jumps to experimental levels', async ({
+  page,
+}) => {
+  await page.goto('/?dev=1');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'DEVELOPER PHYSICS', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Developer physics' });
+  await expect(dialog).toBeVisible();
+  const kick = page.getByRole('slider', { name: 'Kick strength', exact: true });
+  await kick.evaluate((el: HTMLInputElement) => {
+    el.value = '0.14';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.getByRole('button', { name: 'SAVE LOCALLY', exact: true }).click();
+  await expect(page.locator('#dev-status')).toContainText('Saved');
+  await page.getByRole('button', { name: 'RESET DEFAULTS', exact: true }).click();
+  await expect(kick).toHaveValue('0.125');
+  await page.getByRole('button', { name: 'RESTORE SAVED', exact: true }).click();
+  await expect(kick).toHaveValue('0.14');
+  await page.getByRole('button', { name: 'COPY / EXPORT JSON', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Physics configuration JSON' })).toContainText('');
+  const box = page.getByRole('textbox', { name: 'Physics configuration JSON' });
+  expect(JSON.parse(await box.inputValue()).kickStrength).toBe(0.14);
+  await box.fill('{"kickStrength":100,"windStrength":-9}');
+  await page.getByRole('button', { name: 'IMPORT JSON', exact: true }).click();
+  await expect(kick).toHaveValue('0.16');
+  await page.getByRole('button', { name: 'RESET DEFAULTS', exact: true }).click();
+  await page.getByRole('button', { name: 'SAVE LOCALLY', exact: true }).click();
+  await page.locator('#dev-level').selectOption('40');
+  await page.getByRole('button', { name: 'COPY / EXPORT JSON', exact: true }).click();
+  await page.screenshot({ quality: 88, path: `${evidence}/developer-panel.jpg`, fullPage: true });
+  await page.getByRole('button', { name: 'PLAY LEVEL', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Grand Finale', exact: true })).toBeVisible();
+  await expect(page.locator('#shots')).toHaveText('0');
+  await page.reload();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'DEVELOPER PHYSICS', exact: true }).click();
+  await expect(page.getByRole('slider', { name: 'Kick strength', exact: true })).toHaveValue(
+    '0.125',
+  );
+});
+
+test('Workshop and Finale also complete through alternate bank and break routes', async ({
+  page,
+}) => {
+  await frozen(page);
+  for (const [id, angle, power] of [
+    [39, 25, 80],
+    [40, 35, 100],
+  ]) {
+    await select(page, id);
+    await drag(page, angle, power);
+    await page.clock.runFor(12000);
+    await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+    await page.screenshot({ quality: 88, path: `${evidence}/alternate-${id}.jpg`, fullPage: true });
+    await page.getByRole('button', { name: 'BACK TO LEVELS', exact: true }).click();
+  }
+});
+
+test('spring chain and full barrier chain complete through actual kicks', async ({ page }) => {
+  await frozen(page);
+  await select(page, 23);
+  await drag(page, 0, 50);
+  await page.clock.runFor(12000);
+  await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+  await page.screenshot({ quality: 88, path: `${evidence}/spring-chain.jpg`, fullPage: true });
+  await page.getByRole('button', { name: 'BACK TO LEVELS', exact: true }).click();
+  await select(page, 29);
+  await drag(page, 0, 100);
+  await page.clock.runFor(12000);
+  await drag(page, 0, 100);
+  await page.clock.runFor(12000);
+  await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+  await page.screenshot({ quality: 88, path: `${evidence}/barrier-chain.jpg`, fullPage: true });
 });

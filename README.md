@@ -1,12 +1,12 @@
 # Goal In One ⚽ — Park & Treeline
 
-A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. Twenty enclosed grass arenas: the original ten PDF sketches restored, plus ten authored follow-on puzzles. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
+A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. Forty enclosed park arenas: the existing twenty layouts plus twenty experimental puzzles introducing six mechanics. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
 
-The current artwork release applies Park & Treeline scenery, wooden obstacles, timber frames, green training goals and glossy menus to all 20 existing levels. See [artwork implementation and QA](docs/PARK_ART.md) and the [20-level contact sheet](docs/park-evidence/all-20-levels.jpg).
+The current expansion improves rolling, spin, consecutive kicks and continuous boosts, then adds springs, wind, breakable wood, switches/doors, rotating obstacles and slippery surfaces. See [physics, mechanics, tuning and QA](docs/EXPANSION.md) and the [new-level contact sheet](docs/expansion-evidence/levels-21-40.jpg). Park & Treeline artwork is retained.
 
 **Play:** https://charliegghaccount.github.io/goal-in-one-test/
 
-**Current rules:** unlimited kicks, including mid-flight. A kick adds to the ball's existing momentum. Par affects stars only; it never ends a level or disables another kick. These rules supersede the original Flash game's shot limit and the previous remake's rest requirement.
+**Current rules:** unlimited kicks, including mid-flight. Kicks retain controlled momentum and meaningfully redirect the ball, even against its previous movement. Par affects stars only; it never ends a level or disables another kick. These rules supersede the original Flash game's shot limit and the previous remake's rest requirement.
 
 See [design and reference notes](docs/DESIGN.md), [validation evidence](docs/VALIDATION.md), and [current arena screenshots](docs/grass-evidence/). The older `docs/evidence/` directory records the superseded October 20 build.
 
@@ -35,7 +35,7 @@ Playwright uses `/usr/bin/chromium` when available; otherwise run `npx playwrigh
 ## Controls and rules
 
 - **Drag anywhere in the arena**, then release to kick. Longer pull adds a stronger impulse. You can begin a drag away from a fast-moving ball; the guide follows the ball while the drag vector stays anchored to your finger/mouse gesture.
-- Keep kicking while rolling, bouncing, falling, or travelling quickly. Kicks add velocity and spin; they do not zero existing momentum. A six-unit dead zone, Escape, touch cancellation, or loss of pointer capture cancels the drag.
+- Keep kicking while rolling, bouncing, falling, or travelling quickly. Kicks retain a configurable share of velocity, apply directional authority and bound/damp spin. A six-unit dead zone, Escape, touch cancellation, or loss of pointer capture cancels the drag.
 - Arrow and trajectory dots use the current velocity plus the pending kick. Collision surfaces can change the predicted flight.
 - Enter the open mouth of the goal on the right-hand arena boundary. The whole ball must cross the goal plane inside the mouth; post/backside contact alone does not score.
 - **There is no maximum shot count and no over-par failure.** Par is the three-star target; the level data also specifies the two-star threshold. Complete with more shots for one star, even after 20 or 100 kicks.
@@ -52,9 +52,11 @@ Best scores and mute preference save locally. The redesigned arenas use the `goa
 
 Levels 1–10 restore the latest attached original sketches: enclosed chamfered/peaked arenas, solid ramps, supported platform, directional strips, opposing triangles, moving block and red reset. Goals form the right boundary and extend into a physical net.
 
-Levels 11–20 add Stair Play, Twin Peaks, Under and Over, Green Runway, Against the Grain, Safe Crossing, The Low Window, Moving Lane, Return Pass and One More Goal. All use the same grass theme and reusable components. `src/extra-layouts.ts` is the authored expansion content; `src/levels.ts` is the current registry and original trace. Save validation and browsing use this registry, with no ten-level limit.
+Levels 11–20 add Stair Play, Twin Peaks, Under and Over, Green Runway, Against the Grain, Safe Crossing, The Low Window, Moving Lane, Return Pass and One More Goal. `src/extra-layouts.ts` is the authored expansion content; `src/levels.ts` is the current registry and original trace. Save validation and browsing use this registry, with no ten-level limit.
 
-Three stars require one kick; two stars allow up to three; all later completions earn one star. Original-layout scores are migrated from arenas:v3; replaced designer scores stay archived. Current evidence is in `docs/grass-evidence/` and `docs/VALIDATION.md`.
+Levels 21–40 introduce six reusable mechanics in learning groups, ending with Workshop and Grand Finale. Their authored content is in `src/expansion.ts`. Open `?dev=1`, then Settings → Developer Physics, to tune ten safe parameters, save/restore/import/export JSON, or jump directly to any level. Saved tuning affects later play; Reset Defaults and Save restore the shipped settings.
+
+Stars use configurable per-level budgets; all later completions still earn one star. Original-layout scores are migrated from arenas:v3; replaced designer scores stay archived. Current evidence is in `docs/expansion-evidence/` and `docs/EXPANSION.md`.
 
 ## Publish
 

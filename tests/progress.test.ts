@@ -52,7 +52,7 @@ test('restored original-layout records migrate, replaced designer records stay a
   assert.deepEqual(p, { best: { '1': 1, '10': 2 }, sound: false });
   const modern = readProgress({
     getItem: (key) =>
-      key === 'goal-in-one:grass:v5' ? '{"best":{"20":4,"21":1},"sound":true}' : null,
+      key === 'goal-in-one:grass:v5' ? '{"best":{"20":4,"41":1},"sound":true}' : null,
   });
   assert.deepEqual(modern.best, { '20': 4 });
 });

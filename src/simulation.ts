@@ -1,13 +1,15 @@
+import { MechanicRuntime } from './mechanics';
+import { defaultPhysics, sanitizePhysics, type PhysicsConfig } from './physics';
 import Matter from 'matter-js';
 import { segments, WALL_WIDTH, type Level, type Point, type Segment } from './levels';
-const { Engine, Bodies, Body, Composite, Events, Vertices } = Matter;
+const { Engine, Bodies, Body, Composite, Events, Vertices, Query } = Matter;
 export const BALL_RADIUS = 16,
   STEP = 1000 / 120,
   MAX_PULL = 140,
   SHOT_SCALE = 0.125;
 export type Phase = 'ready' | 'moving' | 'scoring' | 'won';
 export type GameEvent = {
-  type: 'shot' | 'hit' | 'post' | 'boost' | 'reset' | 'net' | 'win';
+  type: 'shot' | 'hit' | 'post' | 'boost' | 'reset' | 'net' | 'win' | 'spring' | 'break' | 'switch';
   x: number;
   y: number;
   strength: number;
@@ -28,14 +30,26 @@ export class FootballSimulation {
   surfaces: Matter.Body[] = [];
   goalSensor: Matter.Body;
   private pendingReset = false;
-  private lastBoost = -10;
-  constructor(public level: Level) {
+  private boostApplied = new Set<number>();
+  private currentDt = STEP;
+  config: PhysicsConfig;
+  mechanics: MechanicRuntime;
+  constructor(
+    public level: Level,
+    config: PhysicsConfig = defaultPhysics,
+  ) {
+    this.config = sanitizePhysics(config);
     this.engine = Engine.create({
       gravity: { x: 0, y: 1.1, scale: 0.001 },
       positionIterations: 10,
       velocityIterations: 10,
     });
-    const material = { isStatic: true, friction: 0.045, frictionStatic: 0.18, restitution: 0.76 };
+    const material = {
+      isStatic: true,
+      friction: this.config.groundFriction,
+      frictionStatic: 0.04,
+      restitution: 0.76,
+    };
     for (const s of segments(level)) {
       const length = Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y),
         angle = Math.atan2(s.b.y - s.a.y, s.b.x - s.a.x);
@@ -103,29 +117,20 @@ export class FootballSimulation {
     this.ball = Bodies.circle(level.start.x, level.start.y, BALL_RADIUS, {
       label: 'football',
       restitution: 0.76,
-      friction: 0.045,
-      frictionStatic: 0.18,
-      frictionAir: 0.0035,
+      friction: this.config.groundFriction,
+      frictionStatic: 0.04,
+      frictionAir: this.config.airResistance,
       density: 0.012,
     });
     Composite.add(this.engine.world, this.ball);
+    this.mechanics = new MechanicRuntime(this.engine, level.mechanics ?? {}, (type, p) =>
+      this.events.push({ type, ...p, strength: 1 }),
+    );
     const contacts = (e: Matter.IEventCollision<Matter.Engine>) => {
       for (const pair of e.pairs) {
         if (pair.bodyA !== this.ball && pair.bodyB !== this.ball) continue;
         const other = pair.bodyA === this.ball ? pair.bodyB : pair.bodyA;
         if (other.label === 'delete' && this.canKick) this.pendingReset = true;
-        if (
-          (other.label === 'forward' || other.label === 'backward') &&
-          this.canKick &&
-          this.time - this.lastBoost > 0.55
-        ) {
-          this.lastBoost = this.time;
-          const dir = other.label === 'forward' ? 1 : -1,
-            v = this.ball.velocity;
-          Body.setVelocity(this.ball, { x: v.x + dir * Math.max(8, 12 - dir * v.x), y: v.y });
-          this.phase = 'moving';
-          this.emit('boost', 1);
-        }
       }
     };
     Events.on(this.engine, 'collisionStart', (e) => {
@@ -133,6 +138,22 @@ export class FootballSimulation {
       for (const p of e.pairs) {
         if (p.bodyA !== this.ball && p.bodyB !== this.ball) continue;
         const other = p.bodyA === this.ball ? p.bodyB : p.bodyA;
+        this.mechanics.collision(other, p.collision.normal);
+        if (other.label === 'forward' || other.label === 'backward') {
+          // Integrate the initial contact portion immediately; subsequent contact uses force.
+          if (this.canKick && !this.boostApplied.has(other.id)) {
+            const dir = other.label === 'forward' ? 1 : -1,
+              fade = Math.max(0, 1 - Math.max(0, dir * this.ball.velocity.x) / 18);
+            Body.setVelocity(this.ball, {
+              x:
+                this.ball.velocity.x +
+                (dir * this.config.boostAcceleration * fade * this.currentDt) / (1000 / 60),
+              y: this.ball.velocity.y,
+            });
+            this.boostApplied.add(other.id);
+          }
+          this.emit('boost', 1);
+        }
         if (!other.isSensor && this.ball.speed > 2)
           this.emit(
             other.label.startsWith('goal-') ? 'post' : 'hit',
@@ -154,16 +175,41 @@ export class FootballSimulation {
     if (length < 6) return false;
     const r = Math.min(1, MAX_PULL / length),
       v = this.ball.velocity;
-    // Add the kick to existing momentum, at rest OR mid-flight. No shot-count gate.
-    Body.setVelocity(this.ball, {
-      x: v.x - pull.x * r * SHOT_SCALE,
-      y: v.y - pull.y * r * SHOT_SCALE,
-    });
-    Body.setAngularVelocity(this.ball, this.ball.angularVelocity - pull.x * r * 0.002);
+    const power = Math.min(length, MAX_PULL) * this.config.kickStrength;
+    const dir = { x: -pull.x / length, y: -pull.y / length };
+    const retained = {
+      x: v.x * this.config.momentumRetention,
+      y: v.y * this.config.momentumRetention,
+    };
+    const projection = retained.x * dir.x + retained.y * dir.y;
+    if (projection < -power * 0.25) {
+      retained.x += dir.x * (-power * 0.25 - projection);
+      retained.y += dir.y * (-power * 0.25 - projection);
+    }
+    Body.setVelocity(this.ball, { x: retained.x + dir.x * power, y: retained.y + dir.y * power });
+    Body.setAngularVelocity(
+      this.ball,
+      Math.max(
+        -this.config.maxAngularVelocity,
+        Math.min(
+          this.config.maxAngularVelocity,
+          this.ball.angularVelocity * 0.2 - pull.x * r * 0.0005,
+        ),
+      ),
+    );
     this.shots++;
     this.phase = 'moving';
     this.emit('shot', Math.min(1, length / MAX_PULL));
     return true;
+  }
+  updateConfig(config: PhysicsConfig) {
+    this.config = sanitizePhysics(config);
+    for (const b of Composite.allBodies(this.engine.world)) {
+      if (!b.isSensor) {
+        b.friction = this.config.groundFriction;
+        b.restitution = this.config.restitution;
+      }
+    }
   }
   step() {
     if (this.phase === 'won') return;
@@ -172,6 +218,8 @@ export class FootballSimulation {
     const substeps = Math.max(1, Math.ceil((this.ball.speed * 0.5 + 0.2) / 4));
     const dt = STEP / substeps;
     for (let n = 0; n < substeps; n++) {
+      this.currentDt = dt;
+      this.boostApplied.clear();
       this.time += dt / 1000;
       for (const { body, definition: m } of this.movers) {
         const axis = m.axis ?? 'y';
@@ -204,8 +252,50 @@ export class FootballSimulation {
           y: axis === 'y' ? ((next - old) * (1000 / 60)) / dt : 0,
         });
       }
+      this.ball.friction = this.config.groundFriction;
+      this.ball.frictionAir = this.config.airResistance;
+      this.ball.restitution = this.config.restitution;
+      for (const pad of this.surfaces) {
+        if (
+          (pad.label === 'forward' || pad.label === 'backward') &&
+          this.canKick &&
+          Query.collides(this.ball, [pad]).length
+        ) {
+          this.boostApplied.add(pad.id);
+          const dir = pad.label === 'forward' ? 1 : -1;
+          const fade = Math.max(0, 1 - Math.max(0, dir * this.ball.velocity.x) / 18);
+          Body.applyForce(this.ball, this.ball.position, {
+            x: ((dir * this.ball.mass * this.config.boostAcceleration) / (1000 / 60) ** 2) * fade,
+            y: 0,
+          });
+        }
+      }
+      const spin =
+        this.ball.angularVelocity * Math.pow(1 - this.config.spinDamping, dt / (1000 / 60));
+      Body.setAngularVelocity(
+        this.ball,
+        Math.max(-this.config.maxAngularVelocity, Math.min(this.config.maxAngularVelocity, spin)),
+      );
+      this.ball.frictionStatic = 0.04;
+      this.mechanics.before(this.ball, dt, this.time, this.config);
+      for (const pair of this.engine.pairs.list) {
+        if (pair.bodyA === this.ball || pair.bodyB === this.ball) {
+          const other = pair.bodyA === this.ball ? pair.bodyB : pair.bodyA;
+          pair.friction = Math.min(this.ball.friction, other.friction);
+          pair.frictionStatic = this.ball.frictionStatic;
+          pair.restitution = Math.max(this.ball.restitution, other.restitution);
+        }
+      }
       const previous = { ...this.ball.position };
       Engine.update(this.engine, dt);
+      Body.setAngularVelocity(
+        this.ball,
+        Math.max(
+          -this.config.maxAngularVelocity,
+          Math.min(this.config.maxAngularVelocity, this.ball.angularVelocity),
+        ),
+      );
+      this.mechanics.after(this.ball);
       if (this.pendingReset) {
         this.pendingReset = false;
         this.emit('reset', 1);
@@ -269,17 +359,29 @@ export function trajectory(
   position: Point,
   pull: Point,
   velocity: Point = { x: 0, y: 0 },
+  config: PhysicsConfig = defaultPhysics,
 ): Point[] {
   const len = Math.hypot(pull.x, pull.y),
     r = Math.min(1, MAX_PULL / Math.max(1, len));
-  let vx = velocity.x - pull.x * r * SHOT_SCALE,
-    vy = velocity.y - pull.y * r * SHOT_SCALE,
+  let vx = velocity.x * config.momentumRetention - pull.x * r * config.kickStrength,
+    vy = velocity.y * config.momentumRetention - pull.y * r * config.kickStrength,
     x = position.x,
     y = position.y;
+  if (len >= 6) {
+    const dx = -pull.x / len,
+      dy = -pull.y / len,
+      power = Math.min(len, MAX_PULL) * config.kickStrength,
+      projection =
+        velocity.x * config.momentumRetention * dx + velocity.y * config.momentumRetention * dy;
+    if (projection < -power * 0.25) {
+      vx += dx * (-power * 0.25 - projection);
+      vy += dy * (-power * 0.25 - projection);
+    }
+  }
   const points: Point[] = [];
   for (let i = 0; i < 50; i++) {
-    vx *= 0.9965;
-    vy = vy * 0.9965 + 1.1 * (1000 / 60) ** 2 * 0.001;
+    vx *= 1 - config.airResistance;
+    vy = vy * (1 - config.airResistance) + 1.1 * (1000 / 60) ** 2 * 0.001;
     x += vx;
     y += vy;
     if (i % 3 === 0) points.push({ x, y });

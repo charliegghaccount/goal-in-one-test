@@ -1,3 +1,5 @@
+import type { Mechanics } from './mechanics';
+import { buildExpansion } from './expansion';
 import { extraLayouts } from './extra-layouts';
 export type Point = { x: number; y: number };
 export type Polygon = { id: string; points: Point[] };
@@ -25,6 +27,8 @@ export type Level = {
   obstacles: Polygon[];
   surfaces: Surface[];
   movers: Mover[];
+  mechanics?: Mechanics;
+  experimental?: boolean;
 };
 // Uniform mapping from the PDF's 842 × 595 vector pages. All ten layouts
 // share this transform: no per-level stretching or invented obstacle positions.
@@ -251,6 +255,7 @@ for (const [i, d] of extraLayouts.entries()) {
       : [],
   });
 }
+levels.push(...buildExpansion(levels, fromPDF));
 export const worlds = [{ id: 'grass', name: 'Grass arenas', levelIds: levels.map((l) => l.id) }];
 export type Segment = { id: string; a: Point; b: Point; kind: 'wall' | 'goal' };
 export function segments(l: Level): Segment[] {

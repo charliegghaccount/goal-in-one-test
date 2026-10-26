@@ -1,5 +1,7 @@
 # Park & Treeline artwork update
 
+The newer [physics/mechanics expansion](EXPANSION.md) supersedes the old physics values and twenty-level count below. This document remains historical geometry/art evidence.
+
 The user's pasted artwork request and five-page [Park & Treeline Style Guide](specifications/park-treeline-style-guide.pdf) define this update. All pages were extracted/read; the page 2 world/UI imagery and page 3 A3/B2/C1 components were rendered and visually inspected. The selected combination is park scenery, wooden obstacles, timber boundaries and green training goals. Unselected black-metal frames/ramps in the reference examples are not reproduced.
 
 ## Assets produced
