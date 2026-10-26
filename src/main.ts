@@ -19,6 +19,7 @@ let pull: Point | null = null,
 let last = performance.now(),
   accumulator = 0,
   currentId = 1,
+  levelPage = 0,
   precise = false,
   aimAngle = 35,
   aimPower = 75,
@@ -53,7 +54,7 @@ function button(action: string, label: string, i: string, cls = 'icon-button') {
   return `<button type="button" data-action="${action}" class="${cls}" title="${label}" aria-label="${label}">${icon(i)}</button>`;
 }
 function header() {
-  return `<header class="topbar"><button class="brand" data-action="home" aria-label="Goal In One home"><span class="brand-mark">${icon('ball')}</span><span>GOAL<span class="brand-in">IN</span>ONE<span class="brand-dot">.</span><small>FOOTBALL PHYSICS.</small></span></button><span class="nav-tag">BIG IDEAS. BEAUTIFUL GOALS.</span><nav aria-label="Main navigation"><button class="text-button" data-action="levels">${icon('grid')} <span>LEVELS</span></button><span class="nav-divider"></span>${button('sound', progress.sound ? 'Mute sound' : 'Enable sound', progress.sound ? 'sound' : 'mute', 'icon-button sound-button')}${button('help', 'How to play', 'help')}</nav></header>`;
+  return `<header class="topbar"><button class="brand" data-action="home" aria-label="Goal In One home"><span class="brand-mark">${icon('ball')}</span><span>GOAL<span class="brand-in">IN</span>ONE<span class="brand-dot">.</span><small>FOOTBALL PHYSICS.</small></span></button><span class="nav-tag">BIG IDEAS. BEAUTIFUL GOALS.</span><nav aria-label="Main navigation"><button class="text-button" data-action="levels">${icon('grid')} <span>LEVELS</span></button><span class="nav-divider"></span>${button('sound', progress.sound ? 'Mute sound' : 'Enable sound', progress.sound ? 'sound' : 'mute', 'icon-button sound-button')}${button('settings', 'Settings', 'aim')}${button('help', 'How to play', 'help')}</nav></header>`;
 }
 function persist() {
   storageOK = saveProgress(progress);
@@ -79,7 +80,7 @@ function home() {
   screen = 'home';
   const completed = Object.keys(progress.best).length,
     next = levels.find((l) => !progress.best[l.id])?.id ?? 1;
-  app.innerHTML = `${header()}<main class="home"><section class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> THE FOOTBALL PHYSICS PUZZLER</div><h1>ONE BALL.<br>TEN GOALS.<br><em>MAKE IT COUNT.</em></h1><p>Bank off the walls. Thread the ramps. Find the net.<br>Kick again in mid-air. No shot limits. Just better scores.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${completed ? 'KEEP PLAYING' : 'KICK OFF'} ${icon('arrow')}</button><button class="secondary" data-action="levels">PICK A LEVEL ${icon('grid')}</button></div><div class="hero-note">${icon('mouse')} DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS SCORED <span>·</span> ${totalStars()} STARS</div>` : ''}</section><section class="hero-art" aria-label="Football in an enclosed arena with angled corners and a goal"><div class="art-label">${icon('ball')} A NEW ANGLE ON THE BEAUTIFUL GAME</div><canvas id="scene" aria-hidden="true"></canvas><div class="hero-score"><span>YOUR NEXT</span><strong>GREAT GOAL.</strong>${icon('net')}</div><span class="art-corner">01 / FIRST TOUCH</span></section><section class="feature-strip"><div><span>01</span><p><strong>THE BALL IS IN YOUR HANDS.</strong><small>Drag, aim and release. Every kick counts.</small></p></div><div><span>10</span><p><strong>SMALL WORLDS. BIG CHALLENGES.</strong><small>Enclosed arenas, slopes and moving obstacles.</small></p></div><div>${icon('star')}<p><strong>THREE STARS. YOUR WAY.</strong><small>Unlimited kicks. Fewer shots, more stars.</small></p></div></section></main><footer class="site-footer"><span>INSPIRED BY PHANTASMAGOR’S 2006 FOOTBALL PUZZLER</span><span>NO DOWNLOAD. JUST ONE MORE GOAL. ${icon('net')}</span></footer>`;
+  app.innerHTML = `${header()}<main class="home"><section class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> THE FOOTBALL PHYSICS PUZZLER</div><h1>ONE BALL.<br>TWENTY GOALS.<br><em>MAKE IT COUNT.</em></h1><p>Bank off the walls. Thread the ramps. Find the net.<br>Kick again in mid-air. No shot limits. Just better scores.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${completed ? 'KEEP PLAYING' : 'KICK OFF'} ${icon('arrow')}</button><button class="secondary" data-action="levels">PICK A LEVEL ${icon('grid')}</button></div><div class="hero-note">${icon('mouse')} DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS SCORED <span>·</span> ${totalStars()} STARS</div>` : ''}</section><section class="hero-art" aria-label="Football in an enclosed arena with angled corners and a goal"><div class="art-label">${icon('ball')} A NEW ANGLE ON THE BEAUTIFUL GAME</div><canvas id="scene" aria-hidden="true"></canvas><div class="hero-score"><span>YOUR NEXT</span><strong>GREAT GOAL.</strong>${icon('net')}</div><span class="art-corner">01 / FIRST TOUCH</span></section><section class="feature-strip"><div><span>01</span><p><strong>THE BALL IS IN YOUR HANDS.</strong><small>Drag, aim and release. Every kick counts.</small></p></div><div><span>${levels.length}</span><p><strong>SMALL WORLDS. BIG CHALLENGES.</strong><small>Enclosed arenas, slopes and moving obstacles.</small></p></div><div>${icon('star')}<p><strong>THREE STARS. YOUR WAY.</strong><small>Unlimited kicks. Fewer shots, more stars.</small></p></div></section></main><footer class="site-footer"><span>INSPIRED BY PHANTASMAGOR’S 2006 FOOTBALL PUZZLER</span><span>NO DOWNLOAD. JUST ONE MORE GOAL. ${icon('net')}</span></footer>`;
   sim = new FootballSimulation(levels[0]);
   renderer = new Renderer(document.querySelector('#scene')!);
 
@@ -103,7 +104,15 @@ function miniLevel(l: Level) {
 function levelSelect() {
   cleanup();
   screen = 'levels';
-  app.innerHTML = `${header()}<main class="select-page"><div class="section-heading"><div><div class="eyebrow">THE CHALLENGE BOARD</div><h1>FIND YOUR <em>ANGLE.</em></h1><p>Your ten enclosed arenas. Unlimited kicks in every level.</p></div><div class="progress-card">${icon('star')}<strong>${totalStars()}<span> / ${levels.length * 3}</span></strong><span>STARS COLLECTED</span></div></div><div class="level-grid">${levels.map((l) => `<button class="level-card" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${l.name}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${progress.best[l.id] ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${l.name}</h2><div><span>PAR ${l.par} ${progress.best[l.id] ? `· BEST ${progress.best[l.id]}` : ''}</span>${stars(progress.best[l.id] ? rating(progress.best[l.id], l) : 0)}</div></div></button>`).join('')}</div><p class="selection-note">All levels are open. Best scores save on this browser.${!storageOK ? ' Storage unavailable: progress lasts for this visit.' : ''}</p></main>`;
+  app.innerHTML = `${header()}<main class="select-page"><div class="section-heading"><div><div class="eyebrow">THE CHALLENGE BOARD</div><h1>FIND YOUR <em>ANGLE.</em></h1><p>${levels.length} grass arenas. Unlimited kicks in every level.</p></div><div class="progress-card">${icon('star')}<strong>${totalStars()}<span> / ${levels.length * 3}</span></strong><span>STARS COLLECTED</span></div></div><div class="level-grid">${levels
+    .slice(levelPage * 20, levelPage * 20 + 20)
+    .map(
+      (l) =>
+        `<button class="level-card" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${l.name}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${progress.best[l.id] ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${l.name}</h2><div><span>PAR ${l.par} ${progress.best[l.id] ? `· BEST ${progress.best[l.id]}` : ''}</span>${stars(progress.best[l.id] ? rating(progress.best[l.id], l) : 0)}</div></div></button>`,
+    )
+    .join(
+      '',
+    )}</div><div class="level-paging">${levelPage > 0 ? '<button class="secondary" data-action="previous-page">PREVIOUS</button>' : ''}${(levelPage + 1) * 20 < levels.length ? '<button class="secondary" data-action="next-page">MORE ARENAS</button>' : ''}</div><p class="selection-note">All levels are open. Best scores save on this browser.${!storageOK ? ' Storage unavailable: progress lasts for this visit.' : ''}</p></main>`;
   bind();
 }
 function play(id: number) {
@@ -114,7 +123,15 @@ function play(id: number) {
   precise = false;
   sim = new FootballSimulation(levels[currentId - 1]);
   const l = sim.level;
-  app.innerHTML = `${header()}<main class="game-page"><div class="game-heading"><div class="course-title"><button class="back-button" data-action="levels" aria-label="Back to levels">${icon('back')}</button><div><div class="eyebrow">LEVEL ${String(l.id).padStart(2, '0')} / ${String(levels.length).padStart(2, '0')} <span>·</span> FOOTBALL PHYSICS</div><h1>${l.name}</h1></div></div><div class="round-stats"><div><span>SHOTS</span><strong><b id="shots" aria-live="polite">0</b></strong></div><div><span>KICKS</span><strong class="unlimited">∞</strong></div><div class="par-stat"><span>PAR</span><strong>${l.par}</strong></div>${button('restart', 'Retry level (R)', 'restart')}${button('pause', 'Pause game (P)', 'pause')}</div></div><div class="game-stage"><canvas id="scene" tabindex="0" aria-label="Football puzzle. Drag backwards anywhere and release to kick into the net, even while moving." aria-describedby="level-tip"></canvas><div class="stage-topline"><span class="course-pill">${icon('net')} LEVEL ${String(l.id).padStart(2, '0')}</span><span class="status-pill" id="status">YOUR KICK. YOUR ANGLE.</span><button class="stage-help" data-action="help" aria-label="Show controls">${icon('mouse')}</button></div><div class="stage-bottomline"><span id="power-label">DRAG ANYWHERE TO KICK</span></div></div><div class="game-underbar"><p id="level-tip">${icon('help')} ${l.tip}</p><button class="text-button precise-toggle" data-action="precise" aria-expanded="false">${icon('aim')} PRECISE AIM</button></div><div id="precise-controls" class="precise-controls" hidden><label>Angle <input type="range" min="-30" max="210" value="35" id="angle"/><output id="angle-value">35°</output></label><label>Power <input type="range" min="5" max="100" value="75" id="power"/><output id="power-value">75%</output></label><button class="primary small" data-action="shoot" id="shoot-button">KICK ${icon('arrow')}</button></div><div class="game-footer"><div class="star-targets">${icon('star')} 3 STARS ≤ ${l.starShots[0]} ${l.starShots[0] === 1 ? 'KICK' : 'KICKS'} <span>·</span> 2 STARS ≤ ${l.starShots[1]} <span>·</span> UNLIMITED KICKS</div><nav aria-label="Levels">${levels.map((x) => `<button data-action="play" data-id="${x.id}" aria-label="Level ${x.id}" ${x.id === l.id ? 'aria-current="step"' : ''} class="${progress.best[x.id] ? 'done' : ''}">${progress.best[x.id] ? icon('check') : String(x.id).padStart(2, '0')}</button>`).join('')}</nav><span class="save-note">${icon(storageOK ? 'check' : 'help')} ${storageOK ? 'SAVED ON THIS BROWSER' : 'SESSION ONLY'}</span></div></main>`;
+  app.innerHTML = `${header()}<main class="game-page"><div class="game-heading"><div class="course-title"><button class="back-button" data-action="levels" aria-label="Back to levels">${icon('back')}</button><div><div class="eyebrow">LEVEL ${String(l.id).padStart(2, '0')} / ${String(levels.length).padStart(2, '0')} <span>·</span> FOOTBALL PHYSICS</div><h1>${l.name}</h1></div></div><div class="round-stats"><div><span>SHOTS</span><strong><b id="shots" aria-live="polite">0</b></strong></div><div><span>KICKS</span><strong class="unlimited">∞</strong></div><div class="par-stat"><span>PAR</span><strong>${l.par}</strong></div>${button('restart', 'Retry level (R)', 'restart')}${button('pause', 'Pause game (P)', 'pause')}</div></div><div class="game-stage"><canvas id="scene" tabindex="0" aria-label="Football puzzle. Drag backwards anywhere and release to kick into the net, even while moving." aria-describedby="level-tip"></canvas><div class="stage-topline"><span class="course-pill">${icon('net')} LEVEL ${String(l.id).padStart(2, '0')}</span><span class="status-pill" id="status">YOUR KICK. YOUR ANGLE.</span><button class="stage-help" data-action="help" aria-label="Show controls">${icon('mouse')}</button></div><div class="stage-bottomline"><span id="power-label">DRAG ANYWHERE TO KICK</span></div></div><div class="game-underbar"><p id="level-tip">${icon('help')} ${l.tip}</p><button class="text-button precise-toggle" data-action="precise" aria-expanded="false">${icon('aim')} PRECISE AIM</button></div><div id="precise-controls" class="precise-controls" hidden><label>Angle <input type="range" min="-30" max="210" value="35" id="angle"/><output id="angle-value">35°</output></label><label>Power <input type="range" min="5" max="100" value="75" id="power"/><output id="power-value">75%</output></label><button class="primary small" data-action="shoot" id="shoot-button">KICK ${icon('arrow')}</button></div><div class="game-footer"><div class="star-targets">${icon('star')} 3 STARS ≤ ${l.starShots[0]} ${l.starShots[0] === 1 ? 'KICK' : 'KICKS'} <span>·</span> 2 STARS ≤ ${l.starShots[1]} <span>·</span> UNLIMITED KICKS</div><nav aria-label="Levels">${levels
+    .filter((x) => Math.floor((x.id - 1) / 10) === Math.floor((l.id - 1) / 10))
+    .map(
+      (x) =>
+        `<button data-action="play" data-id="${x.id}" aria-label="Level ${x.id}" ${x.id === l.id ? 'aria-current="step"' : ''} class="${progress.best[x.id] ? 'done' : ''}">${progress.best[x.id] ? icon('check') : String(x.id).padStart(2, '0')}</button>`,
+    )
+    .join(
+      '',
+    )}</nav><span class="save-note">${icon(storageOK ? 'check' : 'help')} ${storageOK ? 'SAVED ON THIS BROWSER' : 'SESSION ONLY'}</span></div></main>`;
   renderer = new Renderer(document.querySelector('#scene')!);
   const bounds = viewBounds(l);
   renderer.canvas.style.aspectRatio = String(bounds.w / bounds.h);
@@ -187,6 +204,14 @@ function bind() {
 function action(a: string, el?: HTMLButtonElement) {
   audio.unlock();
   audio.play('ui');
+  if (a === 'next-page') {
+    levelPage++;
+    levelSelect();
+  }
+  if (a === 'previous-page') {
+    levelPage--;
+    levelSelect();
+  }
   if (a === 'home') home();
   if (a === 'levels') levelSelect();
   if (a === 'play') play(Number(el?.dataset.id));
@@ -204,6 +229,7 @@ function action(a: string, el?: HTMLButtonElement) {
     });
   }
   if (a === 'help') help();
+  if (a === 'settings') settings();
   if (a === 'pause') pause();
   if (a === 'precise') {
     precise = !precise;
@@ -259,6 +285,13 @@ function help() {
   modal(
     `<button class="modal-close icon-button" data-close aria-label="Close instructions">${icon('close')}</button><div class="modal-emblem">${icon('ball')}</div><div class="eyebrow">THE BEAUTIFUL GAME. A DIFFERENT ANGLE.</div><h2>FIND THE NET.</h2><p>Drag anywhere in the arena to set direction and power. Release to add a kick, at rest or in mid-air.</p><div class="help-rows"><p><strong>Aim & cancel</strong><span>Pull farther for more power. Return to the ball’s dead zone or press Escape to cancel.</span></p><p><strong>Kick any time</strong><span>Drag anywhere in the arena, even while the ball moves. Each kick adds to its existing momentum.</span></p><p><strong>Score properly</strong><span>The whole ball must cross the open left side of the net. Hitting its back or crossbar alone is not a goal.</span></p><p><strong>Unlimited kicks</strong><span>Par is a score target. You can always keep playing. The red strip resets position and keeps every shot already taken.</span></p><p><strong>Keyboard</strong><span>↑ ↓ angle · ← → power · Space kick<br>R retry · P pause · L levels<br>The entire arena stays in view on every screen.</span></p></div><button class="primary" data-close>LET’S KICK IT ${icon('arrow')}</button>`,
     'How to play',
+    true,
+  );
+}
+function settings() {
+  modal(
+    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this browser.</p><button class="primary" data-close>BACK TO GAME</button></div>`,
+    'Settings',
     true,
   );
 }

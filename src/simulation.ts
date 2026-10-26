@@ -181,14 +181,22 @@ export class FootballSimulation {
         let next = old + Math.max(-limit, Math.min(limit, desired - old));
         if (axis === 'y') {
           const p = this.ball.position,
-            floor = Math.max(...this.level.outline.map((p) => p.y));
-          if (
-            Math.abs(p.x - m.x) < m.w / 2 + BALL_RADIUS + 2 &&
-            next > old &&
-            old + m.h / 2 <= p.y - BALL_RADIUS + 2 &&
-            p.y + BALL_RADIUS >= floor - WALL_WIDTH / 2 - 3
-          )
-            next = Math.max(old, Math.min(next, p.y - BALL_RADIUS - m.h / 2 - 1));
+            floor = Math.max(...this.level.outline.map((p) => p.y)),
+            roof = Math.min(...this.level.outline.map((p) => p.y));
+          if (Math.abs(p.x - m.x) < m.w / 2 + BALL_RADIUS + 2) {
+            if (
+              next > old &&
+              old + m.h / 2 <= p.y - BALL_RADIUS + 2 &&
+              p.y + BALL_RADIUS >= floor - WALL_WIDTH / 2 - 3
+            )
+              next = Math.max(old, Math.min(next, p.y - BALL_RADIUS - m.h / 2 - 1));
+            if (
+              next < old &&
+              old - m.h / 2 >= p.y + BALL_RADIUS - 2 &&
+              p.y - BALL_RADIUS <= roof + WALL_WIDTH / 2 + 3
+            )
+              next = Math.min(old, Math.max(next, p.y + BALL_RADIUS + m.h / 2 + 1));
+          }
         }
         Body.setPosition(body, { ...body.position, [axis]: next });
         Body.setVelocity(body, {

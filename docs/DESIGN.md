@@ -1,17 +1,33 @@
-# Designer-authored levels, October 24 revision
+# Grass arenas: restoration and expansion
 
-The latest `Goal_In_One_First_10_Level_Blueprints.json` and `Goal_In_One_First_10_Level_Designs.pdf` supersede the October 21 rough contours. All JSON fields and all eleven PDF pages were inspected, including the layout drawings. The original supplied JSON is retained as `src/blueprints.json`; the visual source is `docs/specifications/levels-v2.pdf`. Embedded design suggestions are treated as specifications, with the user's scope and rules taking precedence.
+The October 26 request, pasted major-update brief, and newly attached **Goal In One Levels 1–10 Designs PDF.pdf** are the current specification. All ten PDF pages were rendered and inspected. These replace the October 24 designer JSON layouts. The direct request to add Levels 11–20 explicitly overrides the pasted brief's instructions to stop at ten. No additional world or monetisation system is added.
 
-The runtime imports the JSON directly, using one uniform mapping from bottom-left design units into Canvas coordinates: x=40+12x, y=740−12y. Rectangles, shelf pads, start positions and movers use that mapping. The existing football radius, kick impulse, restitution, gravity and friction are unchanged. A fixed full-arena view fits the enclosure independently of goal elevation.
+## Levels 1–10
 
-The rectangular enclosure is closed on all four sides. Its visible strokes and colliders share segments, using the existing welded rounded-wall construction. The existing 10.4-unit stroke is retained instead of the schematic's suggested 24-unit border, avoiding an unnecessary physics change. Internal goals have a roof, back and floor. Their open mouth is directional: positive travel for the right-side goals and negative travel for Level 5. Goal art mirrors the net mesh as well as the frame. A whole-ball crossing through the mouth is required; spawning inside or striking the outside does not count.
+The original vector trace is restored with one uniform mapping (`fromPDF`) for every vertex. Level 1 has chamfered upper corners; 2/3 have opposite solid triangles and peaked roofs; 4 has the supported flat/downhill structure and stepped roof; 5/6 introduce forward/reverse strips; 7 has opposing low triangles; 8 has the narrow roof/floor passage; 9 has the slow vertical block; 10 has the red reset strip. Minor sketch gaps are welded. The closed inaccessible interior of Level 4 is filled. The football is smaller than the pasted sketch illustration. No obstacle or alternate route is substituted in these ten levels.
 
-Goal markers in the PDF are interpreted as centers of eight-unit-wide, eight-unit-tall nets resting at the specified goal height. Level 10's goal base is lowered one design unit to meet the high deck (top y=39), rather than leaving an unsupported y=40 lip. This preserves the high-goal challenge and makes rolling entries fair. Left/right goal meanings follow the intended travel direction stated by the designer.
+Every goal attaches to the right edge. The shared `segments` component connects the roof/wall junction to the exact goal-mouth top and extends the floor under the trapezoidal net. Roof, back and floor are solid; the mouth is open. The whole ball must cross from left to right within the mouth to score. Sensor proximity, a backside hit or a ball starting inside cannot score. Rendered strokes and rigid capsule boundaries consume identical coordinates; there is no invisible rectangular cage or out-of-bounds teleport.
 
-Level 2's low wall is reduced from 15 to 10 design units after only 2/15 nearby one-kick samples succeeded at the authored height; 7/15 succeeded after tuning. Level 9's red strip is narrowed symmetrically from x=61…79 to 64…76, improving recovery around the ledge while retaining visible risk.
+## Levels 11–20
 
-Level 7's gate travel is shortened to bottom-edge y=5…12 instead of 5…24 so the 21-unit-tall block does not pass through the ceiling shelf at y=36. A trapped ball blocks the descending gate at the floor. Other moving-object ranges and periods remain authored, including Level 9's horizontal sweeper. No new mechanic, world, UI system or engine is introduced.
+`src/extra-layouts.ts` contains authored content records, using the same coordinate system and reusable pads, convex polygons and moving block. They combine known mechanics in this order: stepped banks; twin ramps; baffle/ramp; green runway; ramp/reverse strip; safe shelf/red crossing; narrow baffle passage; boosted moving lane; ramp/reverse/gate; shelf/boost/red/gate finale. These are fixed authored layouts, not random generation. They all retain the right-boundary net and grass presentation.
 
-Par values remain 1,1,2,2,2,2,2,3,3,3: practical routes fit them, with extra allowance in later combinations for recovery. Two-star thresholds are par+2; all later completions earn one star. Unlimited additive kicks, mid-flight aiming, immediate retry, red reset preserving shots, menus and local saves remain. A new designer:v4 namespace avoids presenting scores from replaced levels as current records; previous sound preference is retained and old keys are untouched.
+The content registry exposes one grass world. Save validation reads valid IDs from the registry; level selection renders batches of 20, and the in-game navigation shows the current ten-level group. Adding later packs does not require rewriting a ten-level regex, total star count or completion logic. This prepares for additional content without creating new worlds now.
 
-Current evidence and limitations are in [VALIDATION.md](VALIDATION.md). Older screenshot folders record superseded layouts and are not current validation.
+## Physics, controls and feedback
+
+The proven Matter.js tuning is retained: 120 Hz fixed simulation, gravity 1.1, restitution .76, low rolling friction and mild air drag. Adaptive collision substeps scale with accumulated ball speed, preventing tested high-speed shots from tunnelling. Moving blocks have bounded smooth motion; a trapped ball stops a vertical block near the roof/floor instead of being crushed through the boundary. The roof handling missing from the later designer version is restored.
+
+Every valid kick adds velocity and spin to existing momentum. No shot-count gate, rest lock or kick cooldown exists. Drag anywhere works on mouse and touch; aiming follows the moving ball, and physics continues while aiming. Per-impulse power is capped, accumulated momentum is not. The trajectory is an approximate ballistic guide rather than an exact collision/boost preview.
+
+Pads use one contact system with signed directions. Arrows, coloured strips, activation particles and synthesised sound communicate boosts. Red contact emits red particles at the contact and immediately restores the original start with zero motion while keeping shots. Net capture, particles, the ball trail and celebration remain short and responsive.
+
+Three stars now require one kick in every level. Two stars allow up to three, and all later completions receive one. Thresholds remain level data, not completion restrictions. Every level has a recorded one-kick simulation route; browser confirmation is recorded separately in VALIDATION.md.
+
+## Presentation and mobile
+
+A uniform camera fits the complete contour and outward net. The grass palette, solid green terrain, edge highlights, clear black colliders, mover travel guide, rotational football and net mesh share one visual treatment. The original Flash listing was requested again but blocked by the environment; no direct original-game style or physics match is claimed.
+
+Landscape uses almost the full viewport for the arena, safe-area padding, a compact header and 44 CSS-pixel retry/pause/sound/settings targets. Extra score/navigation copy is hidden on short screens; menu and pause remain accessible. Resizing changes Canvas scale only. The settings dialog exposes persistent sound preferences without adding a new game system. Pointer input remains web-native and suitable for later packaging; there is no native-engine migration.
+
+Original-layout records from `arenas:v3` migrate into the new `grass:v5` namespace. The replaced designer-layout scores remain archived under their old key rather than falsely awarding progress on different geometry. Sound preference carries forward from the newest prior version. Storage failure still allows session-only play.

@@ -3,7 +3,7 @@ import { solutions } from '../solutions';
 import { levels, arenaPolygon } from '../../src/levels';
 import { viewBounds } from '../../src/render';
 import { mkdirSync } from 'node:fs';
-const evidence = 'docs/designer-evidence';
+const evidence = 'docs/grass-evidence';
 mkdirSync(evidence, { recursive: true });
 async function frozen(page: Page) {
   const t = new Date('2026-10-21T12:00:00Z');
@@ -43,7 +43,7 @@ function inside(p: { x: number; y: number }, poly: { x: number; y: number }[]) {
   return yes;
 }
 
-test('all ten designer levels: screenshot, actual drag completion, stars, reload', async ({
+test('all twenty grass levels: screenshot, actual drag completion, stars, reload', async ({
   page,
 }) => {
   test.setTimeout(240000);
@@ -51,19 +51,22 @@ test('all ten designer levels: screenshot, actual drag completion, stars, reload
   for (const [i, route] of solutions.entries()) {
     await select(page, i + 1);
     await page.screenshot({ path: `${evidence}/level-${i + 1}.png`, fullPage: true });
+    await page.locator('#scene').screenshot({ path: `${evidence}/arena-${i + 1}.png` });
     for (const k of route) {
       await drag(page, k.angle, k.power);
       await page.clock.runFor((k.flight ?? 12) * 1000);
     }
     const dialog = page.getByRole('dialog', { name: 'Goal scored' });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByLabel('3 out of 3 stars')).toBeVisible();
+    await expect(
+      dialog.getByLabel(`${route.length === 1 ? 3 : route.length <= 3 ? 2 : 1} out of 3 stars`),
+    ).toBeVisible();
     await page.screenshot({ path: `${evidence}/goal-${i + 1}.png`, fullPage: true });
     await dialog.getByRole('button', { name: 'BACK TO LEVELS', exact: true }).click();
   }
   await page.reload();
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
-  await expect(page.locator('.completed-mark')).toHaveCount(10);
+  await expect(page.locator('.completed-mark')).toHaveCount(20);
 });
 test('moving-ball drag and more than ten kicks remain enabled', async ({ page }) => {
   await frozen(page);
@@ -115,4 +118,51 @@ test('real-time landscape touchscreen completes first goal', async ({ browser })
   await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible({ timeout: 15000 });
   await page.screenshot({ path: `${evidence}/touch-goal.png`, fullPage: true });
   await context.close();
+});
+
+test('settings, pause, keyboard and mobile arena fit', async ({ page }) => {
+  await frozen(page);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+  await page.getByRole('button', { name: 'BACK TO GAME', exact: true }).click();
+  await select(page, 9);
+  await drag(page, 60, 70);
+  await page.clock.runFor(100);
+  await page.getByRole('button', { name: 'Pause game (P)' }).click();
+  const t = await page.locator('#scene').getAttribute('data-sim-time');
+  await page.clock.runFor(1000);
+  expect(await page.locator('#scene').getAttribute('data-sim-time')).toBe(t);
+  await page.getByRole('button', { name: 'RESUME', exact: true }).click();
+  await page.locator('#scene').focus();
+  await page.keyboard.press('Space');
+  await page.clock.runFor(17);
+  await expect(page.locator('#shots')).toHaveText('2');
+  for (const [w, h] of [
+    [932, 430],
+    [844, 390],
+    [740, 360],
+  ]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.clock.runFor(50);
+    const c = await page.locator('#scene').boundingBox();
+    expect(c!.y + c!.height).toBeLessThanOrEqual(h);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: `${evidence}/landscape-${w}.png`, fullPage: true });
+  }
+});
+
+test('next-level and replay controls stay immediate', async ({ page }) => {
+  await frozen(page);
+  await select(page, 1);
+  await drag(page, 0, 70);
+  await page.clock.runFor(12000);
+  await page.getByRole('button', { name: 'NEXT LEVEL', exact: true }).click();
+  await page.clock.runFor(17);
+  await expect(page.getByRole('heading', { name: 'Up the ramp', exact: true })).toBeVisible();
+  await expect(page.locator('#shots')).toHaveText('0');
+  await page.getByRole('button', { name: 'Retry level (R)' }).click();
+  await page.clock.runFor(17);
+  await expect(page.locator('#shots')).toHaveText('0');
 });

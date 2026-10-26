@@ -24,7 +24,7 @@ test('malformed, corrupt, or unavailable browser storage does not break play', (
   const p = readProgress({
     getItem: () => '{"best":{"1":2,"2":-1,"3":"oops","11":4},"sound":false}',
   });
-  assert.deepEqual(p, { best: { '1': 2 }, sound: false });
+  assert.deepEqual(p, { best: { '1': 2, '11': 4 }, sound: false });
   assert.equal(
     saveProgress(p, {
       setItem: () => {
@@ -38,4 +38,21 @@ test('football progression is separate from obsolete level scores but keeps the 
   const legacy = '{"best":{"1":1,"2":1},"sound":false}';
   const p = readProgress({ getItem: (key) => (key === 'goal-in-one:v1' ? legacy : null) });
   assert.deepEqual(p, { best: {}, sound: false });
+});
+
+test('restored original-layout records migrate, replaced designer records stay archived', () => {
+  const p = readProgress({
+    getItem: (key) =>
+      key === 'goal-in-one:arenas:v3'
+        ? '{"best":{"1":1,"10":2},"sound":true}'
+        : key === 'goal-in-one:designer:v4'
+          ? '{"best":{"2":1},"sound":false}'
+          : null,
+  });
+  assert.deepEqual(p, { best: { '1': 1, '10': 2 }, sound: false });
+  const modern = readProgress({
+    getItem: (key) =>
+      key === 'goal-in-one:grass:v5' ? '{"best":{"20":4,"21":1},"sound":true}' : null,
+  });
+  assert.deepEqual(modern.best, { '20': 4 });
 });

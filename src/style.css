@@ -1727,3 +1727,103 @@ p {
     margin: 10px 0;
   }
 }
+/* Grass chapter: one presentation now, data-driven content batches for later worlds. */
+.level-paging {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 24px 0;
+}
+.level-card {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.level-card:hover {
+  transform: translateY(-3px);
+}
+button:focus-visible {
+  outline: 3px solid #78b13f;
+  outline-offset: 4px;
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  body:has(.game-page) {
+    overflow: hidden;
+  }
+  body:has(.game-page) .topbar {
+    height: 44px;
+    padding: 0 max(12px, env(safe-area-inset-left));
+  }
+  body:has(.game-page) .topbar .brand small,
+  body:has(.game-page) .topbar .nav-divider {
+    display: none;
+  }
+  body:has(.game-page) .topbar nav .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .game-page {
+    padding: 0 max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+  }
+  .game-heading {
+    height: 48px;
+    margin: 0;
+  }
+  .round-stats > .icon-button,
+  .back-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .game-stage {
+    border-radius: 12px;
+  }
+  .game-stage canvas {
+    height: calc(100dvh - 100px - env(safe-area-inset-bottom));
+    min-height: 150px;
+  }
+  .game-underbar,
+  .game-footer,
+  .stage-topline .course-pill {
+    display: none;
+  }
+  .stage-topline {
+    pointer-events: none;
+    top: 3px;
+  }
+  .stage-help {
+    pointer-events: auto;
+    min-width: 44px;
+    min-height: 44px;
+    opacity: 0.8;
+  }
+  .status-pill {
+    padding: 5px 8px;
+  }
+  .stage-bottomline {
+    bottom: 4px;
+    pointer-events: none;
+  }
+  .stage-bottomline > span {
+    padding: 4px 8px;
+  }
+  .course-title h1 {
+    font-size: 17px;
+  }
+  .round-stats {
+    gap: 8px;
+  }
+  .modal {
+    max-height: calc(100dvh - 20px);
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .precise-controls {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: min(600px, 90vw);
+    z-index: 5;
+    box-shadow: 0 4px 22px #173b3a33;
+  }
+}

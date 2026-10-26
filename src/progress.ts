@@ -1,10 +1,11 @@
+import { levels } from './levels';
 export type Progress = { best: Record<string, number>; sound: boolean };
-const KEY = 'goal-in-one:designer:v4';
+const KEY = 'goal-in-one:grass:v5';
 export function readProgress(storage?: Pick<Storage, 'getItem'>): Progress {
   try {
     const store = storage ?? localStorage;
     const saved = store.getItem(KEY);
-    const raw = JSON.parse(saved || '{}');
+    const raw = JSON.parse(saved || store.getItem('goal-in-one:arenas:v3') || '{}');
     // Old scores belong to different levels. Keep only the old sound preference.
     if (!saved) {
       const legacy = JSON.parse(
@@ -13,12 +14,15 @@ export function readProgress(storage?: Pick<Storage, 'getItem'>): Progress {
           store.getItem('goal-in-one:v1') ||
           '{}',
       );
-      raw.sound = legacy?.sound !== false;
+      raw.sound =
+        JSON.parse(store.getItem('goal-in-one:designer:v4') || 'null')?.sound ??
+        legacy?.sound !== false;
     }
     const best: Record<string, number> = {};
     if (raw && typeof raw.best === 'object' && raw.best)
       for (const [k, v] of Object.entries(raw.best))
-        if (/^(10|[1-9])$/.test(k) && Number.isInteger(v) && Number(v) > 0) best[k] = Number(v);
+        if (levels.some((l) => String(l.id) === k) && Number.isInteger(v) && Number(v) > 0)
+          best[k] = Number(v);
     return { best, sound: raw?.sound !== false };
   } catch {
     return { best: {}, sound: true };

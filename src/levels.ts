@@ -1,4 +1,4 @@
-import blueprint from './blueprints.json';
+import { extraLayouts } from './extra-layouts';
 export type Point = { x: number; y: number };
 export type Polygon = { id: string; points: Point[] };
 export type Surface = { x: number; y: number; w: number; kind: 'forward' | 'backward' | 'delete' };
@@ -26,90 +26,266 @@ export type Level = {
   surfaces: Surface[];
   movers: Mover[];
 };
-
+// Uniform mapping from the PDF's 842 × 595 vector pages. All ten layouts
+// share this transform: no per-level stretching or invented obstacle positions.
+export const PDF_SCALE = 1.6;
+export function fromPDF(x: number, y: number): Point {
+  return { x: 52 + (x - 50) * PDF_SCALE, y: 92 + (y - 84) * PDF_SCALE };
+}
+const path = (points: number[][]) => points.map(([x, y]) => fromPDF(x, y));
 export const WALL_WIDTH = 10.4;
-export const FLOOR = 692;
-const point = (x: number, y: number): Point => ({ x: 40 + x * 12, y: 740 - y * 12 });
-export const levels: Level[] = blueprint.levels.map((d) => {
-  const dir = d.goal[2] === 'left' ? -1 : 1;
-  const gx = Number(d.goal[0]),
-    gy = Number(d.goal[1]) - (d.id === 10 ? 1 : 0);
-  return {
-    id: d.id,
-    name: d.name,
-    tip: d.intended,
-    par: d.par,
-    starShots: [d.par, d.par + 2],
-    width: 1280,
-    start: point(d.start[0], d.start[1]),
-    goal: { ...point(gx - dir * 4, gy), w: dir * 96, h: 96, roof: dir * 96, direction: dir },
-    outline: [
-      [2, 4],
-      [2, 54],
-      [98, 54],
-      [98, 4],
-    ].map(([x, y]) => point(x, y)),
-    obstacles: d.solids.map((r, i) => ({
-      id: `solid-${i}`,
-      points: [
-        [r.x, r.y],
-        [r.x, r.y + (d.id === 2 ? 10 : r.h)],
-        [r.x + r.w, r.y + (d.id === 2 ? 10 : r.h)],
-        [r.x + r.w, r.y],
-      ].map(([x, y]) => point(x, y)),
-    })),
-    surfaces: [
-      ...d.pads.map((p) => ({ ...point(p.x, p.y), w: p.w * 12, kind: p.kind as Surface['kind'] })),
-      ...d.hazards.map((p) => ({
-        ...point(p.x + (d.id === 9 ? 3 : 0), p.y),
-        w: (p.w - (d.id === 9 ? 6 : 0)) * 12,
-        kind: 'delete' as const,
-      })),
-    ],
-    movers: d.movers.map((m) => {
-      const axis = m.axis as 'x' | 'y';
-      const end = d.id === 7 ? 12 : m.range_end;
-      const center = (m.range_start + end) / 2;
-      return {
-        ...point(
-          axis === 'x' ? center + m.w / 2 : m.x + m.w / 2,
-          axis === 'y' ? center + m.h / 2 : m.y + m.h / 2,
-        ),
-        w: m.w * 12,
-        h: m.h * 12,
-        travel: (end - m.range_start) * 6,
-        period: m.period_seconds,
-        axis,
-      };
-    }),
-  };
+export const FLOOR = fromPDF(0, 419.0852).y;
+const LEFT = 53.4429,
+  RIGHT = 700.2021;
+const goal: Goal = {
+  x: fromPDF(699.386, 0).x,
+  y: FLOOR,
+  w: (784.065 - 699.386) * PDF_SCALE,
+  h: (419.0852 - 351.8) * PDF_SCALE,
+  roof: (749.097 - 699.386) * PDF_SCALE,
+};
+const normal = [
+  [LEFT, 419.0852],
+  [LEFT, 282.2],
+  [120, 215.3793],
+  [632, 215.3793],
+  [RIGHT, 283.2],
+  [RIGHT, 351.8],
+];
+const peaked = [
+  [LEFT, 419.0852],
+  [LEFT, 282.2],
+  [120, 215.3793],
+  [419.63, 84.61],
+  [RIGHT, 351.8],
+];
+const poly = (id: string, p: number[][]): Polygon => ({ id, points: path(p) });
+const names = [
+  'First touch',
+  'Up the ramp',
+  'Over the edge',
+  'Under one roof',
+  'Full speed ahead',
+  'Against the flow',
+  'Double trouble',
+  'Thread the gap',
+  'Moving target',
+  'The red line',
+];
+const tips = [
+  'Bank shots off any black border. Drag and kick again even while the ball is moving.',
+  'A solid rising triangle sits below the peaked roof. Use its slope or clear its tall end.',
+  'The triangle faces the other way: clear its vertical face, then follow the downhill slope.',
+  'The supported platform has a flat top and a descending slope. The roof steps down too.',
+  'The green floor surface throws the ball to the right. Its arrows show the impulse direction.',
+  'The orange surface throws the ball left. Kick in the air to clear it or use the rebound.',
+  'Two triangles face each other beneath a low roof. Keep control through the middle.',
+  'Pass between the hanging roof triangle and the floor triangle. You can correct mid-flight.',
+  'The block slowly travels from floor to ceiling. Pick your moment or adjust a moving ball.',
+  'Touching the red strip returns the ball to its start. Every kick already taken still counts.',
+];
+const outlines = [
+  normal,
+  peaked,
+  peaked,
+  [
+    [LEFT, 419.0852],
+    [LEFT, 282.2],
+    [120, 215.3793],
+    [306, 215.3793],
+    [372, 283.1988],
+    [RIGHT, 283.1988],
+    [RIGHT, 351.8],
+  ],
+  normal,
+  normal,
+  [
+    [LEFT, 419.0852],
+    [LEFT, 284.1507],
+    [636.7348, 284.1507],
+    [RIGHT, 351.8],
+  ],
+  [
+    [LEFT, 419.0852],
+    [LEFT, 282.2],
+    [120, 215.3793],
+    [269.3307, 149.7696],
+    [532.7077, 149.7696],
+    [RIGHT, 351.8],
+  ],
+  [
+    [LEFT, 419.0852],
+    [LEFT, 199.2077],
+    [RIGHT, 199.2077],
+    [RIGHT, 351.8],
+  ],
+  normal,
+];
+const obstacles: Polygon[][] = [
+  [],
+  [
+    poly('rising-triangle', [
+      [168.3936, 419.0852],
+      [370.2677, 315.8352],
+      [370.2677, 419.0852],
+    ]),
+  ],
+  [
+    poly('falling-triangle', [
+      [168.3936, 315.8352],
+      [168.3936, 419.0852],
+      [370.2677, 419.0852],
+    ]),
+  ],
+  [
+    poly('supported-platform', [
+      [135.3359, 419.0852],
+      [135.3359, 354.0981],
+      [305.4561, 354.0981],
+      [365, 419.0852],
+    ]),
+  ],
+  [],
+  [],
+  [
+    poly('left-triangle', [
+      [194.0522, 419.0852],
+      [344.6092, 376.2365],
+      [344.6092, 419.0852],
+    ]),
+    poly('right-triangle', [
+      [407.7487, 376.2365],
+      [407.7487, 419.0852],
+      [558.3057, 419.0852],
+    ]),
+  ],
+  [
+    poly('hanging-triangle', [
+      [269.3307, 149.7696],
+      [532.7077, 149.7696],
+      [401.0192, 250.116],
+    ]),
+    poly('floor-triangle', [
+      [269.3307, 419.0852],
+      [401.0192, 315.5011],
+      [532.7077, 419.0852],
+    ]),
+  ],
+  [],
+  [],
+];
+const surface = (x: number, end: number, kind: Surface['kind']): Surface => ({
+  x: fromPDF(x, 0).x,
+  y: FLOOR,
+  w: (end - x) * PDF_SCALE,
+  kind,
 });
+export const levels: Level[] = outlines.map((outline, i) => ({
+  id: i + 1,
+  name: names[i],
+  tip: tips[i],
+  par: 1,
+  starShots: [1, 3],
+  width: 1280,
+  start: { x: fromPDF(i === 8 ? 142.5 : 87.5, 0).x, y: FLOOR - 22 },
+  goal: { ...goal },
+  outline: path(outline),
+  obstacles: obstacles[i],
+  surfaces:
+    i === 4
+      ? [surface(354.8897, 627.1455, 'forward')]
+      : i === 5
+        ? [surface(376.92, 627.1455, 'backward')]
+        : i === 9
+          ? [surface(311.8696, 441.9704, 'delete')]
+          : [],
+  movers:
+    i === 8
+      ? [
+          {
+            x: fromPDF((277.6667 + 307.3736) / 2, 0).x,
+            y: (fromPDF(0, 199.2077).y + FLOOR) / 2,
+            w: (307.3736 - 277.6667) * PDF_SCALE,
+            h: 160,
+            travel: 89,
+            period: 8,
+          },
+        ]
+      : [],
+}));
+for (const [i, d] of extraLayouts.entries()) {
+  const data = d as {
+    name: string;
+    tip: string;
+    polygons: readonly (readonly (readonly number[])[])[];
+    pads?: readonly (readonly [number, number, Surface['kind']])[];
+    mover?: { x: number; y: number; w: number; h: number; travel: number; period: number };
+  };
+  levels.push({
+    id: 11 + i,
+    name: d.name,
+    tip: d.tip,
+    par: 1,
+    starShots: [1, 3],
+    width: 1280,
+    start: { ...levels[0].start },
+    goal: { ...goal },
+    outline: path(peaked),
+    obstacles: data.polygons.map((p, j) =>
+      poly(
+        `extra-${i}-${j}`,
+        p.map((p) => [...p]),
+      ),
+    ),
+    surfaces: (data.pads ?? []).map(([x, end, kind]) => surface(x, end, kind)),
+    movers: data.mover
+      ? [
+          {
+            ...fromPDF(data.mover.x, data.mover.y),
+            w: data.mover.w * PDF_SCALE,
+            h: data.mover.h * PDF_SCALE,
+            travel: data.mover.travel * PDF_SCALE,
+            period: data.mover.period,
+          },
+        ]
+      : [],
+  });
+}
+export const worlds = [{ id: 'grass', name: 'Grass arenas', levelIds: levels.map((l) => l.id) }];
 export type Segment = { id: string; a: Point; b: Point; kind: 'wall' | 'goal' };
 export function segments(l: Level): Segment[] {
-  const g = l.goal;
-  const lines: Segment[] = l.outline.map((a, i) => ({
-    id: `wall-${i}`,
-    a,
-    b: l.outline[(i + 1) % l.outline.length],
+  const g = l.goal,
+    lines: Segment[] = [];
+  for (let i = 1; i < l.outline.length; i++)
+    lines.push({ id: `wall-${i}`, a: l.outline[i - 1], b: l.outline[i], kind: 'wall' });
+  // Weld the hand-drawn roof/right-wall junction to the exact mouth top.
+  lines.push({
+    id: 'mouth-junction',
+    a: l.outline.at(-1)!,
+    b: { x: g.x, y: g.y - g.h },
     kind: 'wall',
-  }));
-  lines.push(
-    {
-      id: 'goal-roof',
-      a: { x: g.x, y: g.y - g.h },
-      b: { x: g.x + g.roof, y: g.y - g.h },
-      kind: 'goal',
-    },
-    {
-      id: 'goal-back',
-      a: { x: g.x + g.roof, y: g.y - g.h },
-      b: { x: g.x + g.w, y: g.y },
-      kind: 'goal',
-    },
-    { id: 'goal-floor', a: { x: g.x, y: g.y }, b: { x: g.x + g.w, y: g.y }, kind: 'goal' },
-  );
-  return lines;
+  });
+  lines.push({ id: 'floor', a: l.outline[0], b: { x: g.x + g.w, y: g.y }, kind: 'wall' });
+  lines.push({
+    id: 'goal-roof',
+    a: { x: g.x, y: g.y - g.h },
+    b: { x: g.x + g.roof, y: g.y - g.h },
+    kind: 'goal',
+  });
+  lines.push({
+    id: 'goal-back',
+    a: { x: g.x + g.roof, y: g.y - g.h },
+    b: { x: g.x + g.w, y: g.y },
+    kind: 'goal',
+  });
+  return lines.filter((s) => Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y) > 0.01);
 }
 export function arenaPolygon(l: Level): Point[] {
-  return l.outline;
+  const g = l.goal;
+  return [
+    ...l.outline,
+    { x: g.x, y: g.y - g.h },
+    { x: g.x + g.roof, y: g.y - g.h },
+    { x: g.x + g.w, y: g.y },
+  ];
 }

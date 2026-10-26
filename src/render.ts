@@ -99,13 +99,13 @@ export class Renderer {
     const c = this.ctx,
       l = sim.level,
       g = l.goal;
-    c.fillStyle = '#d9e5dd';
+    c.fillStyle = '#c7dbc1';
     c.fillRect(0, 0, this.width, this.height);
     c.save();
     c.translate(this.offsetX, this.offsetY);
     c.scale(this.scale, this.scale);
     this.path(arenaPolygon(l));
-    c.fillStyle = '#edf5e8';
+    c.fillStyle = '#eaf3d6';
     c.fill();
     c.save();
     c.clip();
@@ -127,14 +127,14 @@ export class Renderer {
     c.restore();
     for (const o of l.obstacles) {
       this.path(o.points);
-      c.fillStyle = '#26434a';
+      c.fillStyle = '#385640';
       c.fill();
       c.save();
       c.clip();
-      c.strokeStyle = '#0b2534';
+      c.strokeStyle = '#233d2a';
       c.lineWidth = 7;
       c.stroke();
-      c.strokeStyle = '#9bbdae25';
+      c.strokeStyle = '#add87832';
       c.lineWidth = 2;
       for (let x = 0; x < 1280; x += 28) {
         c.beginPath();
@@ -144,7 +144,30 @@ export class Renderer {
       }
       c.restore();
     }
+    for (const o of l.obstacles) {
+      c.strokeStyle = '#7fba59';
+      c.lineWidth = 3;
+      for (let i = 0; i < o.points.length; i++) {
+        const a = o.points[i],
+          b = o.points[(i + 1) % o.points.length];
+        if (b.x > a.x && b.y <= a.y + 1) {
+          c.beginPath();
+          c.moveTo(a.x + 2, a.y + 2);
+          c.lineTo(b.x - 2, b.y + 2);
+          c.stroke();
+        }
+      }
+    }
     for (const { body, definition: m } of sim.movers) {
+      c.save();
+      c.setLineDash([6, 9]);
+      c.strokeStyle = '#506f5566';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(m.x, m.y - m.travel - m.h / 2);
+      c.lineTo(m.x, m.y + m.travel + m.h / 2);
+      c.stroke();
+      c.restore();
       const { x, y } = body.position;
       c.fillStyle = '#29404b';
       c.fillRect(x - m.w / 2, y - m.h / 2, m.w, m.h);
