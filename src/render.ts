@@ -1,3 +1,4 @@
+import { scenery, wood, beam, joint, turf } from './art';
 import {
   BALL_RADIUS,
   MAX_PULL,
@@ -68,7 +69,7 @@ export class Renderer {
           ? ['#fb7369', '#ffb1aa']
           : e.type === 'boost'
             ? ['#adf177', '#f9c36a']
-            : ['#c6ded0', '#fff'];
+            : ['#c5a36b', '#a6d44b'];
     for (let i = 0, n = e.type === 'win' ? 65 : 12; i < n; i++)
       this.particles.push({
         x: e.x,
@@ -99,69 +100,18 @@ export class Renderer {
     const c = this.ctx,
       l = sim.level,
       g = l.goal;
-    c.fillStyle = '#c7dbc1';
-    c.fillRect(0, 0, this.width, this.height);
+    scenery(c, this.width, this.height);
     c.save();
     c.translate(this.offsetX, this.offsetY);
     c.scale(this.scale, this.scale);
     this.path(arenaPolygon(l));
-    c.fillStyle = '#eaf3d6';
+    c.fillStyle = 'rgba(238,249,255,.14)';
     c.fill();
-    c.save();
-    c.clip();
-    // Decoration is subdued, clipped inside the arena, and clearly separate from solids.
-    c.strokeStyle = '#92b6a31a';
-    c.lineWidth = 1;
-    for (let x = 40; x < 1280; x += 40) {
-      c.beginPath();
-      c.moveTo(x, 0);
-      c.lineTo(x, 720);
-      c.stroke();
-    }
-    for (let y = 0; y < 720; y += 40) {
-      c.beginPath();
-      c.moveTo(0, y);
-      c.lineTo(1280, y);
-      c.stroke();
-    }
-    c.restore();
-    for (const o of l.obstacles) {
-      this.path(o.points);
-      c.fillStyle = '#385640';
-      c.fill();
-      c.save();
-      c.clip();
-      c.strokeStyle = '#233d2a';
-      c.lineWidth = 7;
-      c.stroke();
-      c.strokeStyle = '#add87832';
-      c.lineWidth = 2;
-      for (let x = 0; x < 1280; x += 28) {
-        c.beginPath();
-        c.moveTo(x, 720);
-        c.lineTo(x + 220, 0);
-        c.stroke();
-      }
-      c.restore();
-    }
-    for (const o of l.obstacles) {
-      c.strokeStyle = '#7fba59';
-      c.lineWidth = 3;
-      for (let i = 0; i < o.points.length; i++) {
-        const a = o.points[i],
-          b = o.points[(i + 1) % o.points.length];
-        if (b.x > a.x && b.y <= a.y + 1) {
-          c.beginPath();
-          c.moveTo(a.x + 2, a.y + 2);
-          c.lineTo(b.x - 2, b.y + 2);
-          c.stroke();
-        }
-      }
-    }
+    for (const o of l.obstacles) wood(c, o.points);
     for (const { body, definition: m } of sim.movers) {
       c.save();
-      c.setLineDash([6, 9]);
-      c.strokeStyle = '#506f5566';
+      c.setLineDash([5, 8]);
+      c.strokeStyle = '#344d5e66';
       c.lineWidth = 2;
       c.beginPath();
       c.moveTo(m.x, m.y - m.travel - m.h / 2);
@@ -169,32 +119,32 @@ export class Renderer {
       c.stroke();
       c.restore();
       const { x, y } = body.position;
-      c.fillStyle = '#29404b';
-      c.fillRect(x - m.w / 2, y - m.h / 2, m.w, m.h);
-      c.strokeStyle = '#112b3a';
-      c.lineWidth = 3;
-      c.strokeRect(x - m.w / 2 + 1.5, y - m.h / 2 + 1.5, m.w - 3, m.h - 3);
-      c.fillStyle = '#a4c6b2';
-      for (const yy of [y - m.h / 2 + 10, y + m.h / 2 - 10]) {
-        c.beginPath();
-        c.arc(x, yy, 3, 0, Math.PI * 2);
-        c.fill();
-      }
+      wood(c, [
+        { x: x - m.w / 2, y: y - m.h / 2 },
+        { x: x + m.w / 2, y: y - m.h / 2 },
+        { x: x + m.w / 2, y: y + m.h / 2 },
+        { x: x - m.w / 2, y: y + m.h / 2 },
+      ]);
     }
     this.net(sim, reduced);
-    c.lineWidth = WALL_WIDTH;
-    c.lineCap = 'round';
-    c.lineJoin = 'round';
-    for (const s of segments(l)) {
-      c.strokeStyle = s.kind === 'goal' ? '#29b96e' : '#112b35';
-      c.beginPath();
-      c.moveTo(s.a.x, s.a.y);
-      c.lineTo(s.b.x, s.b.y);
-      c.stroke();
-    }
+    const walls = segments(l);
+    for (const s of walls) beam(c, s, WALL_WIDTH);
+    const joints = new Map<string, Point>();
+    for (const s of walls.filter((s) => s.kind === 'wall'))
+      for (const p of [s.a, s.b]) joints.set(`${p.x},${p.y}`, p);
+    for (const p of joints.values()) joint(c, p, WALL_WIDTH);
+    const floor = walls.find((s) => s.id === 'floor');
+    if (floor) turf(c, floor.a, floor.b);
     for (const s of l.surfaces) {
       const color =
         s.kind === 'forward' ? '#83d44b' : s.kind === 'backward' ? '#ed9e35' : '#ed4b52';
+      c.strokeStyle =
+        s.kind === 'forward' ? '#1f702c' : s.kind === 'backward' ? '#8b4f15' : '#8f243b';
+      c.lineWidth = 12;
+      c.beginPath();
+      c.moveTo(s.x, s.y - 6);
+      c.lineTo(s.x + s.w, s.y - 6);
+      c.stroke();
       c.strokeStyle = color;
       c.lineWidth = 8;
       c.beginPath();
@@ -212,7 +162,7 @@ export class Renderer {
         }
       } else {
         const dir = s.kind === 'forward' ? 1 : -1;
-        c.strokeStyle = '#fffbd5';
+        c.strokeStyle = '#fffef0';
         c.lineWidth = 2.2;
         for (let x = s.x + 16; x < s.x + s.w - 10; x += 30) {
           c.beginPath();
@@ -291,13 +241,13 @@ export class Renderer {
       { x: g.x, y: g.y },
     ];
     this.path(points);
-    c.fillStyle = '#ffffffa8';
+    c.fillStyle = '#e8fff021';
     c.fill();
     c.save();
     c.clip();
     const t = sim.time - sim.goalTime,
       ripple = !reduced && t >= 0 && t < 1.4 ? Math.sin(t * 24) * Math.exp(-t * 3) * 4 : 0;
-    c.strokeStyle = '#53aa8588';
+    c.strokeStyle = '#ffffffdf';
     c.lineWidth = 1.3;
     for (let x = Math.min(g.x, g.x + g.w); x < Math.max(g.x, g.x + g.w); x += 13) {
       c.beginPath();
@@ -330,7 +280,11 @@ export class Renderer {
     c.shadowColor = '#15344944';
     c.shadowBlur = 4;
     c.shadowOffsetY = 2;
-    c.fillStyle = '#fff';
+    const shine = c.createRadialGradient(-5, -6, 1, 0, 0, BALL_RADIUS);
+    shine.addColorStop(0, '#fff');
+    shine.addColorStop(0.7, '#f8fafb');
+    shine.addColorStop(1, '#b7c7d2');
+    c.fillStyle = shine;
     c.strokeStyle = '#173449';
     c.lineWidth = 1.5;
     c.beginPath();

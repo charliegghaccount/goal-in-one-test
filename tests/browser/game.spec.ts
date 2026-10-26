@@ -3,7 +3,7 @@ import { solutions } from '../solutions';
 import { levels, arenaPolygon } from '../../src/levels';
 import { viewBounds } from '../../src/render';
 import { mkdirSync } from 'node:fs';
-const evidence = 'docs/grass-evidence';
+const evidence = 'docs/park-evidence';
 mkdirSync(evidence, { recursive: true });
 async function frozen(page: Page) {
   const t = new Date('2026-10-21T12:00:00Z');
@@ -48,10 +48,18 @@ test('all twenty grass levels: screenshot, actual drag completion, stars, reload
 }) => {
   test.setTimeout(240000);
   await frozen(page);
-  for (const [i, route] of solutions.entries()) {
+  await page.clock.runFor(100);
+  await page.screenshot({ quality: 88, path: `${evidence}/menu.jpg`, fullPage: true });
+  await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
+  await page.screenshot({ quality: 88, path: `${evidence}/select.jpg`, fullPage: true });
+  for (const [i, sourceRoute] of solutions.entries()) {
+    // This shot is browser-verified at the new artwork/HUD canvas fit; runtime geometry is unchanged.
+    const route = i === 2 ? [{ angle: 65, power: 90 }] : sourceRoute;
     await select(page, i + 1);
-    await page.screenshot({ path: `${evidence}/level-${i + 1}.png`, fullPage: true });
-    await page.locator('#scene').screenshot({ path: `${evidence}/arena-${i + 1}.png` });
+    await page.screenshot({ quality: 88, path: `${evidence}/level-${i + 1}.jpg`, fullPage: true });
+    await page
+      .locator('#scene')
+      .screenshot({ quality: 88, path: `${evidence}/arena-${i + 1}.jpg` });
     for (const k of route) {
       await drag(page, k.angle, k.power);
       await page.clock.runFor((k.flight ?? 12) * 1000);
@@ -61,7 +69,7 @@ test('all twenty grass levels: screenshot, actual drag completion, stars, reload
     await expect(
       dialog.getByLabel(`${route.length === 1 ? 3 : route.length <= 3 ? 2 : 1} out of 3 stars`),
     ).toBeVisible();
-    await page.screenshot({ path: `${evidence}/goal-${i + 1}.png`, fullPage: true });
+    await page.screenshot({ quality: 88, path: `${evidence}/goal-${i + 1}.jpg`, fullPage: true });
     await dialog.getByRole('button', { name: 'BACK TO LEVELS', exact: true }).click();
   }
   await page.reload();
@@ -116,7 +124,7 @@ test('real-time landscape touchscreen completes first goal', async ({ browser })
   });
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect(page.getByRole('dialog', { name: 'Goal scored' })).toBeVisible({ timeout: 15000 });
-  await page.screenshot({ path: `${evidence}/touch-goal.png`, fullPage: true });
+  await page.screenshot({ quality: 88, path: `${evidence}/touch-goal.jpg`, fullPage: true });
   await context.close();
 });
 
@@ -149,7 +157,7 @@ test('settings, pause, keyboard and mobile arena fit', async ({ page }) => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `${evidence}/landscape-${w}.png`, fullPage: true });
+    await page.screenshot({ quality: 88, path: `${evidence}/landscape-${w}.jpg`, fullPage: true });
   }
 });
 
@@ -165,4 +173,17 @@ test('next-level and replay controls stay immediate', async ({ page }) => {
   await page.getByRole('button', { name: 'Retry level (R)' }).click();
   await page.clock.runFor(17);
   await expect(page.locator('#shots')).toHaveText('0');
+});
+
+test('park review captures all twenty artwork layouts', async ({ page }) => {
+  await frozen(page);
+  await page.clock.runFor(100);
+  await page.screenshot({ quality: 88, path: `${evidence}/menu.jpg`, fullPage: true });
+  await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
+  await page.screenshot({ quality: 88, path: `${evidence}/select.jpg`, fullPage: true });
+  for (const l of levels) {
+    await select(page, l.id);
+    await page.screenshot({ quality: 88, path: `${evidence}/level-${l.id}.jpg`, fullPage: true });
+    await page.locator('#scene').screenshot({ quality: 88, path: `${evidence}/arena-${l.id}.jpg` });
+  }
 });

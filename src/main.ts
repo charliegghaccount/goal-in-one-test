@@ -1,3 +1,5 @@
+const logoUrl = new URL('./assets/logo.svg', import.meta.url).href;
+const ballArtUrl = new URL('./assets/football.svg', import.meta.url).href;
 import './style.css';
 import { levels, arenaPolygon, segments, WALL_WIDTH, type Level, type Point } from './levels';
 import { FootballSimulation, MAX_PULL, rating, STEP } from './simulation';
@@ -80,9 +82,7 @@ function home() {
   screen = 'home';
   const completed = Object.keys(progress.best).length,
     next = levels.find((l) => !progress.best[l.id])?.id ?? 1;
-  app.innerHTML = `${header()}<main class="home"><section class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> THE FOOTBALL PHYSICS PUZZLER</div><h1>ONE BALL.<br>TWENTY GOALS.<br><em>MAKE IT COUNT.</em></h1><p>Bank off the walls. Thread the ramps. Find the net.<br>Kick again in mid-air. No shot limits. Just better scores.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${completed ? 'KEEP PLAYING' : 'KICK OFF'} ${icon('arrow')}</button><button class="secondary" data-action="levels">PICK A LEVEL ${icon('grid')}</button></div><div class="hero-note">${icon('mouse')} DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS SCORED <span>·</span> ${totalStars()} STARS</div>` : ''}</section><section class="hero-art" aria-label="Football in an enclosed arena with angled corners and a goal"><div class="art-label">${icon('ball')} A NEW ANGLE ON THE BEAUTIFUL GAME</div><canvas id="scene" aria-hidden="true"></canvas><div class="hero-score"><span>YOUR NEXT</span><strong>GREAT GOAL.</strong>${icon('net')}</div><span class="art-corner">01 / FIRST TOUCH</span></section><section class="feature-strip"><div><span>01</span><p><strong>THE BALL IS IN YOUR HANDS.</strong><small>Drag, aim and release. Every kick counts.</small></p></div><div><span>${levels.length}</span><p><strong>SMALL WORLDS. BIG CHALLENGES.</strong><small>Enclosed arenas, slopes and moving obstacles.</small></p></div><div>${icon('star')}<p><strong>THREE STARS. YOUR WAY.</strong><small>Unlimited kicks. Fewer shots, more stars.</small></p></div></section></main><footer class="site-footer"><span>INSPIRED BY PHANTASMAGOR’S 2006 FOOTBALL PUZZLER</span><span>NO DOWNLOAD. JUST ONE MORE GOAL. ${icon('net')}</span></footer>`;
-  sim = new FootballSimulation(levels[0]);
-  renderer = new Renderer(document.querySelector('#scene')!);
+  app.innerHTML = `${header()}<main class="home park-home"><section class="hero-copy"><div class="eyebrow">PARK & TREELINE</div><h1><img class="game-logo" src="${logoUrl}" alt="Goal In One"/></h1><p>One ball. Twenty goals. Your perfect shot.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${icon('play')} ${completed ? 'CONTINUE' : 'PLAY'}</button><button class="secondary" data-action="levels">${icon('grid')} LEVEL SELECT</button><button class="secondary" data-action="settings">${icon('aim')} SETTINGS</button></div><div class="hero-note">DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS · ${totalStars()} STARS</div>` : ''}</section><img class="park-football" src="${ballArtUrl}" alt="" aria-hidden="true"/></main><footer class="site-footer"><span>20 ARENAS · UNLIMITED KICKS</span><span>ONE MORE PERFECT SHOT.</span></footer>`;
 
   bind();
 }
@@ -90,25 +90,25 @@ function miniLevel(l: Level) {
   const b = viewBounds(l),
     g = l.goal;
   const path = (p: Point[]) => p.map((v, i) => `${i ? 'L' : 'M'}${v.x} ${v.y}`).join(' ') + ' Z';
-  return `<svg viewBox="${b.x} ${b.y} ${b.w} ${b.h}" aria-hidden="true" class="mini-course"><rect x="0" y="0" width="1280" height="720" fill="#d9e5dd"/><path d="${path(arenaPolygon(l))}" fill="#edf5e8"/>${l.obstacles.map((o) => `<path d="${path(o.points)}" fill="#26434a"/>`).join('')}${segments(
+  return `<svg viewBox="${b.x} ${b.y} ${b.w} ${b.h}" aria-hidden="true" class="mini-course"><rect x="0" y="0" width="1280" height="720" fill="transparent"/><path d="${path(arenaPolygon(l))}" fill="#e1f8ff55"/>${l.obstacles.map((o) => `<path d="${path(o.points)}" fill="#bc8244"/>`).join('')}${segments(
     l,
   )
     .map(
       (s) =>
-        `<path d="M${s.a.x} ${s.a.y} L${s.b.x} ${s.b.y}" stroke="${s.kind === 'goal' ? '#29b96e' : '#112b35'}" stroke-width="${WALL_WIDTH}" stroke-linecap="round"/>`,
+        `<path d="M${s.a.x} ${s.a.y} L${s.b.x} ${s.b.y}" stroke="${s.kind === 'goal' ? '#48df35' : '#8b542a'}" stroke-width="${WALL_WIDTH}" stroke-linecap="round"/>`,
     )
     .join(
       '',
-    )}${l.surfaces.map((s) => `<path d="M${s.x} ${s.y - 6}h${s.w}" stroke="${s.kind === 'forward' ? '#83d44b' : s.kind === 'backward' ? '#ed9e35' : '#ed4b52'}" stroke-width="8"/>`).join('')}${l.movers.map((m) => `<rect x="${m.x + (m.axis === 'x' ? m.travel : 0) - m.w / 2}" y="${m.y + (m.axis === 'x' ? 0 : m.travel) - m.h / 2}" width="${m.w}" height="${m.h}" fill="#26434a"/>`).join('')}<circle cx="${l.start.x}" cy="${l.start.y}" r="16" fill="#fff" stroke="#17394f" stroke-width="3"/><path d="m${l.start.x} ${l.start.y - 7} 7 5-3 8h-8l-3-8z" fill="#17394f"/></svg>`;
+    )}${l.surfaces.map((s) => `<path d="M${s.x} ${s.y - 6}h${s.w}" stroke="${s.kind === 'forward' ? '#83d44b' : s.kind === 'backward' ? '#ed9e35' : '#ed4b52'}" stroke-width="8"/>`).join('')}${l.movers.map((m) => `<rect x="${m.x + (m.axis === 'x' ? m.travel : 0) - m.w / 2}" y="${m.y + (m.axis === 'x' ? 0 : m.travel) - m.h / 2}" width="${m.w}" height="${m.h}" fill="#bc8244"/>`).join('')}<circle cx="${l.start.x}" cy="${l.start.y}" r="16" fill="#fff" stroke="#17394f" stroke-width="3"/><path d="m${l.start.x} ${l.start.y - 7} 7 5-3 8h-8l-3-8z" fill="#17394f"/></svg>`;
 }
 function levelSelect() {
   cleanup();
   screen = 'levels';
-  app.innerHTML = `${header()}<main class="select-page"><div class="section-heading"><div><div class="eyebrow">THE CHALLENGE BOARD</div><h1>FIND YOUR <em>ANGLE.</em></h1><p>${levels.length} grass arenas. Unlimited kicks in every level.</p></div><div class="progress-card">${icon('star')}<strong>${totalStars()}<span> / ${levels.length * 3}</span></strong><span>STARS COLLECTED</span></div></div><div class="level-grid">${levels
+  app.innerHTML = `${header()}<main class="select-page"><div class="section-heading"><div><div class="eyebrow">PARK & TREELINE</div><h1>PICK YOUR <em>PERFECT SHOT.</em></h1><p>${levels.length} grass arenas. Unlimited kicks in every level.</p></div><div class="progress-card">${icon('star')}<strong>${totalStars()}<span> / ${levels.length * 3}</span></strong><span>STARS COLLECTED</span></div></div><div class="level-grid">${levels
     .slice(levelPage * 20, levelPage * 20 + 20)
     .map(
       (l) =>
-        `<button class="level-card" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${l.name}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${progress.best[l.id] ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${l.name}</h2><div><span>PAR ${l.par} ${progress.best[l.id] ? `· BEST ${progress.best[l.id]}` : ''}</span>${stars(progress.best[l.id] ? rating(progress.best[l.id], l) : 0)}</div></div></button>`,
+        `<button class="level-card ${progress.best[l.id] ? 'level-done' : 'level-open'}" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${l.name}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${progress.best[l.id] ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${l.name}</h2><div><span>${progress.best[l.id] ? 'SCORED' : 'OPEN'} · PAR ${l.par} ${progress.best[l.id] ? `· BEST ${progress.best[l.id]}` : ''}</span>${stars(progress.best[l.id] ? rating(progress.best[l.id], l) : 0)}</div></div></button>`,
     )
     .join(
       '',

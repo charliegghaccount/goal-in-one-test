@@ -1,6 +1,8 @@
-# Goal In One ⚽ — enclosed arena edition
+# Goal In One ⚽ — Park & Treeline
 
 A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. Twenty enclosed grass arenas: the original ten PDF sketches restored, plus ten authored follow-on puzzles. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
+
+The current artwork release applies Park & Treeline scenery, wooden obstacles, timber frames, green training goals and glossy menus to all 20 existing levels. See [artwork implementation and QA](docs/PARK_ART.md) and the [20-level contact sheet](docs/park-evidence/all-20-levels.jpg).
 
 **Play:** https://charliegghaccount.github.io/goal-in-one-test/
 

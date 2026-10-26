@@ -31,3 +31,7 @@ A uniform camera fits the complete contour and outward net. The grass palette, s
 Landscape uses almost the full viewport for the arena, safe-area padding, a compact header and 44 CSS-pixel retry/pause/sound/settings targets. Extra score/navigation copy is hidden on short screens; menu and pause remain accessible. Resizing changes Canvas scale only. The settings dialog exposes persistent sound preferences without adding a new game system. Pointer input remains web-native and suitable for later packaging; there is no native-engine migration.
 
 Original-layout records from `arenas:v3` migrate into the new `grass:v5` namespace. The replaced designer-layout scores remain archived under their old key rather than falsely awarding progress on different geometry. Sound preference carries forward from the newest prior version. Storage failure still allows session-only play.
+
+## Current artwork
+
+The Park & Treeline artwork-only release supersedes the previous rendering palette. Geometry and mechanics above remain unchanged. See [PARK_ART.md](PARK_ART.md) for the selected A3/B2/C1 components, asset provenance and current visual QA.

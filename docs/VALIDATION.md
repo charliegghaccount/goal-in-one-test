@@ -1,5 +1,7 @@
 # Grass arenas validation — October 26
 
+For the newer artwork-only release and current screenshots, see [Park & Treeline QA](PARK_ART.md). The physics/geometry findings below remain applicable.
+
 Current source and interpretation are documented in [DESIGN.md](DESIGN.md). Historical screenshot folders describe superseded versions; current captures are in `docs/grass-evidence/`.
 
 ## Runtime checks

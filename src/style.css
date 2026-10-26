@@ -1827,3 +1827,539 @@ button:focus-visible {
     box-shadow: 0 4px 22px #173b3a33;
   }
 }
+/* Park & Treeline — shared illustrated scenery and casual-game material system. */
+:root {
+  font-family: 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+  --ink: #193b55;
+  --muted: #527088;
+  --lime: #66dc20;
+  --line: #bad9ed;
+  color: #193b55;
+  background: #68c6ef;
+}
+body {
+  background:
+    linear-gradient(#6dbbef0c, #559e651c),
+    url('./assets/park.webp') center center/cover fixed no-repeat;
+  min-height: 100dvh;
+}
+.topbar {
+  background: #eaf8ffed;
+  border: 2px solid #ffffffa8;
+  border-top: 0;
+  border-radius: 0 0 24px 24px;
+  box-shadow: 0 5px 0 #21527324;
+  height: 82px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.brand {
+  color: #fff6b2;
+  text-shadow:
+    2px 2px 0 #163c59,
+    -1px -1px 0 #163c59;
+  letter-spacing: -1px;
+}
+.brand small {
+  color: #386c82;
+  text-shadow: none;
+}
+.brand-mark {
+  background: linear-gradient(#56beed, #146bb4);
+  box-shadow:
+    inset 0 2px #fff8,
+    0 3px #0d4269;
+}
+.nav-tag {
+  color: #386c82;
+}
+.icon-button,
+.back-button,
+.stage-help {
+  background: linear-gradient(#75ceff, #248edb);
+  color: #fff;
+  border: 2px solid #185e9b;
+  box-shadow:
+    inset 0 2px #dbf8ffbd,
+    0 3px #16486d33;
+  border-radius: 12px;
+}
+.text-button {
+  color: #1b628c;
+}
+.primary,
+.secondary {
+  border-radius: 20px;
+  border: 3px solid #176e14;
+  color: #fff;
+  font-weight: 950;
+  text-shadow: 0 2px #17531399;
+  box-shadow:
+    inset 0 3px #e4ffb9b0,
+    inset 0 -4px #1b8c2466,
+    0 5px #174b2166;
+  background: linear-gradient(#b4fa52 0%, #6fe31c 44%, #25b91b 48%, #289c16 100%);
+}
+.secondary {
+  background: linear-gradient(#7cdbff, #28b8fa 44%, #0998f1 48%, #1472d2);
+  border-color: #16518d;
+  text-shadow: 0 2px #12436f88;
+  box-shadow:
+    inset 0 3px #e2fcffb0,
+    inset 0 -4px #175ba95c,
+    0 5px #17436c66;
+}
+.primary:hover,
+.secondary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+.park-home {
+  min-height: calc(100dvh - 130px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 12px 20px 35px;
+  overflow: hidden;
+}
+.park-home .hero-copy {
+  width: min(600px, 100%);
+  text-align: center;
+  padding: 0;
+  z-index: 1;
+}
+.park-home .eyebrow {
+  color: #fff;
+  font-size: 13px;
+  letter-spacing: 4px;
+  text-shadow: 0 2px 3px #16405a;
+}
+.park-home h1 {
+  font-size: inherit;
+  line-height: 1;
+  margin: 0;
+}
+.game-logo {
+  width: min(500px, 90vw);
+  height: auto;
+  filter: drop-shadow(0 9px 5px #173e5b30);
+}
+.park-home p {
+  font-size: 17px;
+  font-weight: 900;
+  color: #234f62;
+  text-shadow: 0 1px #fff;
+}
+.park-home .hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  max-width: 330px;
+  margin: 22px auto;
+}
+.park-home .hero-actions button {
+  width: 100%;
+  min-height: 60px;
+  font-size: 21px;
+  letter-spacing: 0.4px;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+.park-home .hero-actions .primary {
+  min-height: 70px;
+  font-size: 29px;
+}
+.park-home .hero-note,
+.home-progress {
+  color: #fff;
+  font-weight: 900;
+  text-shadow: 0 2px #28502c;
+  font-size: 12px;
+}
+.park-football {
+  position: absolute;
+  width: clamp(90px, 17vw, 240px);
+  right: 4%;
+  bottom: 2%;
+  transform: rotate(14deg);
+  filter: drop-shadow(7px 14px 7px #1e483b55);
+}
+.site-footer {
+  color: #fff;
+  text-shadow: 0 1px 2px #164b35;
+  background: #316c3c5c;
+  border: 0;
+}
+.select-page {
+  padding-top: 32px;
+}
+.section-heading {
+  background: #eff9ffed;
+  border: 3px solid #fff;
+  border-radius: 23px;
+  padding: 23px;
+  box-shadow: 0 6px #1f5c7d30;
+}
+.section-heading h1 {
+  font-size: 35px;
+  color: #1c5483;
+  letter-spacing: -1px;
+}
+.section-heading h1 em {
+  color: #399f25;
+}
+.section-heading p {
+  color: #4f6c79;
+}
+.level-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+.level-card {
+  border: 3px solid #effaff;
+  border-radius: 20px;
+  background: linear-gradient(#e8f9ff, #b1d5eb);
+  box-shadow:
+    inset 0 3px #fff,
+    0 5px #1e639e70;
+  color: #18496b;
+  overflow: hidden;
+}
+.level-card.level-done {
+  background: linear-gradient(#c7fb75, #7bda33);
+  border-color: #f0ffd2;
+}
+.level-art {
+  height: 105px;
+  background: #ffffff15;
+  border-bottom: 1px solid #6c9cbd44;
+}
+.level-number {
+  font-size: 48px;
+  left: 16px;
+  top: 14px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: -2px;
+  font-weight: 1000;
+  text-shadow:
+    2px 3px #17415e,
+    -2px -1px #17415e;
+  z-index: 2;
+}
+.mini-course {
+  opacity: 0.45;
+}
+.level-card-copy {
+  padding: 12px 14px;
+}
+.level-card-copy h2 {
+  font-size: 16px;
+  color: #254d61;
+  margin-bottom: 10px;
+}
+.level-card-copy > div {
+  gap: 4px;
+}
+.level-card-copy > div > span:first-child {
+  font-size: 8px;
+  color: #355d68;
+  letter-spacing: 0.2px;
+}
+.stars .icon {
+  color: #728c9c;
+  fill: #b0c8d5;
+  filter: drop-shadow(0 1px #fff8);
+}
+.stars .earned {
+  color: #b97805;
+  fill: #ffdc3e;
+  filter: drop-shadow(0 2px 1px #6f722e50);
+}
+.selection-note {
+  background: #f4fbffeb;
+  border-radius: 14px;
+  padding: 14px;
+  color: #254e67;
+}
+.progress-card {
+  background: linear-gradient(#fff9d7, #ffe88a);
+  border: 2px solid white;
+  border-radius: 18px;
+  padding: 16px;
+  color: #8a6116;
+}
+.game-heading {
+  background: #f0faffed;
+  border-radius: 18px;
+  padding: 12px 18px;
+  box-shadow: 0 4px #1c5a7830;
+}
+.game-page {
+  padding-top: 22px;
+}
+.course-title h1 {
+  color: #24577c;
+  font-weight: 1000;
+}
+.round-stats strong {
+  color: #225c87;
+}
+.game-stage {
+  border: 3px solid #eefaff;
+  border-radius: 20px;
+  box-shadow:
+    0 8px 0 #1b4d6e35,
+    0 14px 30px #0d3d6640;
+  overflow: hidden;
+}
+.course-pill,
+.status-pill,
+.stage-bottomline > span {
+  background: #f1fbfff2;
+  color: #25526a;
+  border: 1px solid #bdd9e9;
+  box-shadow: 0 2px #244d6130;
+  font-weight: 900;
+}
+.game-underbar,
+.game-footer {
+  background: #edf9ffed;
+  border-radius: 14px;
+  padding: 13px 15px;
+  color: #285569;
+}
+.game-underbar p,
+.save-note {
+  color: #3b6572;
+}
+.game-footer nav button {
+  background: #c8e8f9;
+  color: #215b7d;
+  border: 1px solid #a5cde5;
+}
+.game-footer nav button[aria-current] {
+  background: linear-gradient(#75d6fa, #177bd0);
+  color: white;
+}
+.modal-backdrop {
+  background: #0c3e716b;
+  backdrop-filter: blur(5px);
+}
+.modal {
+  background: linear-gradient(#fbfdff, #d8effa);
+  border: 4px solid #fff;
+  border-radius: 30px;
+  box-shadow:
+    0 8px #1a526d55,
+    0 20px 80px #12446e66;
+}
+.modal h2 {
+  color: #215e91;
+  font-weight: 1000;
+  text-shadow: 0 2px #fff;
+}
+.modal-emblem {
+  background: linear-gradient(#8cddfc, #339be5);
+  color: #fff;
+  border: 3px solid #efffff;
+  box-shadow: 0 4px #205a8550;
+}
+.completion-stars .stars .earned {
+  animation: park-star 0.4s ease-out both;
+}
+.completion-stars .stars .earned:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.completion-stars .stars .earned:nth-child(3) {
+  animation-delay: 0.2s;
+}
+@keyframes park-star {
+  from {
+    transform: scale(0.4) rotate(-20deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+@media (max-width: 900px) {
+  .level-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .level-card-copy h2 {
+    font-size: 14px;
+  }
+  .section-heading h1 {
+    font-size: 26px;
+  }
+  .park-football {
+    right: -30px;
+  }
+}
+@media (max-width: 600px) {
+  .level-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .section-heading {
+    padding: 15px;
+  }
+  .section-heading h1 {
+    font-size: 24px;
+  }
+  .game-heading {
+    padding: 8px;
+  }
+  .brand {
+    font-size: 20px;
+  }
+  .park-home .hero-actions button {
+    min-height: 52px;
+  }
+  .park-home .hero-actions .primary {
+    min-height: 62px;
+  }
+  .park-home p {
+    font-size: 14px;
+  }
+  .park-football {
+    width: 100px;
+    bottom: 1%;
+  }
+  .section-heading .progress-card {
+    padding: 8px;
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .topbar {
+    border-radius: 0 0 14px 14px;
+  }
+  .park-home {
+    min-height: calc(100dvh - 70px);
+    padding: 8px;
+  }
+  .park-home .hero-copy {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    width: min(700px, 94vw);
+    column-gap: 20px;
+  }
+  .park-home h1 {
+    grid-column: 1;
+    grid-row: 1 / 4;
+  }
+  .game-logo {
+    width: 100%;
+  }
+  .park-home .eyebrow,
+  .park-home p,
+  .park-home .hero-note {
+    display: none;
+  }
+  .park-home .hero-actions {
+    grid-column: 2;
+    width: 100%;
+    margin: 0;
+    gap: 8px;
+  }
+  .park-home .hero-actions button {
+    min-height: 48px;
+    font-size: 15px;
+    padding: 5px;
+  }
+  .park-home .hero-actions .primary {
+    min-height: 52px;
+    font-size: 23px;
+  }
+  .park-football {
+    width: 80px;
+    bottom: 1%;
+    right: 0;
+  }
+  .home-progress {
+    grid-column: 2;
+  }
+  .game-page {
+    padding-top: 0;
+  }
+  .game-heading {
+    padding: 0 5px;
+    border-radius: 10px;
+  }
+  .course-title h1 {
+    font-size: 17px;
+  }
+  .game-stage {
+    border-width: 2px;
+    border-radius: 12px;
+  }
+  .game-footer,
+  .game-underbar {
+    display: none;
+  }
+  .round-stats > .icon-button,
+  .back-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .game-stage canvas {
+    height: calc(100dvh - 102px - env(safe-area-inset-bottom));
+  }
+  .section-heading {
+    padding: 14px;
+    margin-top: 12px;
+  }
+  .level-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .level-number {
+    font-size: 34px;
+  }
+  .level-art {
+    height: 72px;
+  }
+  .level-card-copy {
+    padding: 9px;
+  }
+  .level-card-copy h2 {
+    font-size: 12px;
+  }
+  .modal {
+    max-height: calc(100dvh - 20px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .completion-stars .stars .earned {
+    animation: none;
+  }
+}
+/* Override older component-specific flat fills as well as the shared button base. */
+.park-home .hero-actions .primary,
+.completion-actions .primary {
+  background: linear-gradient(#b4fa52 0%, #6fe31c 44%, #25b91b 48%, #289c16 100%);
+  color: #fff;
+  text-shadow: 0 2px #17531399;
+  box-shadow:
+    inset 0 3px #e4ffb9b0,
+    inset 0 -4px #1b8c2466,
+    0 5px #174b2166;
+}
+.park-home .hero-actions .primary:hover,
+.completion-actions .primary:hover {
+  background: linear-gradient(#c8ff71, #75ec27 44%, #32c425 48%, #32ab1e);
+}
+.round-stats .icon-button {
+  background: linear-gradient(#75ceff, #248edb);
+  color: white;
+  border: 2px solid #185e9b;
+}
+.park-home .hero-note {
+  justify-content: center;
+}
