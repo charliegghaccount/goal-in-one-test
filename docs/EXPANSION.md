@@ -1,5 +1,7 @@
 # Physics lab and experimental Levels 21–40
 
+Historical report for the 40-level release. For the current 60-level build, see [VNext](VNEXT.md).
+
 This release implements the user's physics/mechanics expansion brief. The Park & Treeline art remains. Existing Levels 1–20 are not redesigned: a serialized pre-change baseline is retained at `expansion-evidence/baseline-levels-1-20.json`, and a regression test compares every original contour, collider definition, start, pad, moving path, goal and scoring threshold. The existing `goal-in-one:grass:v5` save namespace is retained, so existing records and sound preferences survive. Browsing and save validation use the forty-level registry.
 
 ## Physics fixes

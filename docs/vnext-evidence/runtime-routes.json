@@ -1,0 +1,473 @@
+[
+  {
+    "id": 41,
+    "route": [
+      {
+        "angle": 66,
+        "power": 94
+      }
+    ],
+    "shots": 1,
+    "time": 3.2000000000000184,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "wall-3",
+      "ground-block",
+      "wall-5",
+      "angled-backboard",
+      "goal-sensor",
+      "goal-back"
+    ],
+    "gates": [],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 42,
+    "route": [
+      {
+        "angle": 40,
+        "power": 90
+      }
+    ],
+    "shots": 1,
+    "time": 2.0583333333333274,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "joint:wall-4",
+      "joint:goal-roof",
+      "goal-roof",
+      "goal-sensor",
+      "goal-back"
+    ],
+    "gates": [],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 43,
+    "route": [
+      {
+        "angle": 0,
+        "power": 70
+      }
+    ],
+    "shots": 1,
+    "time": 2.049999999999994,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "switch", "goal-sensor", "goal-back"],
+    "gates": ["g43"],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 44,
+    "route": [
+      {
+        "angle": 0,
+        "power": 90
+      }
+    ],
+    "shots": 1,
+    "time": 4.7166666666666925,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "spring", "wall-3", "safe-landing", "solid-hurdle", "goal-sensor"],
+    "gates": [],
+    "springs": 1,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 45,
+    "route": [
+      {
+        "angle": 60,
+        "power": 100
+      }
+    ],
+    "shots": 1,
+    "time": 3.4249999999999887,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 90,
+    "contacts": ["floor", "wall-6", "high-bridge", "wall-7", "goal-sensor"],
+    "gates": [],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 46,
+    "route": [
+      {
+        "angle": 25,
+        "power": 70
+      }
+    ],
+    "shots": 1,
+    "time": 6.800000000000169,
+    "windSteps": 104,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "ground-pier",
+      "wall-3",
+      "wall-1",
+      "wall-5",
+      "joint:wall-5",
+      "joint:goal-roof",
+      "goal-sensor"
+    ],
+    "gates": [],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 47,
+    "route": [
+      {
+        "angle": 5,
+        "power": 90
+      }
+    ],
+    "shots": 1,
+    "time": 5.233333333333393,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "loft-ramp", "guide-rail", "breakable", "goal-sensor"],
+    "gates": [],
+    "springs": 0,
+    "broken": 1,
+    "resets": 0
+  },
+  {
+    "id": 48,
+    "route": [
+      {
+        "angle": 50,
+        "power": 90
+      }
+    ],
+    "shots": 1,
+    "time": 3.0166666666666657,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "rotor",
+      "wall-6",
+      "goal-sensor",
+      "joint:wall-6",
+      "joint:goal-roof",
+      "goal-roof"
+    ],
+    "gates": [],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 49,
+    "route": [
+      {
+        "angle": 0,
+        "power": 90
+      }
+    ],
+    "shots": 1,
+    "time": 5.058333333333381,
+    "windSteps": 0,
+    "iceSteps": 70,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "ice", "finish-rise", "wall-6", "goal-sensor"],
+    "gates": [],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 50,
+    "route": [
+      {
+        "angle": 0,
+        "power": 60
+      }
+    ],
+    "shots": 1,
+    "time": 2.866666666666658,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "switch", "opening-approach", "goal-sensor"],
+    "gates": ["g50"],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 51,
+    "route": [
+      {
+        "angle": 60,
+        "power": 80
+      }
+    ],
+    "shots": 1,
+    "time": 3.0749999999999904,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "switch", "partition-upper-650", "goal-sensor"],
+    "gates": ["g51"],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 52,
+    "route": [
+      {
+        "angle": 70,
+        "power": 100
+      },
+      {
+        "angle": -20,
+        "power": 60
+      }
+    ],
+    "shots": 2,
+    "time": 13.35833333333323,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "wall-3",
+      "upper-baffle",
+      "lower-baffle",
+      "return-wedge",
+      "wall-7",
+      "goal-sensor"
+    ],
+    "gates": [],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 53,
+    "route": [
+      {
+        "angle": 0,
+        "power": 80
+      }
+    ],
+    "shots": 1,
+    "time": 5.7083333333334405,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "spring", "wall-4", "second-ramp", "goal-sensor"],
+    "gates": [],
+    "springs": 1,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 54,
+    "route": [
+      {
+        "angle": 50,
+        "power": 90
+      },
+      {
+        "angle": 0,
+        "power": 60
+      }
+    ],
+    "shots": 2,
+    "time": 12.991666666666639,
+    "windSteps": 30,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "wall-2",
+      "partition-lower-1060",
+      "wall-3",
+      "right-catch-shelf",
+      "goal-sensor",
+      "goal-back"
+    ],
+    "gates": [],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 55,
+    "route": [
+      {
+        "angle": 0,
+        "power": 90
+      }
+    ],
+    "shots": 1,
+    "time": 3.8666666666667213,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "switch", "goal-sensor", "goal-back"],
+    "gates": ["g55a", "g55b"],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 56,
+    "route": [
+      {
+        "angle": 0,
+        "power": 60
+      }
+    ],
+    "shots": 1,
+    "time": 5.933333333333446,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "spring",
+      "elevated-bridge-a",
+      "elevated-bridge-b",
+      "wall-6",
+      "joint:wall-6",
+      "joint:goal-roof",
+      "goal-sensor"
+    ],
+    "gates": [],
+    "springs": 1,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 57,
+    "route": [
+      {
+        "angle": 0,
+        "power": 70
+      }
+    ],
+    "shots": 1,
+    "time": 6.158333333333346,
+    "windSteps": 164,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "middle-shelf", "switch", "gate", "goal-sensor", "goal-back"],
+    "gates": ["g57"],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 58,
+    "route": [
+      {
+        "angle": 0,
+        "power": 60
+      },
+      {
+        "angle": 15,
+        "power": 80
+      },
+      {
+        "angle": 0,
+        "power": 80
+      }
+    ],
+    "shots": 3,
+    "time": 25.46666666666589,
+    "windSteps": 0,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "spring",
+      "midair-bridge",
+      "landing-deck",
+      "partition-lower-1340",
+      "wall-3",
+      "goal-sensor",
+      "goal-back"
+    ],
+    "gates": [],
+    "springs": 1,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 59,
+    "route": [
+      {
+        "angle": 0,
+        "power": 90
+      }
+    ],
+    "shots": 1,
+    "time": 3.516666666666705,
+    "windSteps": 0,
+    "iceSteps": 61,
+    "bridgeSteps": 0,
+    "contacts": ["floor", "switch", "ice", "goal-sensor", "goal-back"],
+    "gates": ["g59a", "g59b"],
+    "springs": 0,
+    "broken": 0,
+    "resets": 0
+  },
+  {
+    "id": 60,
+    "route": [
+      {
+        "angle": 15,
+        "power": 90
+      }
+    ],
+    "shots": 1,
+    "time": 7.183333333333315,
+    "windSteps": 86,
+    "iceSteps": 0,
+    "bridgeSteps": 0,
+    "contacts": [
+      "floor",
+      "early-hurdle",
+      "spring",
+      "wind-ledge",
+      "breakable",
+      "switch",
+      "goal-sensor",
+      "goal-back"
+    ],
+    "gates": ["g60"],
+    "springs": 1,
+    "broken": 1,
+    "resets": 0
+  }
+]

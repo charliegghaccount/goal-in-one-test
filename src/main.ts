@@ -21,7 +21,9 @@ let pull: Point | null = null,
   dragging = false,
   activePointer: number | null = null,
   aimOrigin: Point | null = null,
+  aimScale = 1,
   resultShown = false;
+let roundSerial = 0;
 let last = performance.now(),
   accumulator = 0,
   currentId = 1,
@@ -73,6 +75,7 @@ function cancelDrag() {
 }
 function cleanup() {
   cancelDrag();
+  audio.stopVoice();
   renderer = null;
   sim?.destroy();
   document.querySelector('.modal-backdrop')?.remove();
@@ -86,7 +89,7 @@ function home() {
   screen = 'home';
   const completed = Object.keys(progress.best).length,
     next = levels.find((l) => !progress.best[l.id])?.id ?? 1;
-  app.innerHTML = `${header()}<main class="home park-home"><section class="hero-copy"><div class="eyebrow">PARK & TREELINE</div><h1><img class="game-logo" src="${logoUrl}" alt="Goal In One"/></h1><p>One ball. ${levels.length} goals. Your perfect shot.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${icon('play')} ${completed ? 'CONTINUE' : 'PLAY'}</button><button class="secondary" data-action="levels">${icon('grid')} LEVEL SELECT</button><button class="secondary" data-action="settings">${icon('aim')} SETTINGS</button></div><div class="hero-note">DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS · ${totalStars()} STARS</div>` : ''}</section><img class="park-football" src="${ballArtUrl}" alt="" aria-hidden="true"/></main><footer class="site-footer"><span>20 ARENAS · UNLIMITED KICKS</span><span>ONE MORE PERFECT SHOT.</span></footer>`;
+  app.innerHTML = `${header()}<main class="home park-home"><section class="hero-copy"><div class="eyebrow">PARK & TREELINE</div><h1><img class="game-logo" src="${logoUrl}" alt="Goal In One"/></h1><p>One ball. ${levels.length} goals. Your perfect shot.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${icon('play')} ${completed ? 'CONTINUE' : 'PLAY'}</button><button class="secondary" data-action="levels">${icon('grid')} LEVEL SELECT</button><button class="secondary" data-action="settings">${icon('aim')} SETTINGS</button></div><div class="hero-note">DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS · ${totalStars()} STARS</div>` : ''}</section><img class="park-football" src="${ballArtUrl}" alt="" aria-hidden="true"/></main><footer class="site-footer"><span>${levels.length} ARENAS · UNLIMITED KICKS</span><span>ONE MORE PERFECT SHOT.</span></footer>`;
 
   bind();
 }
@@ -124,6 +127,7 @@ function play(id: number) {
   screen = 'game';
   currentId = Math.max(1, Math.min(levels.length, id));
   resultShown = false;
+  roundSerial++;
   precise = false;
   sim = new FootballSimulation(levels[currentId - 1], activePhysics);
   const l = sim.level;
@@ -137,7 +141,28 @@ function play(id: number) {
       '',
     )}</nav><span class="save-note">${icon(storageOK ? 'check' : 'help')} ${storageOK ? 'SAVED ON THIS BROWSER' : 'SESSION ONLY'}</span></div></main>`;
   renderer = new Renderer(document.querySelector('#scene')!);
-  const bounds = viewBounds(l);
+  if (l.camera) {
+    document.querySelector('.game-page')!.classList.add('vnext-game');
+    const stats = document.querySelector('.round-stats')!;
+    if (l.camera.mode !== 'fixed')
+      stats.insertAdjacentHTML(
+        'afterbegin',
+        button('overview', 'Arena overview (pauses play)', 'zoom'),
+      );
+    stats.insertAdjacentHTML(
+      'beforeend',
+      button(
+        'sound',
+        progress.sound ? 'Mute sound' : 'Enable sound',
+        progress.sound ? 'sound' : 'mute',
+        'icon-button sound-button arena-sound',
+      ),
+    );
+  }
+  const bounds =
+    l.camera && l.camera.mode !== 'fixed'
+      ? { w: l.camera.viewWidth, h: l.camera.viewHeight }
+      : viewBounds(l);
   renderer.canvas.style.aspectRatio = String(bounds.w / bounds.h);
   bind();
   bindCanvas();
@@ -170,26 +195,32 @@ function syncAim() {
   }
 }
 function kick(p: Point) {
-  return sim.shoot(p);
+  return renderer?.camera.overview ? false : sim.shoot(p);
 }
 function bindCanvas() {
   const canvas = renderer!.canvas;
   canvas.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || !sim.canKick || document.querySelector('.modal-backdrop')) return;
-    const p = renderer!.toWorld(e.clientX, e.clientY);
+    if (
+      e.button !== 0 ||
+      !sim.canKick ||
+      renderer!.camera.overview ||
+      document.querySelector('.modal-backdrop')
+    )
+      return;
     e.preventDefault();
     audio.unlock();
     canvas.focus({ preventScroll: true });
     dragging = true;
     activePointer = e.pointerId;
-    aimOrigin = p;
+    aimOrigin = { x: e.clientX, y: e.clientY };
+    aimScale = renderer!.scale;
     pull = { x: 0, y: 0 };
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', (e) => {
     if (!dragging || e.pointerId !== activePointer || !aimOrigin) return;
-    const p = renderer!.toWorld(e.clientX, e.clientY);
-    pull = { x: p.x - aimOrigin.x, y: p.y - aimOrigin.y };
+    // Screen-space displacement keeps a stationary finger's power steady while the world scrolls.
+    pull = { x: (e.clientX - aimOrigin.x) / aimScale, y: (e.clientY - aimOrigin.y) / aimScale };
   });
   canvas.addEventListener('pointerup', (e) => {
     if (!dragging || e.pointerId !== activePointer) return;
@@ -250,6 +281,22 @@ function action(a: string, el?: HTMLButtonElement) {
     );
   }
   if (a === 'pause') pause();
+  if (a === 'overview' && renderer) {
+    cancelDrag();
+    renderer.camera.setOverview(!renderer.camera.overview);
+    if (!renderer.camera.overview) {
+      renderer.resize(sim.level);
+      renderer.camera.resetTo(sim.ball.position);
+    }
+    accumulator = 0;
+    if (el) {
+      el.setAttribute(
+        'aria-label',
+        renderer.camera.overview ? 'Return to play' : 'Arena overview (pauses play)',
+      );
+      el.setAttribute('aria-pressed', String(renderer.camera.overview));
+    }
+  }
   if (a === 'precise') {
     precise = !precise;
     document.querySelector<HTMLElement>('#precise-controls')!.hidden = !precise;
@@ -302,7 +349,7 @@ function modal(content: string, label: string, closable = false) {
 function help() {
   if (document.querySelector('.modal-backdrop')) return;
   modal(
-    `<button class="modal-close icon-button" data-close aria-label="Close instructions">${icon('close')}</button><div class="modal-emblem">${icon('ball')}</div><div class="eyebrow">THE BEAUTIFUL GAME. A DIFFERENT ANGLE.</div><h2>FIND THE NET.</h2><p>Drag anywhere in the arena to set direction and power. Release to add a kick, at rest or in mid-air.</p><div class="help-rows"><p><strong>Aim & cancel</strong><span>Pull farther for more power. Return to the ball’s dead zone or press Escape to cancel.</span></p><p><strong>Kick any time</strong><span>Drag anywhere in the arena, even while the ball moves. Each kick adds to its existing momentum.</span></p><p><strong>Score properly</strong><span>The whole ball must cross the open left side of the net. Hitting its back or crossbar alone is not a goal.</span></p><p><strong>Unlimited kicks</strong><span>Par is a score target. You can always keep playing. The red strip resets position and keeps every shot already taken.</span></p><p><strong>Keyboard</strong><span>↑ ↓ angle · ← → power · Space kick<br>R retry · P pause · L levels<br>The entire arena stays in view on every screen.</span></p></div><button class="primary" data-close>LET’S KICK IT ${icon('arrow')}</button>`,
+    `<button class="modal-close icon-button" data-close aria-label="Close instructions">${icon('close')}</button><div class="modal-emblem">${icon('ball')}</div><div class="eyebrow">THE BEAUTIFUL GAME. A DIFFERENT ANGLE.</div><h2>FIND THE NET.</h2><p>Drag anywhere in the arena to set direction and power. Release to add a kick, at rest or in mid-air.</p><div class="help-rows"><p><strong>Aim & cancel</strong><span>Pull farther for more power. Return to the ball’s dead zone or press Escape to cancel.</span></p><p><strong>Kick any time</strong><span>Drag anywhere in the arena, even while the ball moves. Each kick adds to its existing momentum.</span></p><p><strong>Score properly</strong><span>The whole ball must cross the open left side of the net. Hitting its back or crossbar alone is not a goal.</span></p><p><strong>Unlimited kicks</strong><span>Par is a score target. You can always keep playing. The red strip resets position and keeps every shot already taken.</span></p><p><strong>Keyboard</strong><span>↑ ↓ angle · ← → power · Space kick<br>R retry · P pause · L levels<br>Compact arenas stay in view. Larger arenas follow the ball; use the map button to pause and see the whole course.</span></p></div><button class="primary" data-close>LET’S KICK IT ${icon('arrow')}</button>`,
     'How to play',
     true,
   );
@@ -324,13 +371,14 @@ function pause() {
 }
 function result() {
   resultShown = true;
+  app.dataset.celebration = sim.shots === 1 ? 'one-shot' : 'standard';
   const l = sim.level,
     n = rating(sim.shots, l),
     prior = progress.best[l.id];
   recordBest(progress, l.id, sim.shots);
   persist();
   modal(
-    `<div class="completion-kicker">${icon('net')} LEVEL COMPLETE · ${String(l.id).padStart(2, '0')}</div><div class="completion-stars">${stars(n)}</div><h2>${l.id === levels.length ? 'FINAL WHISTLE!' : 'GOOOAL!'}</h2><p>Through the opening. Into the net. Keep finding your angle.</p><div class="completion-stats"><div><span>SHOTS</span><strong>${sim.shots}</strong></div><div><span>PAR</span><strong>${l.par}</strong></div><div><span>BEST</span><strong>${progress.best[l.id]}</strong></div></div><div class="personal-best">${!prior || sim.shots < prior ? 'NEW PERSONAL BEST' : 'A GOAL WORTH REPLAYING'}</div><div class="completion-actions"><button class="primary" data-action="${l.id === levels.length ? 'levels' : 'next'}">${l.id === levels.length ? 'ALL LEVELS' : 'NEXT LEVEL'} ${icon('arrow')}</button><button class="secondary" data-action="restart">PLAY AGAIN</button><button class="text-button" data-action="levels">BACK TO LEVELS</button></div>${!storageOK ? '<small>Browser storage is unavailable. Progress lasts for this visit.</small>' : ''}`,
+    `<div class="completion-kicker">${icon('net')} LEVEL COMPLETE · ${String(l.id).padStart(2, '0')}</div><div class="completion-stars">${stars(n)}</div><h2>${sim.shots === 1 ? 'GOAL IN ONE!' : l.id === levels.length ? 'FINAL WHISTLE!' : 'GOOOAL!'}</h2><p>Through the opening. Into the net. Keep finding your angle.</p><div class="completion-stats"><div><span>SHOTS</span><strong>${sim.shots}</strong></div><div><span>PAR</span><strong>${l.par}</strong></div><div><span>BEST</span><strong>${progress.best[l.id]}</strong></div></div><div class="personal-best">${!prior || sim.shots < prior ? 'NEW PERSONAL BEST' : 'A GOAL WORTH REPLAYING'}</div><div class="completion-actions"><button class="primary" data-action="${l.id === levels.length ? 'levels' : 'next'}">${l.id === levels.length ? 'ALL LEVELS' : 'NEXT LEVEL'} ${icon('arrow')}</button><button class="secondary" data-action="restart">PLAY AGAIN</button><button class="text-button" data-action="levels">BACK TO LEVELS</button></div>${!storageOK ? '<small>Browser storage is unavailable. Progress lasts for this visit.</small>' : ''}`,
     'Goal scored',
   );
 }
@@ -378,7 +426,7 @@ function frame(now: number) {
   last = now;
   if (renderer && sim) {
     const modalOpen = !!document.querySelector('.modal-backdrop');
-    if (screen === 'game' && !document.hidden && !modalOpen) {
+    if (screen === 'game' && !document.hidden && !modalOpen && !renderer.camera.overview) {
       accumulator += dt * 1000;
       while (accumulator >= STEP) {
         sim.step();
@@ -386,7 +434,8 @@ function frame(now: number) {
       }
       for (const e of sim.events.splice(0)) {
         if (!reducedMotion) renderer.effect(e);
-        audio.play(e.type);
+        if (e.type === 'win') audio.celebrate(sim.shots, roundSerial);
+        else audio.play(e.type);
       }
       document.querySelector('#shots')!.textContent = String(sim.shots);
       const status = document.querySelector('#status')!;
@@ -409,7 +458,7 @@ function frame(now: number) {
     }
     renderer.render(
       sim,
-      modalOpen ? 0 : dt,
+      modalOpen || renderer.camera.overview ? 0 : dt,
       pull ?? (precise && sim.canKick ? getAim() : null),
       screen === 'home',
       reducedMotion,

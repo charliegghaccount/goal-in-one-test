@@ -9,6 +9,8 @@ import {
   type GameEvent,
 } from './simulation';
 import { arenaPolygon, segments, WALL_WIDTH, type Point, type Level } from './levels';
+import { Camera } from './camera';
+export { viewBounds } from './camera';
 type Particle = {
   x: number;
   y: number;
@@ -18,10 +20,6 @@ type Particle = {
   size: number;
   color: string;
 };
-export function viewBounds(l: Level) {
-  const y = Math.min(...l.outline.map((p) => p.y)) - 65;
-  return { x: 25, y, w: 1250, h: Math.max(...l.outline.map((p) => p.y)) - y + 55 };
-}
 export class Renderer {
   ctx: CanvasRenderingContext2D;
   scale = 1;
@@ -34,6 +32,8 @@ export class Renderer {
   time = 0;
   particles: Particle[] = [];
   trail: Point[] = [];
+  camera = new Camera();
+  private resets = 0;
   constructor(public canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d')!;
   }
@@ -49,18 +49,20 @@ export class Renderer {
     }
     this.width = r.width;
     this.height = r.height;
-    const b = viewBounds(l);
-    this.scale = Math.min(r.width / b.w, r.height / b.h);
-    this.offsetX = (r.width - b.w * this.scale) / 2 - b.x * this.scale;
-    this.offsetY = (r.height - b.h * this.scale) / 2 - b.y * this.scale;
+    this.camera.resize(l, r.width, r.height);
+    this.syncCamera();
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   toWorld(clientX: number, clientY: number): Point {
     const r = this.canvas.getBoundingClientRect();
-    return {
-      x: (clientX - r.left - this.offsetX) / this.scale,
-      y: (clientY - r.top - this.offsetY) / this.scale,
-    };
+    return this.camera.screenToWorld({ x: clientX - r.left, y: clientY - r.top });
+  }
+  private syncCamera() {
+    this.scale = this.camera.scale;
+    this.offsetX = this.camera.offsetX;
+    this.offsetY = this.camera.offsetY;
+    this.cameraX = this.camera.view.x;
+    this.viewWidth = this.camera.view.w;
   }
   effect(e: GameEvent) {
     if (e.type === 'reset') this.trail = [];
@@ -104,12 +106,22 @@ export class Renderer {
     _locked = false,
   ) {
     this.resize(sim.level);
+    if (sim.resetCount !== this.resets) {
+      this.camera.resetTo(sim.ball.position);
+      this.resets = sim.resetCount;
+    }
+    this.camera.update(sim.ball.position, sim.ball.velocity, dt);
+    this.syncCamera();
     this.time += reduced ? 0 : dt;
     const c = this.ctx,
       l = sim.level,
       g = l.goal;
     scenery(c, this.width, this.height);
     c.save();
+    const corner = this.camera.worldToScreen(this.camera.view);
+    c.beginPath();
+    c.rect(corner.x, corner.y, this.camera.view.w * this.scale, this.camera.view.h * this.scale);
+    c.clip();
     c.translate(this.offsetX, this.offsetY);
     c.scale(this.scale, this.scale);
     this.path(arenaPolygon(l));
@@ -231,7 +243,47 @@ export class Renderer {
     }
     c.globalAlpha = 1;
     c.restore();
-    this.canvas.dataset.cameraX = '0';
+    const indicator = this.camera.goalIndicator({ x: g.x, y: g.y - g.h / 2 });
+    if (l.camera && !menu && indicator) {
+      c.save();
+      c.translate(indicator.x, indicator.y);
+      c.fillStyle = '#174c39ee';
+      c.beginPath();
+      c.arc(0, 0, 19, 0, Math.PI * 2);
+      c.fill();
+      c.save();
+      c.rotate(indicator.angle);
+      c.strokeStyle = '#dcffb0';
+      c.lineWidth = 3;
+      c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(-8, 0);
+      c.lineTo(8, 0);
+      c.moveTo(2, -6);
+      c.lineTo(8, 0);
+      c.lineTo(2, 6);
+      c.stroke();
+      c.restore();
+      c.fillStyle = '#174c39';
+      c.font = 'bold 10px sans-serif';
+      c.textAlign = 'center';
+      c.fillText('GOAL', 0, -25);
+      c.restore();
+    }
+    this.canvas.dataset.goalOffscreen = String(!!indicator);
+    this.canvas.dataset.cameraX = String(l.camera ? this.camera.view.x : 0);
+    this.canvas.dataset.cameraY = String(l.camera ? this.camera.view.y : 0);
+    this.canvas.dataset.viewWidth = String(this.camera.view.w);
+    this.canvas.dataset.viewHeight = String(this.camera.view.h);
+    this.canvas.dataset.overview = String(this.camera.overview);
+    this.canvas.dataset.ballDiameter = String(BALL_RADIUS * 2 * this.scale);
+    this.canvas.dataset.switches = sim.mechanics.gates
+      .filter((g) => g.target)
+      .map((g) => g.def.id)
+      .join(',');
+    this.canvas.dataset.springs = String(sim.mechanics.springs.filter((s) => s.last >= 0).length);
+    this.canvas.dataset.broken = String(sim.mechanics.breakables.filter((b) => b.broken).length);
+    this.canvas.dataset.aiming = String(!!pull);
     this.canvas.dataset.scale = String(this.scale);
     this.canvas.dataset.ballScreenX = String(this.offsetX + b.position.x * this.scale);
     this.canvas.dataset.ballScreenY = String(this.offsetY + b.position.y * this.scale);

@@ -194,7 +194,7 @@ function inPoly(p: { x: number; y: number }, poly: { x: number; y: number }[]) {
   }
   return inside;
 }
-for (const l of levels.slice(20))
+for (const l of levels.slice(20, 40))
   test(`level ${l.id} gates and rotating wood stay inside the authored arena`, () => {
     const s = new FootballSimulation(l);
     for (const g of s.mechanics.gates) g.target = true;

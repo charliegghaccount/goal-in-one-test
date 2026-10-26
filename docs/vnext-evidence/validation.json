@@ -1,0 +1,46 @@
+{
+  "runtime": {
+    "baselinePassed": 238,
+    "passed": 448,
+    "failed": 0,
+    "command": "npm test"
+  },
+  "browser": {
+    "passed": 15,
+    "failed": 0,
+    "command": "npx playwright test",
+    "realDragGoals": [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+      27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+      50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60
+    ],
+    "newLevelResultFile": "browser-results.json",
+    "touch": "real-time Chromium touch emulation",
+    "landscapeViewports": [
+      [932, 430],
+      [844, 390],
+      [740, 360]
+    ],
+    "humanPlaytesting": false
+  },
+  "production": {
+    "command": "npm run build:pages",
+    "basePath": "/goal-in-one-test/",
+    "HTTPStatus": 200,
+    "cards": 60,
+    "goal60RealDrag": true,
+    "celebrationInViewport": true,
+    "hazard56RealDragReset": true,
+    "hazardShotsRetained": 1,
+    "resetCameraX": 16,
+    "developerSliders": 10,
+    "jumpOptions": 60,
+    "pageErrors": [],
+    "failedRequests": []
+  },
+  "voice": {
+    "oneShotHookTested": true,
+    "recordedAssetPresent": false,
+    "browserTTSUsed": false
+  }
+}

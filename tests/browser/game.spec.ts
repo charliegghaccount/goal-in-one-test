@@ -3,7 +3,7 @@ import { solutions } from '../solutions';
 import { levels, arenaPolygon } from '../../src/levels';
 import { viewBounds } from '../../src/render';
 import { mkdirSync } from 'node:fs';
-const evidence = 'docs/expansion-evidence';
+const evidence = process.env.GAME_EVIDENCE ?? 'test-results/regression-evidence';
 mkdirSync(evidence, { recursive: true });
 async function frozen(page: Page) {
   const t = new Date('2026-10-21T12:00:00Z');
@@ -13,10 +13,18 @@ async function frozen(page: Page) {
 }
 async function select(page: Page, id: number) {
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
-  if (id > 20 && (await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).count()))
+  const targetPage = Math.floor((id - 1) / 20);
+  let currentPage = Math.floor(
+    (Number(await page.locator('.level-card').first().getAttribute('data-id')) - 1) / 20,
+  );
+  while (currentPage < targetPage) {
     await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
-  if (id <= 20 && (await page.getByRole('button', { name: 'PREVIOUS', exact: true }).count()))
+    currentPage++;
+  }
+  while (currentPage > targetPage) {
     await page.getByRole('button', { name: 'PREVIOUS', exact: true }).click();
+    currentPage--;
+  }
   await page.locator(`.level-card[data-id="${id}"]`).click();
   await page.clock.runFor(100);
 }
@@ -184,7 +192,7 @@ test('expansion review captures all forty artwork layouts', async ({ page }) => 
   await page.screenshot({ quality: 88, path: `${evidence}/menu.jpg`, fullPage: true });
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
   await page.screenshot({ quality: 88, path: `${evidence}/select.jpg`, fullPage: true });
-  for (const l of levels) {
+  for (const l of levels.slice(0, 40)) {
     await select(page, l.id);
     await page.screenshot({ quality: 88, path: `${evidence}/level-${l.id}.jpg`, fullPage: true });
     await page.locator('#scene').screenshot({ quality: 88, path: `${evidence}/arena-${l.id}.jpg` });

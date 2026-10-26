@@ -1,11 +1,45 @@
+import { CompletionCelebration, oneShotVoiceFile } from './celebration';
 export class Audio {
   context: AudioContext | null = null;
-  enabled = true;
+  private muted = false;
+  private output: GainNode | null = null;
+  private voice: AudioBuffer | null = null;
+  private speaking: AudioBufferSourceNode | null = null;
+  private loading = false;
+  private celebration = new CompletionCelebration();
+  voiceVolume = 0.8;
+  get enabled() {
+    return !this.muted;
+  }
+  set enabled(value: boolean) {
+    this.muted = !value;
+    if (this.output && this.context)
+      this.output.gain.setValueAtTime(value ? 1 : 0, this.context.currentTime);
+    if (!value) this.stopVoice();
+  }
   unlock() {
     if (!this.enabled) return;
     try {
       this.context ??= new AudioContext();
+      if (!this.output) {
+        this.output = this.context.createGain();
+        this.output.connect(this.context.destination);
+      }
       if (this.context.state === 'suspended') void this.context.resume().catch(() => {});
+      if (oneShotVoiceFile && !this.loading) {
+        this.loading = true;
+        const url = new URL(oneShotVoiceFile, new URL(import.meta.env.BASE_URL, location.href));
+        void fetch(url)
+          .then((r) => {
+            if (!r.ok) throw new Error('Voice unavailable');
+            return r.arrayBuffer();
+          })
+          .then((b) => this.context!.decodeAudioData(b))
+          .then((b) => {
+            this.voice = b;
+          })
+          .catch(() => {});
+      }
     } catch {
       /* Silent play remains available. */
     }
@@ -29,9 +63,37 @@ export class Audio {
     gain.gain.linearRampToValueAtTime(volume, t + 0.008);
     gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.output ?? ctx.destination);
     osc.start(t);
     osc.stop(t + duration + 0.02);
+  }
+  stopVoice() {
+    try {
+      this.speaking?.stop();
+    } catch {
+      /* Already ended. */
+    }
+    this.speaking = null;
+  }
+  celebrate(shots: number, round: number) {
+    const kind = this.celebration.take(shots, round);
+    if (!kind || !this.enabled) return;
+    this.stopVoice();
+    if (kind === 'one-shot' && this.context && this.voice) {
+      const source = this.context.createBufferSource(),
+        gain = this.context.createGain();
+      source.buffer = this.voice;
+      gain.gain.value = Math.max(0, Math.min(1, this.voiceVolume));
+      source.connect(gain);
+      gain.connect(this.output ?? this.context.destination);
+      source.onended = () => {
+        if (this.speaking === source) this.speaking = null;
+      };
+      this.speaking = source;
+      source.start();
+      // Short chime after the phrase; a single active source prevents overlapping announcements.
+      this.tone(1046.5, 0.2, 'triangle', 0.05, Math.min(this.voice.duration, 2));
+    } else this.play('win');
   }
   play(type: string) {
     if (type === 'spring') {

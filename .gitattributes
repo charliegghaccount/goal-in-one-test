@@ -1,0 +1,2 @@
+# Preserve supplied PDF bytes and review them as documents, not line-oriented source.
+*.pdf binary
