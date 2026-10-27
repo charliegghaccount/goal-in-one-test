@@ -1,0 +1,41 @@
+ℹ tests 583
+ℹ suites 0
+ℹ pass 583
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3349.947553
+
+Pages build:
+
+> goal-in-one@1.0.0 build:pages
+> npm run build -- --base=/goal-in-one-test/
+
+
+> goal-in-one@1.0.0 build
+> tsc --noEmit && vite build --base=/goal-in-one-test/
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 37 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.77 kB │ gzip:  0.44 kB
+dist/assets/park-D22JWOpP.webp  285.46 kB
+dist/assets/index-BrxWhHsg.css   43.24 kB │ gzip: 10.06 kB
+dist/assets/index-ohdQecvi.js   287.75 kB │ gzip: 92.54 kB
+✓ built in 1.01s
+
+Production browser:
+{"httpStatus":200,"base":"/goal-in-one-test/","savedDraft":true,"publishedInMiddle":true,"reloadPersistence":true,"actualDragGoal":true,"stableId":"design-ab24c0ac-6fa1-4fc8-a978-46528347952b","revision":"1","pageErrors":[],"failedRequests":[]}
+
+Bundled release check:
+
+> goal-in-one@1.0.0 campaign:bundle
+> tsx scripts/bundle-campaign.ts docs/studio-v2-evidence/browser-campaign.json
+
+Bundled 60 approved published levels. Review src/data/campaign-release.json, run tests/build, then commit and deploy. No remote changes were made.
+
+Fresh-browser bundle route:
+{"bundledCampaign":true,"localCampaignAbsent":true,"position":10,"stableId":"builtin-9","revision":"2","actualDragGoal":true,"pageErrors":[]}

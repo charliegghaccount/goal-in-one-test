@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import Matter from 'matter-js';
 import { levels, arenaPolygon, WALL_WIDTH, type Level, type Point } from '../src/levels';
 import authored from '../src/data/vnext';
@@ -287,8 +287,9 @@ test('one-kick and ordinary celebrations dispatch once per round, including mute
 });
 test('record deterministic new-level route diagnostics for review', () => {
   assert.equal(diagnostics.length, 20);
+  mkdirSync('test-results', { recursive: true });
   writeFileSync(
-    'docs/vnext-evidence/runtime-routes.json',
+    process.env.VNEXT_RUNTIME_EVIDENCE ?? 'test-results/vnext-runtime-routes.json',
     JSON.stringify(diagnostics, null, 2) + '\n',
   );
 });

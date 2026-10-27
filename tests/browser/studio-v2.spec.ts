@@ -1,0 +1,511 @@
+import { test, expect, type Page } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+test.use({ actionTimeout: 12000 });
+const evidence = process.env.STUDIO_EVIDENCE ?? 'test-results/studio-v2-evidence';
+mkdirSync(evidence, { recursive: true });
+mkdirSync('.cache', { recursive: true });
+async function frozen(p: Page) {
+  const t = new Date('2026-10-27T14:00:00Z');
+  await p.clock.install({ time: t });
+  await p.clock.pauseAt(new Date(+t + 1000));
+  await p.goto('/?dev=1&editor=1');
+  await p.clock.runFor(100);
+}
+async function command(p: Page, s: string) {
+  if (process.env.STUDIO_DEBUG) console.log('command', s);
+  await p.locator(`[data-command="${s}"]`).first().click();
+  await p.clock.runFor(34);
+}
+async function field(p: Page, name: string, value: string) {
+  const f = p.getByRole('spinbutton', { name, exact: true });
+  await f.fill(value);
+  await f.press('Tab');
+  await p.clock.runFor(17);
+}
+async function world(p: Page, x: number, y: number) {
+  const c = p.locator('#editor-canvas'),
+    r = (await c.boundingBox())!,
+    d = await c.evaluate((c) => ({ ...c.dataset })),
+    s = +d.scale!;
+  return {
+    x: r.x + (r.width - +d.viewWidth! * s) / 2 + (x - +d.cameraX!) * s,
+    y: r.y + (r.height - +d.viewHeight! * s) / 2 + (y - +d.cameraY!) * s,
+  };
+}
+async function dragWorld(p: Page, a: { x: number; y: number }, b: { x: number; y: number }) {
+  const start = await world(p, a.x, a.y),
+    end = await world(p, b.x, b.y);
+  await p.mouse.move(start.x, start.y);
+  await p.mouse.down();
+  await p.mouse.move(end.x, end.y, { steps: 8 });
+  await p.mouse.up();
+  await p.clock.runFor(34);
+}
+async function place(p: Page, name: string, x: number, y: number) {
+  await p.locator('.object-library').getByRole('button', { name, exact: true }).click();
+  const q = await world(p, x, y);
+  await p.mouse.click(q.x, q.y);
+  await p.clock.runFor(34);
+}
+async function exported(p: Page) {
+  await command(p, 'Export');
+  const d = JSON.parse(await p.locator('#ed-json').inputValue());
+  await p.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  return d;
+}
+async function publish(p: Page, pos?: number) {
+  await command(p, 'Publish to Game');
+  if (pos) await p.getByRole('spinbutton', { name: 'Publish position' }).fill(String(pos));
+  await p.getByRole('button', { name: 'Save & Publish', exact: true }).click();
+  await p.clock.runFor(50);
+  await expect(p.locator('#editor-status')).toContainText('Published locally');
+}
+async function kick(p: Page, angle: number, power: number) {
+  const c = p.locator('#scene'),
+    r = (await c.boundingBox())!,
+    d = await c.evaluate((c) => ({ ...c.dataset })),
+    s = +d.scale! / +d.zoom!,
+    a = (angle * Math.PI) / 180,
+    x = r.x + r.width * 0.42,
+    y = r.y + r.height * 0.4;
+  await p.mouse.move(x, y);
+  await p.mouse.down();
+  await p.mouse.move(
+    x - ((Math.cos(a) * 140 * power) / 100) * s,
+    y + ((Math.sin(a) * 140 * power) / 100) * s,
+    { steps: 5 },
+  );
+  await p.mouse.up();
+}
+async function enter(p: Page) {
+  await p.getByRole('button', { name: 'Settings', exact: true }).click();
+  await p.getByRole('button', { name: 'LEVEL EDITOR', exact: true }).click();
+  await p.clock.runFor(50);
+}
+
+test('Level 9 draft/test/publish/reload, stable progress and complete campaign export/import', async ({
+  page: p,
+}) => {
+  test.setTimeout(150000);
+  const errors: string[] = [];
+  p.on('pageerror', (e) => errors.push(e.message));
+  await frozen(p);
+  await command(p, 'Campaign');
+  await p
+    .locator('[data-design="builtin-9"]')
+    .getByRole('button', { name: 'Open / Edit', exact: true })
+    .click();
+  await p.clock.runFor(34);
+  await p
+    .getByRole('textbox', { name: 'Level name', exact: true })
+    .fill('Nine published from Studio');
+  await p.getByRole('textbox', { name: 'Level name', exact: true }).press('Tab');
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('mover:0');
+  await field(p, 'Width', '90');
+  await command(p, 'Save Draft');
+  await command(p, 'Exit');
+  await p.getByRole('button', { name: 'LEVEL SELECT', exact: true }).click();
+  await expect(p.locator('.level-card[data-id="9"]')).toContainText('Moving target');
+  await enter(p);
+  await command(p, 'Test Level');
+  await p.clock.runFor(100);
+  await kick(p, 25, 100);
+  await p.clock.runFor(12000);
+  await expect(p.getByRole('dialog', { name: 'Draft goal scored' })).toBeVisible();
+  await p.getByRole('button', { name: 'RETURN TO EDITOR', exact: true }).click();
+  await p.clock.runFor(34);
+  await publish(p);
+  await command(p, 'Exit');
+  await p.reload();
+  await p.clock.runFor(34);
+  await command(p, 'Exit');
+  await p.getByRole('button', { name: 'LEVEL SELECT', exact: true }).click();
+  await p.locator('.level-card[data-id="9"]').click();
+  await p.clock.runFor(100);
+  await expect(p.locator('.course-title h1')).toHaveText('Nine published from Studio');
+  await kick(p, 25, 100);
+  await p.clock.runFor(12000);
+  await expect(p.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+  await p.screenshot({ path: `${evidence}/published-nine-goal.jpg`, quality: 88 });
+  await p.getByRole('button', { name: 'NEXT LEVEL', exact: true }).click();
+  await expect(p.locator('.course-title h1')).toHaveText('The red line');
+  await enter(p);
+  await command(p, 'Campaign');
+  const manager = p.getByRole('dialog', { name: 'Campaign Manager' });
+  await manager.locator('[data-design="builtin-35"] [data-position]').fill('9');
+  await manager.locator('[data-design="builtin-35"] [data-position]').press('Tab');
+  await expect(manager.locator('[data-design="builtin-35"] h3')).toContainText('9.');
+  await manager.getByRole('button', { name: 'Export entire campaign', exact: true }).click();
+  const campaignText = await p.locator('#ed-json').inputValue();
+  const campaign = JSON.parse(campaignText);
+  expect(campaign.order[8]).toBe('builtin-35');
+  expect(campaign.designs.find((d: any) => d.id === 'builtin-9').published.level.movers[0].w).toBe(
+    90,
+  );
+  writeFileSync('.cache/studio-v2-campaign.json', campaignText);
+  await p.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await command(p, 'Campaign');
+  await manager.getByRole('button', { name: 'Import entire campaign', exact: true }).click();
+  await p.locator('#ed-file').setInputFiles('.cache/studio-v2-campaign.json');
+  await expect
+    .poll(async () => (await p.locator('#ed-json').inputValue()).length)
+    .toBeGreaterThan(1000);
+  p.once('dialog', (d) => d.accept());
+  await p.locator('#ed-apply-import').click();
+  await command(p, 'Exit');
+  await p.getByRole('button', { name: 'LEVEL SELECT', exact: true }).click();
+  await expect(p.locator('.level-card[data-id="10"]')).toContainText('Nine published from Studio');
+  await expect(p.locator('.level-card[data-id="10"]')).toContainText('BEST 1');
+  expect(errors).toEqual([]);
+});
+
+test('publish a new middle level, drag campaign order, unpublish/archive/restore and revision history', async ({
+  page: p,
+}) => {
+  test.setTimeout(120000);
+  await frozen(p);
+  await command(p, 'New');
+  await p.getByRole('button', { name: 'rectangle', exact: true }).click();
+  await p.clock.runFor(34);
+  await p.getByRole('textbox', { name: 'Level name', exact: true }).fill('Middle test arena');
+  await p.getByRole('textbox', { name: 'Level name', exact: true }).press('Tab');
+  await publish(p, 3);
+  await command(p, 'Campaign');
+  let card = p
+    .locator('.campaign-card')
+    .filter({ has: p.getByRole('heading', { name: '3. Middle test arena', exact: true }) });
+  const id = await card.getAttribute('data-design');
+  await expect(card).toContainText('Published');
+  await card.dragTo(p.locator('[data-design="builtin-1"]'));
+  await expect(p.locator(`[data-design="${id}"] h3`)).toHaveText('1. Middle test arena');
+  await p
+    .locator(`[data-design="${id}"]`)
+    .getByRole('button', { name: 'Unpublish', exact: true })
+    .click();
+  await expect(p.locator(`[data-design="${id}"]`)).toContainText('Unpublished');
+  await expect(p.locator('.campaign-manager')).toContainText('60 playable levels');
+  await p
+    .locator(`[data-design="${id}"]`)
+    .getByRole('button', { name: 'Publish', exact: true })
+    .click();
+  await expect(p.locator('.campaign-manager')).toContainText('61 playable levels');
+  await p
+    .locator(`[data-design="${id}"]`)
+    .getByRole('button', { name: 'Archive', exact: true })
+    .click();
+  await expect(p.locator('.campaign-manager')).toContainText('60 playable levels');
+  await p
+    .locator(`[data-design="${id}"]`)
+    .getByRole('button', { name: 'Restore', exact: true })
+    .click();
+  await expect(p.locator('.campaign-manager')).toContainText('61 playable levels');
+  await p.getByRole('heading', { name: 'CAMPAIGN MANAGER', exact: true }).scrollIntoViewIfNeeded();
+  await p.screenshot({ path: `${evidence}/campaign-collection.jpg`, quality: 88 });
+  await p.getByRole('textbox', { name: 'Find level' }).fill('Middle test');
+  await p.screenshot({ path: `${evidence}/campaign-manager.jpg`, quality: 88 });
+  await p
+    .locator(`[data-design="${id}"]`)
+    .getByRole('button', { name: 'Open / Edit', exact: true })
+    .click();
+  await p.clock.runFor(34);
+  await command(p, 'Test Level');
+  await p.clock.runFor(100);
+  await kick(p, 0, 80);
+  await p.clock.runFor(10000);
+  await expect(p.getByRole('dialog', { name: 'Draft goal scored' })).toBeVisible();
+  await p.getByRole('button', { name: 'RETURN TO EDITOR', exact: true }).click();
+  await p.clock.runFor(34);
+  await command(p, 'Exit');
+  await p.getByRole('button', { name: 'LEVEL SELECT', exact: true }).click();
+  await p.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+  await p.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+  await p.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+  await p.locator('.level-card[data-id="61"]').click();
+  await p.clock.runFor(100);
+  await kick(p, 0, 80);
+  await p.clock.runFor(10000);
+  await expect(p.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+  await expect(p.getByRole('button', { name: 'ALL LEVELS', exact: true })).toBeVisible();
+});
+
+test('eight anchored resize handles, rotated resizing, boundary edge drag, vertices and Escape', async ({
+  page: p,
+}) => {
+  await frozen(p);
+  await p.locator('#ed-snap').uncheck();
+  await place(p, 'Block', 500, 350);
+  let d = await exported(p),
+    points = d.level.obstacles[0].points;
+  await dragWorld(p, { x: 565, y: 350 }, { x: 645, y: 350 });
+  d = await exported(p);
+  expect(Math.min(...d.level.obstacles[0].points.map((p: any) => p.x))).toBeCloseTo(435);
+  expect(Math.max(...d.level.obstacles[0].points.map((p: any) => p.x))).toBeCloseTo(645);
+  await field(p, 'Rotation (degrees)', '30');
+  d = await exported(p);
+  const poly = d.level.obstacles[0].points,
+    mid = (a: any, b: any) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }),
+    right = mid(poly[1], poly[2]);
+  await dragWorld(p, right, { x: right.x + 60 * Math.cos(Math.PI / 6), y: right.y + 30 });
+  d = await exported(p);
+  expect(d.level.obstacles[0].points[0].x).toBeCloseTo(poly[0].x, 3);
+  expect(d.level.obstacles[0].points[3].y).toBeCloseTo(poly[3].y, 3);
+  await p.screenshot({ path: `${evidence}/resizing-rotated.jpg`, quality: 88 });
+  await command(p, 'Boundary');
+  await dragWorld(p, { x: 590, y: 120 }, { x: 590, y: 160 });
+  d = await exported(p);
+  expect(d.level.boundary[1].y).toBeCloseTo(160);
+  expect(d.level.boundary[2].y).toBeCloseTo(160);
+  await dragWorld(p, { x: 60, y: 160 }, { x: 100, y: 180 });
+  d = await exported(p);
+  expect(d.level.boundary[1].x).toBeCloseTo(100);
+  await command(p, 'Undo');
+  await command(p, 'Redo');
+  await command(p, 'Boundary');
+  await p.screenshot({ path: `${evidence}/boundary-and-handles.jpg`, quality: 88 });
+  const a = await world(p, 100, 180),
+    b = await world(p, 180, 220);
+  await p.mouse.move(a.x, a.y);
+  await p.mouse.down();
+  await p.mouse.move(b.x, b.y);
+  await p.keyboard.press('Escape');
+  await p.mouse.up();
+  d = await exported(p);
+  expect(d.level.boundary[1].x).toBeCloseTo(100);
+  await command(p, 'Test Level');
+  await p.clock.runFor(100);
+  await kick(p, 0, 80);
+  await p.clock.runFor(12000);
+  await expect(p.getByRole('dialog', { name: 'Draft goal scored' })).toBeVisible();
+});
+
+test('visual diagonal path, spring arrow, gate offset, speed controls and shared live preview', async ({
+  page: p,
+}) => {
+  test.setTimeout(100000);
+  await frozen(p);
+  await p.locator('#ed-snap').uncheck();
+  await place(p, 'Moving block ↔', 500, 350);
+  await dragWorld(p, { x: 400, y: 350 }, { x: 350, y: 450 });
+  await dragWorld(p, { x: 600, y: 350 }, { x: 700, y: 250 });
+  await field(p, 'Period (seconds)', '6');
+  let d = await exported(p);
+  expect(d.level.movers[0].path.start.x).toBeCloseTo(350);
+  expect(d.level.movers[0].path.end.y).toBeCloseTo(250);
+  await command(p, 'Preview');
+  await p.clock.runFor(1500);
+  const preview = JSON.parse((await p.locator('#editor-canvas').getAttribute('data-movers'))!)[0];
+  expect(preview.x).toBeGreaterThan(450);
+  await p.screenshot({ path: `${evidence}/diagonal-path-preview.jpg`, quality: 88 });
+  await command(p, 'Preview');
+  await place(p, 'Spring', 280, 640);
+  await p.clock.runFor(34);
+  d = await exported(p);
+  const spring = d.level.mechanics.springs[0],
+    scale = +(await p.locator('#editor-canvas').getAttribute('data-scale'))!,
+    len = (65 + spring.strength * 2) / scale,
+    a = (spring.angle * Math.PI) / 180;
+  await dragWorld(
+    p,
+    { x: spring.x + spring.w / 2 + Math.cos(a) * len, y: spring.y - 6 - Math.sin(a) * len },
+    { x: spring.x + spring.w / 2 - 100, y: spring.y - 106 },
+  );
+  d = await exported(p);
+  expect(d.level.mechanics.springs[0].angle).toBeCloseTo(135, 0);
+  await p.screenshot({ path: `${evidence}/spring-direction.jpg`, quality: 88 });
+  await place(p, 'Timed gate kit', 800, 450);
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('gate:0');
+  await dragWorld(p, { x: 800, y: 290 }, { x: 900, y: 250 });
+  await field(p, 'Opening duration (seconds)', '2');
+  await field(p, 'Closing duration (seconds)', '1');
+  await p.screenshot({ path: `${evidence}/gate-offset-controls.jpg`, quality: 88 });
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('switch:0');
+  await field(p, 'Width', '12');
+  await field(p, 'Height', '20');
+  await field(p, 'Timer (seconds)', '3');
+  d = await exported(p);
+  expect(d.level.mechanics.gates[0].offset.x).toBeCloseTo(100, 3);
+  expect(d.level.mechanics.gates[0].offset.y).toBeCloseTo(-200, 3);
+  expect(d.level.mechanics.switches[0].w).toBe(12);
+  await p.screenshot({ path: `${evidence}/mechanic-controls.jpg`, quality: 88 });
+  await command(p, 'Test Level');
+  await p.clock.runFor(1500);
+  const game = JSON.parse((await p.locator('#scene').getAttribute('data-movers'))!)[0];
+  expect(Math.abs(game.x - preview.x)).toBeLessThan(6);
+  await p.screenshot({ path: `${evidence}/diagonal-runtime.jpg`, quality: 88 });
+});
+
+test('Level 5 and other directional boost prototypes score using actual kicks with the new global baseline', async ({
+  page: p,
+}) => {
+  test.setTimeout(100000);
+  await frozen(p);
+  await command(p, 'Exit');
+  for (const [id, angle, power] of [
+    [5, 10, 90],
+    [6, 35, 100],
+    [13, 0, 70],
+    [16, 35, 90],
+  ]) {
+    await p.getByRole('button', { name: 'LEVELS', exact: true }).click();
+    await p.locator(`.level-card[data-id="${id}"]`).click();
+    await p.clock.runFor(100);
+    await kick(p, angle, power);
+    await p.clock.runFor(12000);
+    await expect(p.getByRole('dialog', { name: 'Goal scored' })).toBeVisible();
+    if (id === 5)
+      await p.screenshot({ path: `${evidence}/level-five-boost-goal.jpg`, quality: 88 });
+    await p.getByRole('button', { name: 'BACK TO LEVELS', exact: true }).click();
+  }
+});
+
+test('spring arrow alone launches up-left and small timed switch drives a diagonal 2s/1s gate', async ({
+  page: p,
+}) => {
+  test.setTimeout(90000);
+  await frozen(p);
+  await p.locator('#ed-snap').uncheck();
+  await place(p, 'Spring', 280, 640);
+  let d = await exported(p),
+    spring = d.level.mechanics.springs[0],
+    scale = +(await p.locator('#editor-canvas').getAttribute('data-scale'))!,
+    length = (65 + spring.strength * 2) / scale,
+    a = (spring.angle * Math.PI) / 180;
+  await dragWorld(
+    p,
+    { x: 280 + Math.cos(a) * length, y: 634 - Math.sin(a) * length },
+    { x: 180, y: 534 },
+  );
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('spawn:0');
+  await field(p, 'X', '400');
+  await field(p, 'Y', '618');
+  await command(p, 'Test Level');
+  await p.clock.runFor(100);
+  await kick(p, 180, 60);
+  let fired = false;
+  for (let i = 0; i < 25; i++) {
+    await p.clock.runFor(30);
+    if ((await p.locator('#scene').getAttribute('data-springs')) === '1') {
+      fired = true;
+      break;
+    }
+  }
+  expect(fired).toBe(true);
+  expect(+(await p.locator('#scene').getAttribute('data-velocity-x'))!).toBeLessThan(-5);
+  expect(+(await p.locator('#scene').getAttribute('data-velocity-y'))!).toBeLessThan(-5);
+  await p.screenshot({ path: `${evidence}/spring-arrow-runtime.jpg`, quality: 88 });
+  await p.getByRole('button', { name: 'Return to editor', exact: true }).first().click();
+  await p.clock.runFor(34);
+  await command(p, 'New');
+  await p.getByRole('button', { name: 'rectangle', exact: true }).click();
+  await p.clock.runFor(34);
+  await place(p, 'Timed gate kit', 700, 400);
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('gate:0');
+  await field(p, 'Width', '80');
+  await field(p, 'Height', '160');
+  await field(p, 'Opening offset X', '120');
+  await field(p, 'Opening offset Y', '-160');
+  await field(p, 'Opening duration (seconds)', '2');
+  await field(p, 'Closing duration (seconds)', '1');
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('switch:0');
+  await field(p, 'X', '350');
+  await field(p, 'Y', '400');
+  await field(p, 'Width', '12');
+  await field(p, 'Height', '20');
+  await field(p, 'Timer (seconds)', '3');
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('spawn:0');
+  await field(p, 'X', '350');
+  await field(p, 'Y', '400');
+  await command(p, 'Test Level');
+  await p.clock.runFor(1000);
+  const gate = async () => JSON.parse((await p.locator('#scene').getAttribute('data-gates'))!)[0];
+  let g = await gate();
+  expect(g.target).toBe(true);
+  expect(g.progress).toBeCloseTo(0.5, 1);
+  expect(g.x).toBeCloseTo(700 + 120 * g.progress, 3);
+  expect(g.y).toBeCloseTo(400 - 160 * g.progress, 3);
+  await p.clock.runFor(1000);
+  g = await gate();
+  expect(g.progress).toBeGreaterThan(0.98);
+  await p.screenshot({ path: `${evidence}/diagonal-gate-open.jpg`, quality: 88 });
+  await p.clock.runFor(1500);
+  g = await gate();
+  expect(g.target).toBe(false);
+  expect(g.progress).toBeCloseTo(0.5, 1);
+  await p.clock.runFor(600);
+  expect((await gate()).progress).toBeLessThan(0.01);
+});
+
+test('quota failures block publication truthfully and still allow a complete downloadable backup', async ({
+  page: p,
+}) => {
+  await frozen(p);
+  await command(p, 'New');
+  await p.getByRole('button', { name: 'rectangle', exact: true }).click();
+  await p.clock.runFor(34);
+  await p.getByRole('textbox', { name: 'Level name', exact: true }).fill('Recover me after quota');
+  await p.getByRole('textbox', { name: 'Level name', exact: true }).press('Tab');
+  // Inject only a storage fault; all design/publish/backup actions still use the real UI.
+  await p.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'goal-in-one:campaign:v1')
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      return original.call(this, k, v);
+    };
+  });
+  await command(p, 'Publish to Game');
+  await p.getByRole('button', { name: 'Save & Publish', exact: true }).click();
+  await expect(p.locator('#publish-status')).toContainText('Quota');
+  await p.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await command(p, 'Backup All');
+  const backup = JSON.parse(await p.locator('#ed-json').inputValue());
+  expect(backup.order).toHaveLength(60);
+  expect(backup.designs.some((d: any) => d.draft.level.name === 'Recover me after quota')).toBe(
+    true,
+  );
+  const download = p.waitForEvent('download');
+  await p.getByRole('button', { name: 'Download JSON', exact: true }).click();
+  expect((await download).suggestedFilename()).toContain('campaign');
+});
+
+test('corrupt stored campaign opens recoverable originals with a warning and is not overwritten by viewing the manager', async ({
+  page: p,
+}) => {
+  await p.addInitScript(() => localStorage.setItem('goal-in-one:campaign:v1', '{broken campaign'));
+  await frozen(p);
+  await command(p, 'Campaign');
+  await expect(p.locator('.campaign-status')).toContainText('could not be read');
+  expect(await p.evaluate(() => localStorage.getItem('goal-in-one:campaign:v1'))).toBe(
+    '{broken campaign',
+  );
+  await expect(p.locator('.campaign-manager')).toContainText('60 playable levels');
+});
+
+test('metadata publication is validated and a newer draft status survives save/reload', async ({
+  page: p,
+}) => {
+  await frozen(p);
+  await command(p, 'Campaign');
+  await p
+    .locator('[data-design="builtin-9"]')
+    .getByRole('button', { name: 'Open / Edit', exact: true })
+    .click();
+  await p.clock.runFor(34);
+  await field(p, 'Difficulty (1–5)', '4');
+  await expect(p.locator('#editor-title')).toContainText('newer draft');
+  await p
+    .getByRole('textbox', { name: 'Tags (comma separated)', exact: true })
+    .fill('timing, edited');
+  await p.getByRole('textbox', { name: 'Tags (comma separated)', exact: true }).press('Tab');
+  await command(p, 'Save Draft');
+  await expect(p.locator('#editor-title')).toContainText('newer draft');
+  await publish(p);
+  await expect(p.locator('#editor-title')).toContainText('Published');
+  await p.reload();
+  await p.clock.runFor(34);
+  await command(p, 'Settings');
+  await field(p, 'Difficulty (1–5)', '6');
+  await command(p, 'Publish to Game');
+  await p.getByRole('button', { name: 'Save & Publish', exact: true }).click();
+  await expect(p.locator('#publish-status')).toContainText('Difficulty must be');
+});

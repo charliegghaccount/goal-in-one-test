@@ -1,8 +1,10 @@
 # Goal In One ⚽ — Park & Treeline
 
-A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. Sixty enclosed park arenas, including twelve new compact puzzles and eight larger scrolling courses. All sixty official definitions and saved progression are preserved. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
+**Level Studio V2:** [Open editor](https://charliegghaccount.github.io/goal-in-one-test/?dev=1&editor=1&v=studio2) · [Campaign publishing and controls guide](docs/STUDIO-V2.md). Edit, test and publish levels locally, organise the active campaign, export releases and backups. Global boost acceleration now defaults to 2.0.
 
-The current update adds an internal visual **Level Studio** and player camera exploration. Open `?dev=1&editor=1`, or use Settings → Level Editor in developer mode. Drafts share the actual renderer and physics, support editable perimeters and concave obstacles, and save/export independently of official progress. See the [editor and exploration guide](docs/EDITOR.md) and [editor screenshot](docs/editor-evidence/editor-spring-route.jpg). The earlier [Levels 41–60 report](docs/VNEXT.md) documents the authored scrolling courses.
+A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. The default campaign contains sixty enclosed park prototypes, including twelve compact puzzles and eight larger scrolling courses. All original definitions remain recoverable; the active campaign can now be edited, published and reordered locally. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
+
+The current update adds **Campaign Manager and Level Studio V2**. Open `?dev=1&editor=1`, or use Settings → Level Editor in developer mode. Save Draft keeps gameplay unchanged; Publish to Game updates this browser’s playable campaign immediately and persists across refresh. Stable design IDs and revisioned scores keep progress attached to designs when reordering. See the [V2 operating guide](docs/STUDIO-V2.md), [current editor screenshots](docs/studio-v2-evidence/studio-overview.jpg), and [original editor/exploration guide](docs/EDITOR.md). The earlier [Levels 41–60 report](docs/VNEXT.md) documents the authored scrolling courses.
 
 **Play:** https://charliegghaccount.github.io/goal-in-one-test/
 
@@ -39,20 +41,22 @@ Playwright uses `/usr/bin/chromium` when available; otherwise run `npx playwrigh
 - Arrow and trajectory dots use the current velocity plus the pending kick. Collision surfaces can change the predicted flight.
 - Enter the open mouth of the goal on the right-hand arena boundary. The whole ball must cross the goal plane inside the mouth; post/backside contact alone does not score.
 - **There is no maximum shot count and no over-par failure.** Par is the three-star target; the level data also specifies the two-star threshold. Complete with more shots for one star, even after 20 or 100 kicks.
-- The green surfaces accelerates/throws right; the orange surfaces throws left. Arrow marks show the direction. These automatic contacts do not count as extra player kicks.
+- The green surfaces accelerate right; the orange surfaces accelerate left. Arrow marks show the direction. These automatic contacts do not count as extra player kicks.
 - Red strips in Level 10 and later challenges instantly restores the original ball start and zeroes its motion. It preserves every kick already taken and adds no free or penalty shot.
 - Retry resets the level, moving-block phase, position, count and effects. Pause/help freeze physics.
-- Levels 1–52 use a fixed, uniformly scaled view. Levels 53–60 follow the football horizontally, with full vertical tracking for the two tall courses and vertical safety tracking on shorter screens. A green arrow points towards an off-screen goal. The map button pauses play and restores your previous view when closed. Use ✥ Explore to pan without kicking, ◎ Return to Ball to follow again, and + / −, wheel or touch pinch to zoom. Camera motion and zoom do not change a gesture’s kick power. Resizing never changes physics coordinates.
+- In the default campaign, Levels 1–52 use a fixed, uniformly scaled view. Levels 53–60 follow the football horizontally, with full vertical tracking for the two tall courses and vertical safety tracking on shorter screens. A green arrow points towards an off-screen goal. The map button pauses play and restores your previous view when closed. Use ✥ Explore to pan without kicking, ◎ Return to Ball to follow again, and + / −, wheel or touch pinch to zoom. Camera motion and zoom do not change a gesture’s kick power. Resizing never changes physics coordinates.
 
 **Precise aim** offers sliders and a kick button usable while moving. Keyboard when the canvas is focused: ↑/↓ angle, ←/→ power, Space kick, R retry, P pause, L levels, Escape cancel. Every essential action also has a mouse/touch control. Landscape and portrait layouts are supported; physical iPhones are unverified.
 
-Best scores and mute preference save locally. The redesigned arenas use the `goal-in-one:grass:v5` namespace, so scores from old geometry are not presented as new-arena records. Old save keys remain intact and their sound preference is reused. If storage is blocked, play continues with session-only scores.
+Best scores and mute preference save locally. The redesigned arenas use the `goal-in-one:grass:v5` namespace, so scores from old geometry are not presented as new-arena records. Old save keys remain intact and their sound preference is reused. New campaign results use stable `design-id@revision` keys inside the same progress namespace, so reordering never transfers a record to another puzzle. If storage is blocked, play continues with session-only scores.
 
 ## Levels and content
 
+Numbers here refer to the original template order. Campaign display numbers follow your active ordering. `src/campaign.ts` supplies the shared playable registry; `src/data/campaign-release.json` can bundle an approved exported collection.
+
 Levels 1–10 restore the latest attached original sketches: enclosed chamfered/peaked arenas, solid ramps, supported platform, directional strips, opposing triangles, moving block and red reset. Goals form the right boundary and extend into a physical net.
 
-Levels 11–20 add Stair Play, Twin Peaks, Under and Over, Green Runway, Against the Grain, Safe Crossing, The Low Window, Moving Lane, Return Pass and One More Goal. `src/extra-layouts.ts` is the authored expansion content; `src/levels.ts` is the current registry and original trace. Save validation and browsing use this registry, with no ten-level limit.
+Levels 11–20 add Stair Play, Twin Peaks, Under and Over, Green Runway, Against the Grain, Safe Crossing, The Low Window, Moving Lane, Return Pass and One More Goal. `src/extra-layouts.ts` is the authored expansion content; `src/levels.ts` retains the built-in definitions and original trace. Browsing and navigation use the dynamic campaign registry, without a fixed level-count assumption.
 
 Levels 21–40 introduce six reusable mechanics in learning groups, ending with Workshop and Grand Finale. Their authored content is in `src/expansion.ts`. Open `?dev=1`, then Settings → Developer Physics, to tune ten safe parameters, save/restore/import/export JSON, or jump directly to any level. Saved tuning affects later play; Reset Defaults and Save restore the shipped settings.
 

@@ -41,7 +41,7 @@ test('boost acceleration starts on first contact step and continues smoothly wit
     changes.push(s.ball.velocity.x - x);
   }
   assert.ok(changes[0] > 0);
-  assert.ok(changes.every((v) => v > 0 && v < 0.3));
+  assert.ok(changes.every((v) => v > 0 && v < 1.1));
   Body.setPosition(s.ball, { x: p.x - 70, y: p.y - 100 });
   Body.setVelocity(s.ball, { x: 0, y: 0 });
   s.step();
@@ -54,9 +54,9 @@ test('continuous boost smoothly reverses opposing momentum', () => {
   Body.setPosition(s.ball, { x: p.x + p.w * 0.75, y: p.y - 21 });
   Body.setVelocity(s.ball, { x: -4, y: 0 });
   let last = -4;
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 40 && s.ball.position.x < p.x + p.w - 20; i++) {
     s.step();
-    assert.ok(s.ball.velocity.x - last < 0.5);
+    assert.ok(s.ball.velocity.x - last < 1.1);
     last = s.ball.velocity.x;
   }
   assert.ok(s.ball.velocity.x > 0);

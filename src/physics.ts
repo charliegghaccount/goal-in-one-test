@@ -6,7 +6,7 @@ export const physicsRanges = {
   maxAngularVelocity: [0.08, 0.8, 0.01],
   kickStrength: [0.08, 0.16, 0.005],
   momentumRetention: [0.1, 0.9, 0.05],
-  boostAcceleration: [0.08, 0.8, 0.02],
+  boostAcceleration: [0.1, 5, 0.05],
   springStrength: [0.6, 1.5, 0.05],
   windStrength: [0.4, 1.6, 0.05],
 } as const;
@@ -19,7 +19,7 @@ export const defaultPhysics: PhysicsConfig = {
   maxAngularVelocity: 0.35,
   kickStrength: 0.125,
   momentumRetention: 0.55,
-  boostAcceleration: 0.32,
+  boostAcceleration: 2,
   springStrength: 1,
   windStrength: 1,
 };
@@ -33,10 +33,14 @@ export function sanitizePhysics(raw: unknown): PhysicsConfig {
     }
   return c;
 }
-const KEY = 'goal-in-one:physics:v1';
+const KEY = 'goal-in-one:physics:v2';
 export function loadPhysics(): PhysicsConfig {
   try {
-    return sanitizePhysics(JSON.parse(localStorage.getItem(KEY) || 'null'));
+    const current = localStorage.getItem(KEY);
+    if (current) return sanitizePhysics(JSON.parse(current));
+    const legacy = JSON.parse(localStorage.getItem('goal-in-one:physics:v1') || 'null');
+    // Carry other tuning forward, explicitly establish the new global boost baseline.
+    return sanitizePhysics(legacy ? { ...legacy, boostAcceleration: 2 } : null);
   } catch {
     return { ...defaultPhysics };
   }

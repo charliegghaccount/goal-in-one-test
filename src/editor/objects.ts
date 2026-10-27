@@ -1,5 +1,6 @@
 import type { Level, Point } from '../levels';
 import { boxPoints, inPolygon, distanceToEdge } from '../geometry';
+import { rotorPose } from '../motion';
 import { snapGoal, syncBoundary } from './model';
 export type Kind =
   | 'obstacle'
@@ -177,7 +178,7 @@ export function points(l: Level, r: Ref): Point[] {
       l.camera!.viewWidth,
       l.camera!.viewHeight,
     );
-  if (r.kind === 'switch') return boxPoints(o.x, o.y, 36, 36);
+  if (r.kind === 'switch') return boxPoints(o.x, o.y, o.w ?? 36, o.h ?? 36);
   if (r.kind === 'surface' || r.kind === 'spring')
     return boxPoints(o.x + o.w / 2, o.y - 6, o.w, 12);
   if (r.kind === 'ice') {
@@ -191,9 +192,10 @@ export function points(l: Level, r: Ref): Point[] {
     );
   }
   if (r.kind === 'wind') return boxPoints(o.x + o.w / 2, o.y + o.h / 2, o.w, o.h);
+  const pose = r.kind === 'rotor' ? rotorPose(o, 0).position : o;
   return boxPoints(
-    o.x,
-    o.y,
+    pose.x,
+    pose.y,
     o.w,
     o.h,
     r.kind === 'rotor' ? (o.phase ?? 0) : r.kind === 'mover' ? (o.angle ?? 0) : 0,
@@ -228,6 +230,11 @@ export function translate(l: Level, r: Ref, dx: number, dy: number) {
   } else {
     o.x += dx;
     o.y += dy;
+    if (r.kind === 'mover' && o.path)
+      for (const p of [o.path.start, o.path.end]) {
+        p.x += dx;
+        p.y += dy;
+      }
     if (r.kind === 'rotor' && o.pivot) {
       o.pivot.x += dx;
       o.pivot.y += dy;
@@ -235,7 +242,7 @@ export function translate(l: Level, r: Ref, dx: number, dy: number) {
   }
 }
 export function resizable(r: Ref) {
-  return !['spawn', 'switch', 'boundary', 'region'].includes(r.kind);
+  return !['spawn', 'boundary', 'region'].includes(r.kind);
 }
 export function rotatable(r: Ref) {
   return ['obstacle', 'mover', 'rotor', 'ice'].includes(r.kind);
@@ -245,15 +252,24 @@ export function rotation(l: Level, r: Ref) {
   return r.kind === 'rotor'
     ? (o.phase ?? 0)
     : r.kind === 'obstacle'
-      ? (o.rotation ?? 0)
+      ? (o.rotation ?? rectangleAngle(o.points))
       : (o.angle ?? 0);
+}
+function rectangleAngle(p: Point[]) {
+  if (p?.length !== 4) return 0;
+  const edges = p.map((a, i) => ({ x: p[(i + 1) % 4].x - a.x, y: p[(i + 1) % 4].y - a.y }));
+  if (
+    !edges.every((a, i) => Math.abs(a.x * edges[(i + 1) % 4].x + a.y * edges[(i + 1) % 4].y) < 0.01)
+  )
+    return 0;
+  return Math.atan2(edges[0].y, edges[0].x);
 }
 export function rotate(l: Level, r: Ref, angle: number) {
   const o = object(l, r);
   if (!rotatable(r)) return;
   if (r.kind === 'obstacle') {
     const c = center(l, r),
-      d = angle - (o.rotation ?? 0);
+      d = angle - rotation(l, r);
     o.points = o.points.map((p: Point) => ({
       x: c.x + (p.x - c.x) * Math.cos(d) - (p.y - c.y) * Math.sin(d),
       y: c.y + (p.x - c.x) * Math.sin(d) + (p.y - c.y) * Math.cos(d),
@@ -267,11 +283,20 @@ export function resize(l: Level, r: Ref, w: number, h: number) {
   w = Math.max(8, w);
   h = Math.max(8, h);
   if (r.kind === 'obstacle') {
-    const b = bounds(l, r),
-      c = center(l, r);
-    o.points = o.points.map((p: Point) => ({
-      x: c.x + ((p.x - c.x) * w) / b.w,
-      y: c.y + ((p.y - c.y) * h) / b.h,
+    const c = center(l, r),
+      a = rotation(l, r),
+      co = Math.cos(a),
+      si = Math.sin(a);
+    const local = o.points.map((p: Point) => ({
+      x: (p.x - c.x) * co + (p.y - c.y) * si,
+      y: -(p.x - c.x) * si + (p.y - c.y) * co,
+    }));
+    const bw =
+        Math.max(...local.map((p: Point) => p.x)) - Math.min(...local.map((p: Point) => p.x)),
+      bh = Math.max(...local.map((p: Point) => p.y)) - Math.min(...local.map((p: Point) => p.y));
+    o.points = local.map((p: Point) => ({
+      x: c.x + ((p.x * w) / bw) * co - ((p.y * h) / bh) * si,
+      y: c.y + ((p.x * w) / bw) * si + ((p.y * h) / bh) * co,
     }));
   } else if (r.kind === 'goal') {
     const ratio = o.roof / o.w;
@@ -281,7 +306,7 @@ export function resize(l: Level, r: Ref, w: number, h: number) {
     snapGoal(l, { x: o.x, y: o.y });
   } else if (resizable(r)) {
     o.w = w;
-    if (['mover', 'rotor', 'wind', 'breakable', 'gate'].includes(r.kind)) o.h = h;
+    if (['mover', 'rotor', 'wind', 'breakable', 'gate', 'switch'].includes(r.kind)) o.h = h;
   }
 }
 export function hit(l: Level, p: Point): Ref | null {
@@ -368,7 +393,9 @@ export function add(l: Level, t: Tool, p: Point): Ref[] {
                 ? 160
                 : 130,
       h = t === 'platform' ? 28 : t === 'wall' ? 180 : t === 'barrier' ? 24 : 100;
-    return [polygon(boxPoints(p.x, p.y, w, h, t === 'barrier' ? -0.4 : 0))];
+    const r = polygon(boxPoints(p.x, p.y, w, h, t === 'barrier' ? -0.4 : 0));
+    object(l, r).rotation = t === 'barrier' ? -0.4 : 0;
+    return [r];
   }
   if (t === 'passage')
     return [

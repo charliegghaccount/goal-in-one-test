@@ -1,4 +1,4 @@
-import { levels } from './levels';
+import { campaign } from './campaign';
 import {
   defaultPhysics,
   physicsRanges,
@@ -25,9 +25,15 @@ export function developerPanel(
   jump: (id: number) => void,
   showLevels: () => void,
 ) {
+  const levels = campaign().playable();
+  const esc = (v: string) =>
+    v.replace(
+      /[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+    );
   const overlay = document.createElement('div');
   overlay.className = 'modal-backdrop';
-  overlay.innerHTML = `<section class="modal developer-panel" role="dialog" aria-modal="true" aria-label="Developer physics"><button class="modal-close icon-button" id="dev-close" aria-label="Close developer panel">×</button><h2>PHYSICS LAB</h2><p>Developer mode · all levels unlocked. Settings apply when play resumes. No restart needed.</p><label>Jump to level <select id="dev-level">${levels.map((l) => `<option value="${l.id}">${l.id} · ${l.name}</option>`).join('')}</select></label><p id="dev-tip"></p><div class="dev-actions"><button class="secondary" id="dev-jump">PLAY LEVEL</button><button class="secondary" id="dev-unlock">UNLOCK ALL / LEVEL SELECT</button></div><div class="dev-fields">${(Object.keys(labels) as (keyof PhysicsConfig)[]).map((k) => `<label>${labels[k]}<input data-physics="${k}" aria-label="${labels[k]}" type="range" min="${physicsRanges[k][0]}" max="${physicsRanges[k][1]}" step="${physicsRanges[k][2]}"/><output data-value="${k}"></output></label>`).join('')}</div><div class="dev-actions"><button class="primary" id="dev-save">SAVE LOCALLY</button><button class="secondary" id="dev-restore">RESTORE SAVED</button><button class="secondary" id="dev-defaults">RESET DEFAULTS</button><button class="secondary" id="dev-export">COPY / EXPORT JSON</button></div><textarea id="dev-json" aria-label="Physics configuration JSON" rows="4"></textarea><button class="secondary" id="dev-import">IMPORT JSON</button><p id="dev-status" role="status"></p></section>`;
+  overlay.innerHTML = `<section class="modal developer-panel" role="dialog" aria-modal="true" aria-label="Developer physics"><button class="modal-close icon-button" id="dev-close" aria-label="Close developer panel">×</button><h2>PHYSICS LAB</h2><p>Developer mode · all levels unlocked. Settings apply when play resumes. No restart needed.</p><label>Jump to level <select id="dev-level">${levels.map((l) => `<option value="${l.id}">${l.id} · ${esc(l.name)}</option>`).join('')}</select></label><p id="dev-tip"></p><div class="dev-actions"><button class="secondary" id="dev-jump">PLAY LEVEL</button><button class="secondary" id="dev-unlock">UNLOCK ALL / LEVEL SELECT</button></div><div class="dev-fields">${(Object.keys(labels) as (keyof PhysicsConfig)[]).map((k) => `<label>${labels[k]}<input data-physics="${k}" aria-label="${labels[k]}" type="range" min="${physicsRanges[k][0]}" max="${physicsRanges[k][1]}" step="${physicsRanges[k][2]}"/><output data-value="${k}"></output></label>`).join('')}</div><div class="dev-actions"><button class="primary" id="dev-save">SAVE LOCALLY</button><button class="secondary" id="dev-restore">RESTORE SAVED</button><button class="secondary" id="dev-defaults">RESET DEFAULTS</button><button class="secondary" id="dev-export">COPY / EXPORT JSON</button></div><textarea id="dev-json" aria-label="Physics configuration JSON" rows="4"></textarea><button class="secondary" id="dev-import">IMPORT JSON</button><p id="dev-status" role="status"></p></section>`;
   document.querySelector('#app')!.append(overlay);
   let current = sanitizePhysics(config);
   const $ = (s: string) => overlay.querySelector<HTMLElement>(s)!;
@@ -90,7 +96,8 @@ export function developerPanel(
   };
   const select = $('#dev-level') as HTMLSelectElement;
   const tip = () => {
-    $('#dev-tip').textContent = levels[+select.value - 1].tip;
+    $('#dev-tip').textContent =
+      levels[+select.value - 1]?.tip ?? 'No published levels. Open Level Studio to publish one.';
   };
   select.onchange = tip;
   tip();

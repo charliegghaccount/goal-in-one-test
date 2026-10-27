@@ -46,7 +46,7 @@ test('explore pans both axes with no kicks, overview restores it, and Return to 
   await p.clock.runFor(34);
   expect((await data(p)).cameraX).toBe(free.cameraX);
   await p.screenshot({
-    path: 'docs/editor-evidence/exploring-shaft.jpg',
+    path: 'test-results/exploring-shaft.jpg',
     quality: 88,
     fullPage: true,
   });
@@ -140,7 +140,7 @@ test('touch panning and two-finger pinch never turn into kicks on a landscape ph
   await expect(p.locator('#shots')).toHaveText('0');
   expect(+(await data(p)).zoom!).toBeGreaterThan(1.5);
   await p.screenshot({
-    path: 'docs/editor-evidence/mobile-pinch.jpg',
+    path: 'test-results/mobile-pinch.jpg',
     quality: 88,
     fullPage: true,
   });

@@ -1,4 +1,5 @@
 import Matter from 'matter-js';
+import { rotorPose, gateDuration, gatePosition } from './motion';
 import type { PhysicsConfig } from './physics';
 import type { Point } from './levels';
 const { Bodies, Body, Composite, Query } = Matter;
@@ -12,11 +13,22 @@ export type Breakable = {
   h: number;
   threshold: number;
 };
-export type Gate = { id: string; x: number; y: number; w: number; h: number; offset: Point };
+export type Gate = {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  offset: Point;
+  openDuration?: number;
+  closeDuration?: number;
+};
 export type Switch = {
   id: string;
   x: number;
   y: number;
+  w?: number;
+  h?: number;
   gateId: string;
   mode: 'toggle' | 'timed';
   duration?: number;
@@ -108,20 +120,32 @@ export class MechanicRuntime {
         def,
         active: false,
         body: add(
-          Bodies.circle(def.x, def.y, 18, { isStatic: true, isSensor: true, label: 'switch' }),
+          def.w !== undefined || def.h !== undefined
+            ? Bodies.rectangle(def.x, def.y, def.w ?? 36, def.h ?? 36, {
+                isStatic: true,
+                isSensor: true,
+                label: 'switch',
+              })
+            : Bodies.circle(def.x, def.y, 18, { isStatic: true, isSensor: true, label: 'switch' }),
         ),
       });
     for (const def of defs.rotors ?? [])
       this.rotors.push({
         def,
         body: add(
-          Bodies.rectangle(def.x, def.y, def.w, def.h, {
-            isStatic: true,
-            angle: def.phase ?? 0,
-            label: 'rotor',
-            friction: 0.003,
-            restitution: 0.8,
-          }),
+          Bodies.rectangle(
+            rotorPose(def, 0).position.x,
+            rotorPose(def, 0).position.y,
+            def.w,
+            def.h,
+            {
+              isStatic: true,
+              angle: def.phase ?? 0,
+              label: 'rotor',
+              friction: 0.003,
+              restitution: 0.8,
+            },
+          ),
         ),
       });
     for (const def of defs.ice ?? []) {
@@ -200,8 +224,14 @@ export class MechanicRuntime {
         g.target = false;
         g.until = -1;
       }
-      const next = Math.max(0, Math.min(1, g.progress + ((g.target ? 1 : -1) * dt) / 700));
-      const p = { x: g.def.x + g.def.offset.x * next, y: g.def.y + g.def.offset.y * next };
+      const next = Math.max(
+        0,
+        Math.min(
+          1,
+          g.progress + ((g.target ? 1 : -1) * dt) / (gateDuration(g.def, g.target) * 1000),
+        ),
+      );
+      const p = gatePosition(g.def, next);
       const dist = (p: Point) =>
         Math.hypot(
           Math.max(0, Math.abs(ball.position.x - p.x) - g.def.w / 2),
@@ -220,14 +250,10 @@ export class MechanicRuntime {
       g.progress = next;
     }
     for (const r of this.rotors) {
-      const desired =
-        r.def.amplitude !== undefined
-          ? Math.sin((time * 2 * Math.PI) / (r.def.period ?? 5)) * r.def.amplitude +
-            (r.def.phase ?? 0)
-          : (r.def.phase ?? 0) + time * r.def.speed;
+      const desired = rotorPose(r.def, time).angle;
       const oldAngle = r.body.angle,
         oldPos = { ...r.body.position };
-      const delta = Math.max(-dt / 1000, Math.min(dt / 1000, desired - oldAngle)),
+      const delta = Math.max((-3 * dt) / 1000, Math.min((3 * dt) / 1000, desired - oldAngle)),
         angle = oldAngle + delta;
       if (r.def.pivot)
         Body.setPosition(r.body, {

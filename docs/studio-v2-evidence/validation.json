@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-27",
+  "defaultCampaignLevels": 60,
+  "officialLevelsAdded": 0,
+  "runtime": {
+    "passed": 583,
+    "failed": 0,
+    "log": "runtime-summary.txt"
+  },
+  "browser": {
+    "completeRegressionRun": {
+      "passed": 33,
+      "failed": 0,
+      "duration": "10.1 minutes"
+    },
+    "finalV2Run": {
+      "passed": 9,
+      "failed": 0,
+      "duration": "1.2 minutes"
+    },
+    "distinctCasesInRepository": 34,
+    "log": "browser-results.txt"
+  },
+  "confirmedBrowserGoalLevels": [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+    27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+    51, 52, 53, 54, 55, 56, 57, 58, 59, 60
+  ],
+  "method": "Scripted Chromium with real mouse drag/release and touch events. No ball-position injection for goal routes. Runtime collision fixtures are separate from browser route evidence.",
+  "humanPlaytesting": false,
+  "acceptance": {
+    "level9DraftIsolationPublishAndReload": true,
+    "campaignReorderKeepsIdentityAndScore": true,
+    "newLevelInsertionAndFinalNavigation": true,
+    "unpublishArchiveRestore": true,
+    "campaignFileExportImport": true,
+    "publishedRevisionHistory": true,
+    "anchoredAndRotatedResizing": true,
+    "boundaryEdgeAndVertexEditing": true,
+    "diagonalPathPreviewMatchesRuntime": true,
+    "springArrowLaunchesUpLeft": true,
+    "switchSensorSize": [12, 20],
+    "gateOpenSeconds": 2,
+    "gateCloseSeconds": 1,
+    "gateDiagonalMovement": true,
+    "quotaFailureDownloadRecovery": true,
+    "corruptStoragePreserved": true,
+    "newerDraftMetadataStatusAndValidation": true
+  },
+  "boost": {
+    "globalDefault": 2,
+    "range": [0.1, 5],
+    "legacyPhysicsMigration": true,
+    "legacyPerPadMigration": true,
+    "level5ActualBrowserGoal": {
+      "angleDegrees": 10,
+      "powerPercent": 90,
+      "shots": 1
+    },
+    "explicitOtherBoostRoutes": [6, 13, 16],
+    "geometryRepairsNeededByTestedRoutes": []
+  },
+  "production": {
+    "httpStatus": 200,
+    "base": "/goal-in-one-test/",
+    "savedDraft": true,
+    "publishedInMiddle": true,
+    "reloadPersistence": true,
+    "actualDragGoal": true,
+    "stableId": "design-ab24c0ac-6fa1-4fc8-a978-46528347952b",
+    "revision": "1",
+    "pageErrors": [],
+    "failedRequests": []
+  },
+  "bundlePromotion": {
+    "cliValidatedAndBuilt": true,
+    "freshBrowserLoadedReorderedEdition": true,
+    "freshBrowserDragGoal": true,
+    "shippedCampaignReleaseOverride": null
+  },
+  "unverified": [
+    "Physical iPhone/Android hardware",
+    "Safari and Firefox",
+    "Sustained performance near 2,000 designs",
+    "Human difficulty and optimal-par review"
+  ],
+  "intentionalLimits": [
+    "Desktop editor",
+    "Right-facing vertical goal walls",
+    "Straight two-point motion paths",
+    "Existing top-centre hanging-timber pivot semantics",
+    "Grid snapping; no edge/vertex magnet snapping",
+    "Browser-local publication; public release promotion is an explicit repository/build step"
+  ]
+}

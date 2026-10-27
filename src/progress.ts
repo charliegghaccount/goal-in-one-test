@@ -1,5 +1,11 @@
+import type { Level } from './levels';
+import { scoreKey } from './campaign';
 import { levels } from './levels';
-export type Progress = { best: Record<string, number>; sound: boolean };
+export type Progress = {
+  best: Record<string, number>;
+  sound: boolean;
+  records?: Record<string, number>;
+};
 const KEY = 'goal-in-one:grass:v5';
 export function readProgress(storage?: Pick<Storage, 'getItem'>): Progress {
   try {
@@ -23,7 +29,16 @@ export function readProgress(storage?: Pick<Storage, 'getItem'>): Progress {
       for (const [k, v] of Object.entries(raw.best))
         if (levels.some((l) => String(l.id) === k) && Number.isInteger(v) && Number(v) > 0)
           best[k] = Number(v);
-    return { best, sound: raw?.sound !== false };
+    const records: Record<string, number> = {};
+    if (raw?.records && typeof raw.records === 'object')
+      for (const [k, v] of Object.entries(raw.records))
+        if (k.length <= 160 && /^.+@[1-9][0-9]*$/.test(k) && Number.isInteger(v) && Number(v) > 0)
+          records[k] = Number(v);
+    return {
+      best,
+      sound: raw?.sound !== false,
+      ...(Object.keys(records).length ? { records } : {}),
+    };
   } catch {
     return { best: {}, sound: true };
   }
@@ -38,4 +53,19 @@ export function saveProgress(progress: Progress, storage?: Pick<Storage, 'setIte
 }
 export function recordBest(progress: Progress, id: number, shots: number): void {
   progress.best[id] = Math.min(progress.best[id] ?? Infinity, shots);
+}
+
+export function bestFor(progress: Progress, l: Level): number | undefined {
+  const keyed = progress.records?.[scoreKey(l)];
+  if (keyed) return keyed;
+  const original = /^builtin-(\d+)$/.exec(l.campaignId ?? `builtin-${l.id}`);
+  return (l.revision ?? 1) === 1 && original ? progress.best[original[1]] : undefined;
+}
+export function recordLevelBest(progress: Progress, l: Level, shots: number) {
+  if (!Number.isInteger(shots) || shots < 1) return;
+  const key = scoreKey(l);
+  progress.records ??= {};
+  progress.records[key] = Math.min(bestFor(progress, l) ?? Infinity, shots);
+  const original = /^builtin-(\d+)$/.exec(l.campaignId ?? `builtin-${l.id}`);
+  if ((l.revision ?? 1) === 1 && original) recordBest(progress, +original[1], shots);
 }

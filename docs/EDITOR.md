@@ -1,5 +1,7 @@
 # Level Studio and camera exploration
 
+**Current release:** see [Level Studio V2 and Campaign Manager](STUDIO-V2.md) for publishing, campaign organisation, new resize controls and the intentional boost physics update. The document below records the initial Studio release; its draft-only publication and physics notes are superseded.
+
 This update adds an internal visual editor and player-controlled camera exploration. The repository still contains **60 official levels**. Their definitions, physics defaults, save key, stars and Park & Treeline artwork are preserved; an exact [pre-update snapshot](editor-evidence/baseline-levels-1-60.json) is checked by regression tests. No official levels or mechanics were added.
 
 ## Open the editor

@@ -2,6 +2,7 @@ import { MechanicRuntime } from './mechanics';
 import { convexParts, isConvex } from './geometry';
 import { defaultPhysics, sanitizePhysics, type PhysicsConfig } from './physics';
 import Matter from 'matter-js';
+import { moverPosition } from './motion';
 import { segments, WALL_WIDTH, type Level, type Point, type Segment } from './levels';
 const { Engine, Bodies, Body, Composite, Events, Vertices, Query } = Matter;
 export const BALL_RADIUS = 16,
@@ -101,17 +102,11 @@ export class FootballSimulation {
       Composite.add(this.engine.world, body);
     }
     for (const m of level.movers) {
-      const body = Bodies.rectangle(
-        m.x + (m.axis === 'x' ? m.travel : 0),
-        m.y + (m.axis === 'x' ? 0 : m.travel),
-        m.w,
-        m.h,
-        {
-          ...material,
-          label: 'moving-block',
-          angle: m.angle ?? 0,
-        },
-      );
+      const body = Bodies.rectangle(moverPosition(m, 0).x, moverPosition(m, 0).y, m.w, m.h, {
+        ...material,
+        label: 'moving-block',
+        angle: m.angle ?? 0,
+      });
       this.movers.push({ body, definition: m });
       Composite.add(this.engine.world, body);
     }
@@ -246,6 +241,41 @@ export class FootballSimulation {
       this.boostApplied.clear();
       this.time += dt / 1000;
       for (const { body, definition: m } of this.movers) {
+        if (m.path) {
+          const old = { ...body.position },
+            desired = moverPosition(m, this.time);
+          // Bound tip translation per physics substep, even for imported extreme settings.
+          const distance = Math.hypot(desired.x - old.x, desired.y - old.y),
+            ratio = Math.min(1, (400 * dt) / 1000 / Math.max(0.00001, distance));
+          let p = {
+            x: old.x + (desired.x - old.x) * ratio,
+            y: old.y + (desired.y - old.y) * ratio,
+          };
+          const supported = this.engine.pairs.list.some(
+            (q: Matter.Pair) =>
+              q.isActive &&
+              !q.bodyA.isSensor &&
+              !q.bodyB.isSensor &&
+              (q.bodyA === this.ball || q.bodyB === this.ball) &&
+              q.bodyA !== body &&
+              q.bodyB !== body,
+          );
+          if (supported) {
+            const depth = () =>
+                Query.collides(this.ball, [body]).reduce((n, c) => Math.max(n, c.depth), 0),
+              before = depth();
+            Body.setPosition(body, p);
+            const after = depth();
+            Body.setPosition(body, old);
+            if (after > before + 0.005) p = old;
+          }
+          Body.setPosition(body, p);
+          Body.setVelocity(body, {
+            x: ((p.x - old.x) * (1000 / 60)) / dt,
+            y: ((p.y - old.y) * (1000 / 60)) / dt,
+          });
+          continue;
+        }
         const axis = m.axis ?? 'y';
         const old = body.position[axis];
         const desired = m[axis] + Math.cos((this.time * Math.PI * 2) / m.period) * m.travel;

@@ -1,0 +1,85 @@
+COMPLETE REGRESSION RUN
+
+Running 33 tests using 1 worker
+
+(node:416587) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:416587) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/editor.spec.ts:63:1 › build a spring/ramp level visually, edit its perimeter, save, score, return, export and reopen (12.3s)
+  ✓   2 tests/browser/editor.spec.ts:162:1 › polygon vertices, resize and rotation handles, multi-selection and pan ownership work through the canvas (3.6s)
+  ✓   3 tests/browser/editor.spec.ts:274:1 › all mechanic families are editable, gate linking is a dropdown, and official copies stay isolated (19.3s)
+  ✓   4 tests/browser/editor.spec.ts:345:1 › invalid imports and self-intersecting polygons give useful feedback and cannot run (2.1s)
+  ✓   5 tests/browser/editor.spec.ts:374:1 › fan forces and moving/rotating objects actually run in draft test mode without spending kicks (2.9s)
+  ✓   6 tests/browser/editor.spec.ts:407:1 › forward/back pads, ice and red resets retain real behavior in official-copy test mode (7.1s)
+  ✓   7 tests/browser/exploration.spec.ts:27:1 › explore pans both axes with no kicks, overview restores it, and Return to Ball is smooth (3.3s)
+  ✓   8 tests/browser/exploration.spec.ts:62:1 › equal pixel drags kick accurately after exploration and at different zooms (2.4s)
+  ✓   9 tests/browser/exploration.spec.ts:92:1 › touch panning and two-finger pinch never turn into kicks on a landscape phone (2.4s)
+  ✓  10 tests/browser/exploration.spec.ts:150:1 › compact legacy arenas still fit by default and show goal guidance when zoomed and explored (6.5s)
+  ✓  11 tests/browser/game.spec.ts:58:1 › all forty levels: screenshot, actual drag completion, stars, reload (3.8m)
+  ✓  12 tests/browser/game.spec.ts:89:1 › moving-ball drag and more than ten kicks remain enabled (11.6s)
+  ✓  13 tests/browser/game.spec.ts:101:1 › aim while moving, cancel and instantaneous restart (1.5s)
+  ✓  14 tests/browser/game.spec.ts:113:1 › real-time landscape touchscreen completes first goal (4.2s)
+  ✓  15 tests/browser/game.spec.ts:141:1 › settings, pause, keyboard and mobile arena fit (2.2s)
+  ✓  16 tests/browser/game.spec.ts:174:1 › next-level and replay controls stay immediate (5.3s)
+  ✓  17 tests/browser/game.spec.ts:188:1 › expansion review captures all forty artwork layouts (15.7s)
+  ✓  18 tests/browser/game.spec.ts:202:1 › developer panel saves, restores, imports safe JSON and jumps to experimental levels (3.6s)
+  ✓  19 tests/browser/game.spec.ts:244:1 › Workshop and Finale also complete through alternate bank and break routes (12.9s)
+  ✓  20 tests/browser/game.spec.ts:261:1 › spring chain and full barrier chain complete through actual kicks (14.2s)
+  ✓  21 tests/browser/studio-v2.spec.ts:85:1 › Level 9 draft/test/publish/reload, stable progress and complete campaign export/import (13.4s)
+  ✓  22 tests/browser/studio-v2.spec.ts:161:1 › publish a new middle level, drag campaign order, unpublish/archive/restore and revision history (11.8s)
+  ✓  23 tests/browser/studio-v2.spec.ts:229:1 › eight anchored resize handles, rotated resizing, boundary edge drag, vertices and Escape (8.5s)
+  ✓  24 tests/browser/studio-v2.spec.ts:279:1 › visual diagonal path, spring arrow, gate offset, speed controls and shared live preview (5.4s)
+  ✓  25 tests/browser/studio-v2.spec.ts:335:1 › Level 5 and other directional boost prototypes score using actual kicks with the new global baseline (22.2s)
+  ✓  26 tests/browser/studio-v2.spec.ts:359:1 › spring arrow alone launches up-left and small timed switch drives a diagonal 2s/1s gate (5.0s)
+  ✓  27 tests/browser/studio-v2.spec.ts:436:1 › quota failures block publication truthfully and still allow a complete downloadable backup (1.8s)
+  ✓  28 tests/browser/studio-v2.spec.ts:469:1 › corrupt stored campaign opens recoverable originals with a warning and is not overwritten by viewing the manager (836ms)
+Browser goal 41: Roof Ricochet, 1 kicks
+Browser goal 42: Window of Opportunity, 1 kicks
+Browser goal 43: Unlock the Passage, 1 kicks
+Browser goal 44: Springboard, 1 kicks
+Browser goal 45: Above or Below, 1 kicks
+Browser goal 46: Crosswind Slot, 1 kicks
+Browser goal 47: Break or Bypass, 1 kicks
+Browser goal 48: Clockwork Gap, 1 kicks
+Browser goal 49: Ice Corridor, 1 kicks
+Browser goal 50: The Timed Door, 1 kicks
+Browser goal 51: High Switch, 1 kicks
+Browser goal 52: The Z-Corridor, 2 kicks
+Browser goal 53: Longshot Relay, 1 kicks
+Browser goal 54: Updraft Shaft, 2 kicks
+Browser goal 55: Three Chambers, 1 kicks
+Browser goal 56: Hazard Overpass, 1 kicks
+Browser goal 57: Wind and Workshop, 1 kicks
+Browser goal 58: Skybridge Return, 3 kicks
+Browser goal 59: Switchback Factory, 1 kicks
+Browser goal 60: The Grand Route, 1 kicks
+  ✓  29 tests/browser/vnext.spec.ts:65:1 › all twenty authored levels complete through real browser drags with puzzle and camera evidence (1.8m)
+  ✓  30 tests/browser/vnext.spec.ts:178:1 › landscape phones keep fixed and scrolling arenas aimable, unclipped and touch-sized (4.8s)
+  ✓  31 tests/browser/vnext.spec.ts:213:1 › a held moving-camera drag keeps its power, and map overview pauses instantly (2.6s)
+  ✓  32 tests/browser/vnext.spec.ts:253:1 › scrolling touch input scores a two-switch level in real time and respects one-shot celebration (5.8s)
+  ✓  33 tests/browser/vnext.spec.ts:291:1 › spring/rotor relay and alternate high-window routes work through browser controls (49.7s)
+
+  Slow test file: tests/browser/game.spec.ts (5.0m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  33 passed (10.1m)
+
+FINAL V2 ACCEPTANCE RUN AFTER HARDENING
+
+Running 9 tests using 1 worker
+
+(node:421448) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:421448) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/studio-v2.spec.ts:86:1 › Level 9 draft/test/publish/reload, stable progress and complete campaign export/import (14.3s)
+  ✓  2 tests/browser/studio-v2.spec.ts:162:1 › publish a new middle level, drag campaign order, unpublish/archive/restore and revision history (12.4s)
+  ✓  3 tests/browser/studio-v2.spec.ts:231:1 › eight anchored resize handles, rotated resizing, boundary edge drag, vertices and Escape (9.1s)
+  ✓  4 tests/browser/studio-v2.spec.ts:281:1 › visual diagonal path, spring arrow, gate offset, speed controls and shared live preview (5.2s)
+  ✓  5 tests/browser/studio-v2.spec.ts:337:1 › Level 5 and other directional boost prototypes score using actual kicks with the new global baseline (21.4s)
+  ✓  6 tests/browser/studio-v2.spec.ts:361:1 › spring arrow alone launches up-left and small timed switch drives a diagonal 2s/1s gate (5.4s)
+  ✓  7 tests/browser/studio-v2.spec.ts:438:1 › quota failures block publication truthfully and still allow a complete downloadable backup (2.0s)
+  ✓  8 tests/browser/studio-v2.spec.ts:471:1 › corrupt stored campaign opens recoverable originals with a warning and is not overwritten by viewing the manager (844ms)
+  ✓  9 tests/browser/studio-v2.spec.ts:484:1 › metadata publication is validated and a newer draft status survives save/reload (2.2s)
+
+  9 passed (1.2m)

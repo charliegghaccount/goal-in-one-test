@@ -20,10 +20,17 @@ export type Mover = {
   travel: number;
   period: number;
   axis?: 'x' | 'y';
+  path?: { start: Point; end: Point };
+  loop?: 'ping-pong' | 'once';
+  phase?: number;
   angle?: number;
 };
 export type Goal = { x: number; y: number; w: number; h: number; roof: number; direction?: 1 | -1 };
 export type Level = {
+  /** Campaign identity and revision are independent of the display number. */
+  boostVersion?: 2;
+  campaignId?: string;
+  revision?: number;
   id: number;
   name: string;
   tip: string;

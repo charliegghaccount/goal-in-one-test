@@ -1,3 +1,4 @@
+import { movementLine } from './motion';
 import { drawMechanics, drawMechanicSurfaces } from './mechanics-art';
 import type { PhysicsConfig } from './physics';
 import { scenery, wood, beam, joint, turf } from './art';
@@ -134,8 +135,9 @@ export class Renderer {
       c.strokeStyle = '#344d5e66';
       c.lineWidth = 2;
       c.beginPath();
-      c.moveTo(m.x - (m.axis === 'x' ? m.travel : 0), m.y - (m.axis === 'x' ? 0 : m.travel));
-      c.lineTo(m.x + (m.axis === 'x' ? m.travel : 0), m.y + (m.axis === 'x' ? 0 : m.travel));
+      const line = movementLine(m);
+      c.moveTo(line.start.x, line.start.y);
+      c.lineTo(line.end.x, line.end.y);
       c.stroke();
       c.restore();
       wood(c, body.vertices);
@@ -303,6 +305,17 @@ export class Renderer {
     this.canvas.dataset.cameraManual = String(this.camera.manual);
     this.canvas.dataset.cameraReturning = String(this.camera.returning);
     this.canvas.dataset.zoom = String(this.camera.userZoom);
+    this.canvas.dataset.gates = JSON.stringify(
+      sim.mechanics.gates.map((g) => ({
+        id: g.def.id,
+        x: g.body.position.x,
+        y: g.body.position.y,
+        progress: g.progress,
+        target: g.target,
+      })),
+    );
+    this.canvas.dataset.campaignId = l.campaignId ?? '';
+    this.canvas.dataset.revision = String(l.revision ?? 0);
     this.canvas.dataset.rotors = JSON.stringify(sim.mechanics.rotors.map((r) => r.body.angle));
     this.canvas.dataset.movers = JSON.stringify(sim.movers.map((m) => m.body.position));
     this.canvas.dataset.windContact = String(

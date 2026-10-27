@@ -99,13 +99,22 @@ export function drawMechanics(
     c.strokeStyle = '#176083';
     c.lineWidth = 4;
     c.beginPath();
-    c.arc(sw.def.x, sw.def.y, 16, 0, Math.PI * 2);
+    if (sw.def.w !== undefined || sw.def.h !== undefined)
+      c.roundRect(
+        sw.def.x - (sw.def.w ?? 36) / 2,
+        sw.def.y - (sw.def.h ?? 36) / 2,
+        sw.def.w ?? 36,
+        sw.def.h ?? 36,
+        4,
+      );
+    else c.arc(sw.def.x, sw.def.y, 16, 0, Math.PI * 2);
     c.fill();
     c.stroke();
     c.fillStyle = 'white';
-    c.font = 'bold 18px sans-serif';
+    const glyphSize = Math.max(6, Math.min(18, Math.min(sw.def.w ?? 36, sw.def.h ?? 36) * 0.65));
+    c.font = `bold ${glyphSize}px sans-serif`;
     c.textAlign = 'center';
-    c.fillText(sw.def.mode === 'timed' ? '◷' : '↥', sw.def.x, sw.def.y + 6);
+    c.fillText(sw.def.mode === 'timed' ? '◷' : '↥', sw.def.x, sw.def.y + glyphSize * 0.32);
     c.restore();
   }
   for (const r of m.rotors) {

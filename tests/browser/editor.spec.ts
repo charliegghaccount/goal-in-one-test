@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
-const evidence = 'docs/editor-evidence';
+const evidence = process.env.EDITOR_EVIDENCE ?? 'test-results/editor-evidence';
 mkdirSync(evidence, { recursive: true });
 async function frozen(p: Page) {
   const t = new Date('2026-10-27T12:00:00Z');
@@ -107,7 +107,7 @@ test('build a spring/ramp level visually, edit its perimeter, save, score, retur
   await p.clock.runFor(34);
   await p.getByRole('button', { name: 'Fit arena', exact: true }).click();
   await p.clock.runFor(34);
-  await p.getByRole('button', { name: 'Save', exact: true }).click();
+  await p.getByRole('button', { name: 'Save Draft', exact: true }).click();
   await expect(p.locator('#editor-status')).toContainText('Saved');
   const before = await exported(p);
   expect(before.level.boundary[1].y).toBe(80);
@@ -144,13 +144,14 @@ test('build a spring/ramp level visually, edit its perimeter, save, score, retur
   expect(imported.draftId).not.toBe(before.draftId);
   await place(p, 'Platform', 850, 250);
   expect((await exported(p)).level.obstacles).toHaveLength(3);
-  await p.getByRole('button', { name: 'Save', exact: true }).click();
+  await p.getByRole('button', { name: 'Save Draft', exact: true }).click();
   await p.getByRole('button', { name: 'Backup All', exact: true }).click();
   const backup = JSON.parse(await p.getByRole('textbox', { name: 'Level JSON' }).inputValue());
-  expect(backup.drafts.length).toBeGreaterThanOrEqual(2);
+  expect(backup.format).toBe('goal-in-one-campaign');
+  expect(backup.designs.filter((d: any) => !d.builtin).length).toBeGreaterThanOrEqual(2);
   const download = p.waitForEvent('download');
   await p.getByRole('button', { name: 'Download JSON', exact: true }).click();
-  expect((await download).suggestedFilename()).toContain('backup');
+  expect((await download).suggestedFilename()).toContain('campaign');
   await p.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await p.reload();
   await enter(p);
@@ -177,7 +178,7 @@ test('polygon vertices, resize and rotation handles, multi-selection and pan own
   await p.clock.runFor(34);
   expect(
     +(await p.getByRole('spinbutton', { name: 'Width', exact: true }).inputValue()),
-  ).toBeGreaterThan(190);
+  ).toBeCloseTo(175, 2);
   const d = await exported(p),
     o = d.level.obstacles[0],
     xs = o.points.map((p: any) => p.x),

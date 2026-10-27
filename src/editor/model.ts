@@ -6,6 +6,7 @@ export type Draft = {
   format: 'goal-in-one-level';
   version: 1;
   draftId: string;
+  designId?: string;
   modified: string;
   difficulty: number;
   tags: string[];
@@ -15,22 +16,26 @@ const key = 'goal-in-one:editor:drafts:v1',
   recovery = 'goal-in-one:editor:recovery:v1';
 export const uid = () => crypto.randomUUID();
 export function blank(template = 'rectangle'): Draft {
+  if (template === 'long') template = 'long scrolling';
+  const base = ['wide', 'long scrolling', 'multi-section exploration'].includes(template)
+    ? 'wide'
+    : template;
   const boundary: Point[] =
-    template === 'tall'
+    base === 'tall'
       ? [
           { x: 60, y: 1100 },
           { x: 60, y: 80 },
           { x: 900, y: 80 },
           { x: 900, y: 1100 },
         ]
-      : template === 'wide'
+      : base === 'wide'
         ? [
             { x: 60, y: 640 },
             { x: 60, y: 100 },
             { x: 2600, y: 100 },
             { x: 2600, y: 640 },
           ]
-        : template === 'stepped'
+        : base === 'stepped'
           ? [
               { x: 60, y: 720 },
               { x: 60, y: 100 },
@@ -51,7 +56,7 @@ export function blank(template = 'rectangle'): Draft {
             ];
   const right = boundary.reduce((a, p) => (p.x > a.x ? p : a), boundary[0]).x,
     floor = Math.max(...boundary.map((p) => p.y));
-  return {
+  const draft: Draft = {
     format: 'goal-in-one-level',
     version: 1,
     draftId: uid(),
@@ -60,6 +65,7 @@ export function blank(template = 'rectangle'): Draft {
     tags: [],
     level: {
       id: 1001,
+      boostVersion: 2,
       name: 'Untitled arena',
       tip: 'Find your route into the net.',
       par: 3,
@@ -74,7 +80,7 @@ export function blank(template = 'rectangle'): Draft {
       movers: [],
       mechanics: {},
       camera: {
-        mode: template === 'wide' ? 'follow-x' : template === 'tall' ? 'follow-xy' : 'fixed',
+        mode: base === 'wide' ? 'follow-x' : base === 'tall' ? 'follow-xy' : 'fixed',
         viewWidth: 990,
         viewHeight: 560,
         minimumBallDiameterPx: 20,
@@ -83,9 +89,71 @@ export function blank(template = 'rectangle'): Draft {
       experimental: true,
     },
   };
+  const l = draft.level;
+  if (template === 'sloping floor')
+    l.boundary = [
+      { x: 60, y: 640 },
+      { x: 60, y: 120 },
+      { x: 1120, y: 120 },
+      { x: 1120, y: 500 },
+      { x: 920, y: 500 },
+      { x: 400, y: 640 },
+    ];
+  if (template === 'sloping ceiling')
+    l.boundary = [
+      { x: 60, y: 640 },
+      { x: 60, y: 300 },
+      { x: 500, y: 120 },
+      { x: 1120, y: 300 },
+      { x: 1120, y: 640 },
+    ];
+  if (template === 'multi-platform')
+    l.obstacles = [
+      {
+        id: 'platform-1',
+        points: [
+          { x: 350, y: 480 },
+          { x: 650, y: 480 },
+          { x: 650, y: 510 },
+          { x: 350, y: 510 },
+        ],
+      },
+      {
+        id: 'platform-2',
+        points: [
+          { x: 720, y: 350 },
+          { x: 940, y: 350 },
+          { x: 940, y: 380 },
+          { x: 720, y: 380 },
+        ],
+      },
+    ];
+  if (template === 'multi-section exploration') {
+    l.boundary = [
+      { x: 60, y: 940 },
+      { x: 60, y: 100 },
+      { x: 950, y: 100 },
+      { x: 950, y: 360 },
+      { x: 1700, y: 360 },
+      { x: 1700, y: 100 },
+      { x: 2600, y: 100 },
+      { x: 2600, y: 940 },
+      { x: 1800, y: 940 },
+      { x: 1800, y: 650 },
+      { x: 850, y: 650 },
+      { x: 850, y: 940 },
+    ];
+    l.start = { x: 130, y: 918 };
+    l.camera!.mode = 'follow-xy';
+    l.goal.y = 940;
+  }
+  if (template === 'sloping floor') l.goal.y = 500;
+  syncBoundary(l);
+  return draft;
 }
 export function copyOfficial(id: number): Draft {
-  const level = structuredClone(levels.find((l) => l.id === id)!);
+  const source = levels.find((l) => l.id === id)!;
+  const level = structuredClone(source);
   level.name += ' — copy';
   delete level.design;
   // Convert the old implicit floor into a complete editable perimeter, without altering any shape.
@@ -105,7 +173,7 @@ export function copyOfficial(id: number): Draft {
     version: 1,
     draftId: uid(),
     modified: new Date().toISOString(),
-    difficulty: 2,
+    difficulty: source.design?.difficulty ?? 2,
     tags: [],
     level,
   };
@@ -233,8 +301,20 @@ export function parseDraft(text: string): Draft | Draft[] {
   numeric(l.goal, ['x', 'y', 'w', 'h', 'roof'], 'Goal');
   for (const o of l.obstacles)
     if (!o || !Array.isArray(o.points)) throw Error('Obstacle needs a vertex array.');
-  for (const o of l.surfaces) numeric(o, ['x', 'y', 'w'], 'Surface');
-  for (const o of l.movers) numeric(o, ['x', 'y', 'w', 'h', 'travel', 'period'], 'Moving block');
+  for (const o of l.surfaces) {
+    numeric(o, ['x', 'y', 'w'], 'Surface');
+    // Pre-V2 weak explicit overrides are rescaled once; new overrides keep their exact value.
+    if (l.boostVersion !== 2 && typeof o.acceleration === 'number' && o.acceleration <= 0.8)
+      o.acceleration = Math.min(5, o.acceleration * 6.25);
+  }
+  if (l.surfaces.some((s: any) => s.acceleration !== undefined)) l.boostVersion = 2;
+  for (const o of l.movers) {
+    numeric(o, ['x', 'y', 'w', 'h', 'travel', 'period'], 'Moving block');
+    if (o.path) {
+      numeric(o.path.start, ['x', 'y'], 'Path start');
+      numeric(o.path.end, ['x', 'y'], 'Path end');
+    }
+  }
   for (const [kind, fields] of Object.entries({
     springs: ['x', 'y', 'w', 'angle', 'strength'],
     winds: ['x', 'y', 'w', 'h', 'angle', 'strength'],
@@ -256,6 +336,7 @@ export function parseDraft(text: string): Draft | Draft[] {
     format: 'goal-in-one-level',
     version: 1,
     draftId: typeof raw.draftId === 'string' ? raw.draftId : uid(),
+    ...(typeof raw.designId === 'string' ? { designId: raw.designId } : {}),
     modified: typeof raw.modified === 'string' ? raw.modified : new Date().toISOString(),
     difficulty: Number(raw.difficulty) || 2,
     tags: Array.isArray(raw.tags)

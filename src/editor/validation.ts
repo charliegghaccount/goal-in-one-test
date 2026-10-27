@@ -99,6 +99,34 @@ export function validateLevel(l: Level): Issue[] {
         (o.travel < 0 || o.period < 0.5 || !['x', 'y', undefined].includes(o.axis))
       )
         error('Moving block: use axis x/y, nonnegative travel and period ≥0.5 seconds.');
+      if (name === 'Moving block' && !o.path && (o.travel * 2 * Math.PI) / o.period > 400)
+        error(
+          'Moving block peak speed exceeds 400 units/second; reduce travel or increase its cycle duration.',
+        );
+      if (name === 'Moving block' && o.path) {
+        if (
+          !o.path.start ||
+          !o.path.end ||
+          !finite(o.path.start.x, o.path.start.y, o.path.end.x, o.path.end.y)
+        )
+          error('Movement path needs numeric start and end points.');
+        else if (
+          (Math.hypot(o.path.end.x - o.path.start.x, o.path.end.y - o.path.start.y) * Math.PI) /
+            o.period >
+          400
+        )
+          error('Movement path peak speed exceeds 400 units/second; increase its cycle duration.');
+        if (o.loop !== undefined && !['ping-pong', 'once'].includes(o.loop))
+          error('Movement loop must be ping-pong or once.');
+        if (o.phase !== undefined && !finite(o.phase)) error('Starting phase must be numeric.');
+      }
+      if (
+        name === 'Gate' &&
+        [o.openDuration ?? 0.7, o.closeDuration ?? 0.7].some(
+          (v) => !finite(v) || v < 0.05 || v > 120,
+        )
+      )
+        error('Gate opening/closing durations must be between 0.05 and 120 seconds.');
       if (name === 'Wind' && (o.strength <= 0 || o.strength > 5))
         error('Wind strength must be in (0, 5].');
       if (name === 'Breakable' && (o.threshold <= 0 || o.threshold > 40))
@@ -107,19 +135,45 @@ export function validateLevel(l: Level): Issue[] {
         error('Gate needs a unique ID and numeric opening offset.');
       if (
         name === 'Rotor' &&
-        (Math.abs(o.speed) > 1 ||
+        (Math.abs(o.speed) > 3 ||
           (o.amplitude !== undefined &&
             (!finite(o.amplitude, o.period) ||
               o.period < 1 ||
               o.amplitude < 0 ||
               o.amplitude > Math.PI)))
       )
-        error('Rotor: speed ≤1 rad/s; swing needs a nonnegative range ≤π and period ≥1 second.');
+        error('Rotor: speed ≤3 rad/s; swing needs a nonnegative range ≤π and period ≥1 second.');
       if (
         name === 'Rotor' &&
         ((o.phase !== undefined && !finite(o.phase)) || (o.pivot && !finite(o.pivot.x, o.pivot.y)))
       )
         error('Rotor angle and pivot coordinates must be numeric.');
+      if (
+        name === 'Rotor' &&
+        o.amplitude !== undefined &&
+        finite(o.amplitude, o.period ?? 5) &&
+        (o.amplitude * 2 * Math.PI) / (o.period ?? 5) > 3
+      )
+        error('Swing peak angular speed exceeds 3 rad/s; lengthen its period or reduce its range.');
+      if (
+        name === 'Rotor' &&
+        ((o.amplitude !== undefined
+          ? (o.amplitude * 2 * Math.PI) / (o.period ?? 5)
+          : Math.abs(o.speed)) *
+          Math.max(o.w, o.h)) /
+          2 >
+          400
+      )
+        error('Rotor tip speed exceeds 400 units/second; reduce speed/range or size.');
+      if (
+        name === 'Gate' &&
+        o.offset &&
+        (o.openDuration !== undefined || o.closeDuration !== undefined) &&
+        Math.hypot(o.offset.x, o.offset.y) /
+          Math.min(o.openDuration ?? 0.7, o.closeDuration ?? 0.7) >
+          400
+      )
+        error('Gate travel exceeds 400 units/second; increase its opening/closing duration.');
       if (name === 'Moving block' && o.angle !== undefined && !finite(o.angle))
         error('Moving block rotation must be numeric.');
       if (name === 'Gate' || name === 'Breakable')
@@ -133,6 +187,8 @@ export function validateLevel(l: Level): Issue[] {
   if (new Set(switches.map((s) => s.id)).size !== switches.length)
     error('Switch IDs must be unique.');
   for (const s of switches) {
+    if (!finite(s.w ?? 36, s.h ?? 36) || (s.w ?? 36) < 8 || (s.h ?? 36) < 8)
+      error('Switch dimensions must be numeric and at least 8 units.');
     if (!s.id || !finite(s.x, s.y) || !gateIds.has(s.gateId))
       error(`Switch ${s.id || '(unnamed)'} needs coordinates and a link to an existing gate.`);
     if (
@@ -149,9 +205,9 @@ export function validateLevel(l: Level): Issue[] {
       error('Surface needs numeric coordinates, length ≥8 and a supported type.');
     if (
       s.acceleration !== undefined &&
-      (!finite(s.acceleration) || s.acceleration <= 0 || s.acceleration > 2)
+      (!finite(s.acceleration) || s.acceleration <= 0 || s.acceleration > 5)
     )
-      error('Boost acceleration must be in (0, 2].');
+      error('Boost acceleration must be in (0, 5].');
   }
   for (const s of l.mechanics?.springs ?? [])
     if (

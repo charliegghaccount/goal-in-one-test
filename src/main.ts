@@ -8,11 +8,15 @@ const developerMode = new URLSearchParams(location.search).has('dev');
 const logoUrl = new URL('./assets/logo.svg', import.meta.url).href;
 const ballArtUrl = new URL('./assets/football.svg', import.meta.url).href;
 import './style.css';
-import { levels, arenaPolygon, segments, WALL_WIDTH, type Level, type Point } from './levels';
+import { arenaPolygon, segments, WALL_WIDTH, type Level, type Point } from './levels';
 import { FootballSimulation, MAX_PULL, rating, STEP } from './simulation';
 import { Renderer, viewBounds } from './render';
 import { Audio } from './audio';
-import { readProgress, recordBest, saveProgress } from './progress';
+import { readProgress, recordLevelBest, bestFor, saveProgress } from './progress';
+import { campaign } from './campaign';
+import { levelThumbnail } from './thumbnail';
+let levels = campaign().playable();
+const best = (l: Level) => bestFor(progress, l);
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const audio = new Audio(),
   progress = readProgress();
@@ -98,40 +102,29 @@ function cleanup() {
   accumulator = 0;
 }
 function totalStars() {
-  return levels.reduce((s, l) => s + (progress.best[l.id] ? rating(progress.best[l.id], l) : 0), 0);
+  return levels.reduce((s, l) => s + (best(l) ? rating(best(l)!, l) : 0), 0);
 }
 function home() {
   cleanup();
   screen = 'home';
-  const completed = Object.keys(progress.best).length,
-    next = levels.find((l) => !progress.best[l.id])?.id ?? 1;
+  levels = campaign().playable();
+  const completed = levels.filter((l) => best(l)).length,
+    next = levels.find((l) => !best(l))?.id ?? 1;
   app.innerHTML = `${header()}<main class="home park-home"><section class="hero-copy"><div class="eyebrow">PARK & TREELINE</div><h1><img class="game-logo" src="${logoUrl}" alt="Goal In One"/></h1><p>One ball. ${levels.length} goals. Your perfect shot.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${icon('play')} ${completed ? 'CONTINUE' : 'PLAY'}</button><button class="secondary" data-action="levels">${icon('grid')} LEVEL SELECT</button><button class="secondary" data-action="settings">${icon('aim')} SETTINGS</button></div><div class="hero-note">DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS · ${totalStars()} STARS</div>` : ''}</section><img class="park-football" src="${ballArtUrl}" alt="" aria-hidden="true"/></main><footer class="site-footer"><span>${levels.length} ARENAS · UNLIMITED KICKS</span><span>ONE MORE PERFECT SHOT.</span></footer>`;
 
   bind();
 }
-function miniLevel(l: Level) {
-  const b = viewBounds(l),
-    g = l.goal;
-  const path = (p: Point[]) => p.map((v, i) => `${i ? 'L' : 'M'}${v.x} ${v.y}`).join(' ') + ' Z';
-  return `<svg viewBox="${b.x} ${b.y} ${b.w} ${b.h}" aria-hidden="true" class="mini-course"><rect x="0" y="0" width="1280" height="720" fill="transparent"/><path d="${path(arenaPolygon(l))}" fill="#e1f8ff55"/>${l.obstacles.map((o) => `<path d="${path(o.points)}" fill="#bc8244"/>`).join('')}${segments(
-    l,
-  )
-    .map(
-      (s) =>
-        `<path d="M${s.a.x} ${s.a.y} L${s.b.x} ${s.b.y}" stroke="${s.kind === 'goal' ? '#48df35' : '#8b542a'}" stroke-width="${WALL_WIDTH}" stroke-linecap="round"/>`,
-    )
-    .join(
-      '',
-    )}${l.surfaces.map((s) => `<path d="M${s.x} ${s.y - 6}h${s.w}" stroke="${s.kind === 'forward' ? '#83d44b' : s.kind === 'backward' ? '#ed9e35' : '#ed4b52'}" stroke-width="8"/>`).join('')}${l.movers.map((m) => `<rect x="${m.x + (m.axis === 'x' ? m.travel : 0) - m.w / 2}" y="${m.y + (m.axis === 'x' ? 0 : m.travel) - m.h / 2}" width="${m.w}" height="${m.h}" fill="#bc8244"/>`).join('')}<circle cx="${l.start.x}" cy="${l.start.y}" r="16" fill="#fff" stroke="#17394f" stroke-width="3"/><path d="m${l.start.x} ${l.start.y - 7} 7 5-3 8h-8l-3-8z" fill="#17394f"/></svg>`;
-}
+const miniLevel = levelThumbnail;
 function levelSelect() {
   cleanup();
   screen = 'levels';
+  levels = campaign().playable();
+  levelPage = Math.min(levelPage, Math.max(0, Math.ceil(levels.length / 20) - 1));
   app.innerHTML = `${header()}<main class="select-page"><div class="section-heading"><div><div class="eyebrow">PARK & TREELINE</div><h1>PICK YOUR <em>PERFECT SHOT.</em></h1><p>${levels.length} grass arenas. Unlimited kicks in every level.</p></div><div class="progress-card">${icon('star')}<strong>${totalStars()}<span> / ${levels.length * 3}</span></strong><span>STARS COLLECTED</span></div></div><div class="level-grid">${levels
     .slice(levelPage * 20, levelPage * 20 + 20)
     .map(
       (l) =>
-        `<button class="level-card ${progress.best[l.id] ? 'level-done' : 'level-open'}" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${escapeText(l.name)}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${progress.best[l.id] ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${escapeText(l.name)}</h2><div><span>${progress.best[l.id] ? 'SCORED' : 'OPEN'} · PAR ${l.par} ${progress.best[l.id] ? `· BEST ${progress.best[l.id]}` : ''}</span>${stars(progress.best[l.id] ? rating(progress.best[l.id], l) : 0)}</div></div></button>`,
+        `<button class="level-card ${best(l) ? 'level-done' : 'level-open'}" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${escapeText(l.name)}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${best(l) ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${escapeText(l.name)}</h2><div><span>${best(l) ? 'SCORED' : 'OPEN'} · PAR ${l.par} ${best(l) ? `· BEST ${best(l)}` : ''}</span>${stars(best(l) ? rating(best(l)!, l) : 0)}</div></div></button>`,
     )
     .join(
       '',
@@ -170,6 +163,10 @@ function syncCameraControls() {
   renderer!.canvas.style.cursor = exploration?.explore ? 'grab' : 'crosshair';
 }
 function play(id: number, draft?: Level) {
+  if (!draft && !levels.length) {
+    levelSelect();
+    return;
+  }
   cleanup();
   screen = 'game';
   draftTest = draft ? structuredClone(draft) : null;
@@ -183,7 +180,7 @@ function play(id: number, draft?: Level) {
     .filter((x) => Math.floor((x.id - 1) / 10) === Math.floor((l.id - 1) / 10))
     .map(
       (x) =>
-        `<button data-action="play" data-id="${x.id}" aria-label="Level ${x.id}" ${x.id === l.id ? 'aria-current="step"' : ''} class="${progress.best[x.id] ? 'done' : ''}">${progress.best[x.id] ? icon('check') : String(x.id).padStart(2, '0')}</button>`,
+        `<button data-action="play" data-id="${x.id}" aria-label="Level ${x.id}" ${x.id === l.id ? 'aria-current="step"' : ''} class="${best(x) ? 'done' : ''}">${best(x) ? icon('check') : String(x.id).padStart(2, '0')}</button>`,
     )
     .join(
       '',
@@ -454,11 +451,11 @@ function result() {
   }
   const l = sim.level,
     n = rating(sim.shots, l),
-    prior = progress.best[l.id];
-  recordBest(progress, l.id, sim.shots);
+    prior = best(l);
+  recordLevelBest(progress, l, sim.shots);
   persist();
   modal(
-    `<div class="completion-kicker">${icon('net')} LEVEL COMPLETE · ${String(l.id).padStart(2, '0')}</div><div class="completion-stars">${stars(n)}</div><h2>${sim.shots === 1 ? 'GOAL IN ONE!' : l.id === levels.length ? 'FINAL WHISTLE!' : 'GOOOAL!'}</h2><p>Through the opening. Into the net. Keep finding your angle.</p><div class="completion-stats"><div><span>SHOTS</span><strong>${sim.shots}</strong></div><div><span>PAR</span><strong>${l.par}</strong></div><div><span>BEST</span><strong>${progress.best[l.id]}</strong></div></div><div class="personal-best">${!prior || sim.shots < prior ? 'NEW PERSONAL BEST' : 'A GOAL WORTH REPLAYING'}</div><div class="completion-actions"><button class="primary" data-action="${l.id === levels.length ? 'levels' : 'next'}">${l.id === levels.length ? 'ALL LEVELS' : 'NEXT LEVEL'} ${icon('arrow')}</button><button class="secondary" data-action="restart">PLAY AGAIN</button><button class="text-button" data-action="levels">BACK TO LEVELS</button></div>${!storageOK ? '<small>Browser storage is unavailable. Progress lasts for this visit.</small>' : ''}`,
+    `<div class="completion-kicker">${icon('net')} LEVEL COMPLETE · ${String(l.id).padStart(2, '0')}</div><div class="completion-stars">${stars(n)}</div><h2>${sim.shots === 1 ? 'GOAL IN ONE!' : l.id === levels.length ? 'FINAL WHISTLE!' : 'GOOOAL!'}</h2><p>Through the opening. Into the net. Keep finding your angle.</p><div class="completion-stats"><div><span>SHOTS</span><strong>${sim.shots}</strong></div><div><span>PAR</span><strong>${l.par}</strong></div><div><span>BEST</span><strong>${best(l)}</strong></div></div><div class="personal-best">${!prior || sim.shots < prior ? 'NEW PERSONAL BEST' : 'A GOAL WORTH REPLAYING'}</div><div class="completion-actions"><button class="primary" data-action="${l.id === levels.length ? 'levels' : 'next'}">${l.id === levels.length ? 'ALL LEVELS' : 'NEXT LEVEL'} ${icon('arrow')}</button><button class="secondary" data-action="restart">PLAY AGAIN</button><button class="text-button" data-action="levels">BACK TO LEVELS</button></div>${!storageOK ? '<small>Browser storage is unavailable. Progress lasts for this visit.</small>' : ''}`,
     'Goal scored',
   );
 }
