@@ -42,7 +42,7 @@ Select a resizable object to display eight handles. Side handles move only that 
 
 Nine starting templates are available: rectangle, wide, tall, stepped, sloping floor, sloping ceiling, multi-platform, long scrolling and multi-section exploration. All are editable starting frames. Moving the wall supporting the goal attempts to keep a valid snapped opening; an impossible net placement remains visible as a validation error instead of silently undoing the wall edit.
 
-Existing limitations remain: simple concave filled polygons are supported, holes/curves are not; goals require a vertical right-facing external wall. Collision and rendered geometry share the same definitions. Basic validation cannot prove route solvability or good scoring thresholds.
+Simple concave filled polygons are supported; holes/curves are not. Goals can now stand anywhere in a clear space inside the arena, with a right-facing entrance, or attach to a vertical right-facing wall. Drag the net directly or choose goal in the Object dropdown; Properties supports exact entrance X/Y coordinates. Boundary edits repair an invalid wall attachment by finding a nearby valid net position. Free goals retain every perimeter collider and their own physical roof/back/floor; validation blocks nets outside the arena or overlapping solid obstacles. Collision and rendered geometry share the same definitions. Basic validation cannot prove route solvability or good scoring thresholds.
 
 ## Motion and mechanism controls
 
@@ -100,3 +100,5 @@ See [the review contact sheet](studio-v2-evidence/studio-overview.jpg), [full ca
 Screenshots are captured from the real browser editor/game, with actual pointer inputs and shared simulation. Automated route tests are not human playtesting. Physical phones, Safari/Firefox and sustained authoring at the 2,000-design limit remain unverified.
 
 Optional conveniences not implemented: nearby-edge/vertex magnet snapping (grid snapping is supported), curved/multi-point motion paths, online publishing/accounts/sharing, authoring on a phone, polygon holes and other goal orientations. These were not added to the scope. No extra official levels were generated.
+
+Goal-placement follow-up: **586 runtime tests and all 10 V2 browser cases passed**, including tilting the goal wall, freely dragging the net, scoring with real kick input, and rejecting an outside-arena placement. See [the free-standing goal screenshot](free-goal.jpg).

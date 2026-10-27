@@ -16,7 +16,7 @@ import {
   savedDrafts,
   storeDraft,
   syncBoundary,
-  snapGoal,
+  repairGoal as snapGoal,
   uid,
   type Draft,
 } from './model';
@@ -346,7 +346,7 @@ export class LevelEditor {
       else {
         html +=
           n(
-            r.kind === 'goal' ? 'Goal X (wall)' : 'X',
+            r.kind === 'goal' ? 'Goal X (entrance)' : 'X',
             'x',
             r.kind === 'obstacle' || (r.kind === 'rotor' && o.pivot) ? c.x : o.x,
           ) +
@@ -474,7 +474,7 @@ export class LevelEditor {
       if (r.kind === 'goal')
         html +=
           n('Roof length', 'roof', o.roof) +
-          '<small>Dragging snaps to a vertical right boundary and cuts a real opening.</small>';
+          '<small>Drag anywhere inside the arena. Near a valid right wall, the net attaches and opens that wall. Invalid overlaps are highlighted.</small>';
       if (r.kind === 'region')
         html +=
           text('Region label', 'label', o.label) +
@@ -783,12 +783,6 @@ export class LevelEditor {
   }
   private place(t: Tool, p: Point) {
     this.pausePreview();
-    if (t === 'goal' && !snapGoal(structuredClone(this.session.doc.level), this.snapped(p))) {
-      this.status(
-        'No clear goal opening here. Choose a vertical right boundary away from solid obstacles.',
-      );
-      return;
-    }
     this.session.change(() => {
       this.selection = add(this.session.doc.level, t, this.snapped(p));
     });

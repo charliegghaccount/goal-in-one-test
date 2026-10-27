@@ -25,7 +25,15 @@ export type Mover = {
   phase?: number;
   angle?: number;
 };
-export type Goal = { x: number; y: number; w: number; h: number; roof: number; direction?: 1 | -1 };
+export type Goal = {
+  placement?: 'free';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  roof: number;
+  direction?: 1 | -1;
+};
 export type Level = {
   /** Campaign identity and revision are independent of the display number. */
   boostVersion?: 2;
@@ -300,6 +308,7 @@ export function segments(l: Level): Segment[] {
       const a = l.boundary[i],
         b = l.boundary[(i + 1) % l.boundary.length];
       if (
+        g.placement !== 'free' &&
         Math.abs(a.x - g.x) < 0.01 &&
         Math.abs(b.x - g.x) < 0.01 &&
         Math.min(a.y, b.y) <= g.y - g.h + 0.01 &&
@@ -363,6 +372,7 @@ export function arenaPolygon(l: Level): Point[] {
         b = l.boundary[(i + 1) % l.boundary.length];
       points.push(a);
       if (
+        g.placement !== 'free' &&
         Math.abs(a.x - g.x) < 0.01 &&
         Math.abs(b.x - g.x) < 0.01 &&
         Math.min(a.y, b.y) <= g.y - g.h + 0.01 &&

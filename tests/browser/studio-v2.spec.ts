@@ -509,3 +509,36 @@ test('metadata publication is validated and a newer draft status survives save/r
   await p.getByRole('button', { name: 'Save & Publish', exact: true }).click();
   await expect(p.locator('#publish-status')).toContainText('Difficulty must be');
 });
+
+test('tilt a goal wall, drag the net freely, reject overlaps and score the relocated goal', async ({
+  page: p,
+}) => {
+  await frozen(p);
+  await p.locator('#ed-snap').uncheck();
+  await command(p, 'Boundary');
+  await dragWorld(p, { x: 1120, y: 120 }, { x: 1020, y: 180 });
+  await expect(p.locator('[data-command="Test Level"]')).toBeEnabled();
+  let d = await exported(p);
+  expect(d.level.goal.placement).toBe('free');
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('goal:0');
+  const g = d.level.goal;
+  await dragWorld(p, { x: g.x + 40, y: g.y - 40 }, { x: 740, y: 600 });
+  d = await exported(p);
+  expect(d.level.goal.x).toBeCloseTo(700, 2);
+  expect(d.level.goal.y).toBeCloseTo(640, 2);
+  await expect(p.locator('[data-command="Test Level"]')).toBeEnabled();
+  await p.screenshot({ path: `${evidence}/free-goal.jpg`, quality: 88 });
+  await command(p, 'Test Level');
+  await p.clock.runFor(100);
+  await kick(p, 0, 80);
+  await p.clock.runFor(12000);
+  await expect(p.getByRole('dialog', { name: 'Draft goal scored' })).toBeVisible();
+  await p.getByRole('button', { name: 'RETURN TO EDITOR', exact: true }).click();
+  await p.clock.runFor(34);
+  await p.getByRole('combobox', { name: 'Select object' }).selectOption('goal:0');
+  await field(p, 'Goal X (entrance)', '1300');
+  await expect(p.locator('[data-command="Test Level"]')).toBeDisabled();
+  await expect(p.locator('#editor-validation')).toContainText('Goal/net must fit');
+  await field(p, 'Goal X (entrance)', '700');
+  await expect(p.locator('[data-command="Test Level"]')).toBeEnabled();
+});

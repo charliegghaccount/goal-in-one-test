@@ -1,3 +1,4 @@
+import { freeGoalFits } from '../goal-placement';
 import { levels, arenaPolygon, type Level, type Point } from '../levels';
 import { inPolygon, distanceToEdge, polygonError, cleanLoop } from '../geometry';
 import type { Rect } from '../camera';
@@ -182,7 +183,46 @@ export function syncBoundary(l: Level) {
   if (l.boundary) l.outline = structuredClone(l.boundary);
   l.width = Math.max(...l.outline.map((p) => p.x), l.goal.x + l.goal.w) + 30;
 }
+export function moveGoal(l: Level, p: Point) {
+  l.goal.x = p.x;
+  l.goal.y = p.y;
+  l.goal.placement = 'free';
+  // Only attach to a wall when the pointer is actually near that wall.
+  const trial = structuredClone(l);
+  delete trial.goal.placement;
+  if (
+    snapWallGoal(trial, p) &&
+    Math.abs(trial.goal.x - p.x) < 20 &&
+    Math.abs(trial.goal.y - p.y) < 20
+  )
+    l.goal = trial.goal;
+}
+export function repairGoal(l: Level, p: Point): boolean {
+  if (l.goal.placement === 'free' && freeGoalFits(l)) return true;
+  if (l.goal.placement !== 'free' && snapWallGoal(l, p)) return true;
+  // A tilted/deleted goal wall should not strand an otherwise valid arena.
+  const original = { ...l.goal };
+  for (let radius = 0; radius <= 640; radius += 16)
+    for (const [dx, dy] of [
+      [-1, 0],
+      [-1, -1],
+      [0, -1],
+      [1, -1],
+      [1, 0],
+      [0, 1],
+      [-1, 1],
+      [1, 1],
+    ]) {
+      l.goal = { ...original, x: p.x + dx * radius, y: p.y + dy * radius, placement: 'free' };
+      if (freeGoalFits(l)) return true;
+    }
+  l.goal = original;
+  return false;
+}
 export function snapGoal(l: Level, p: Point) {
+  return snapWallGoal(l, p);
+}
+function snapWallGoal(l: Level, p: Point) {
   const b = l.boundary ?? l.outline;
   const candidates = b
     .map((a, i) => ({ a, b: b[(i + 1) % b.length] }))
@@ -222,10 +262,12 @@ export function snapGoal(l: Level, p: Point) {
   )
     return false;
   const trial = { ...l, goal: { ...l.goal, x, y } };
+  delete trial.goal.placement;
   if (polygonError(cleanLoop(arenaPolygon(trial)))) return false;
   l.goal.x = x;
   l.goal.y = y;
   l.goal.direction = 1;
+  delete l.goal.placement;
   return true;
 }
 /** Check structure and resource limits before trusting imported values in the UI/runtime. */

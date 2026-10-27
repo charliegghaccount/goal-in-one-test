@@ -1,7 +1,7 @@
 import type { Level, Point } from '../levels';
 import { boxPoints, inPolygon, distanceToEdge } from '../geometry';
 import { rotorPose } from '../motion';
-import { snapGoal, syncBoundary } from './model';
+import { moveGoal, repairGoal as snapGoal, syncBoundary } from './model';
 export type Kind =
   | 'obstacle'
   | 'surface'
@@ -215,7 +215,7 @@ export function translate(l: Level, r: Ref, dx: number, dy: number) {
   const o = object(l, r);
   if (!o) return;
   if (r.kind === 'goal') {
-    snapGoal(l, { x: o.x + dx, y: o.y + dy });
+    moveGoal(l, { x: o.x + dx, y: o.y + dy });
     return;
   }
   if (r.kind === 'obstacle' || r.kind === 'boundary') {
@@ -377,7 +377,7 @@ export function add(l: Level, t: Tool, p: Point): Ref[] {
     return [{ kind: 'spawn', index: 0 }];
   }
   if (t === 'goal') {
-    snapGoal(l, p);
+    moveGoal(l, p);
     return [{ kind: 'goal', index: 0 }];
   }
   if (t === 'polygon') return [];

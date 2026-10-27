@@ -1,3 +1,4 @@
+import { freeGoalFits } from '../goal-placement';
 import type { Level, Point } from '../levels';
 import { arenaPolygon, segments } from '../levels';
 import {
@@ -34,6 +35,7 @@ export function validateLevel(l: Level): Issue[] {
     error('Goal: height ≥70, depth ≥60 and a roof between 20 and its depth are required.');
   if (
     l.boundary &&
+    g.placement !== 'free' &&
     !b.some((a, i) => {
       const z = b[(i + 1) % b.length];
       return (
@@ -48,6 +50,10 @@ export function validateLevel(l: Level): Issue[] {
   )
     error(
       'Goal needs a vertical external boundary segment covering its full opening. Drag the goal onto the right wall.',
+    );
+  if (g.placement === 'free' && !freeGoalFits(l))
+    error(
+      'Goal/net must fit inside the arena without crossing walls or solid obstacles. Move it into a clear space.',
     );
   if (!e && l.boundary && polygonError(cleanLoop(arenaPolygon(l))))
     error('The net overlaps another arena boundary. Choose a clear right-facing wall.');
