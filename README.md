@@ -1,8 +1,8 @@
 # Goal In One ⚽ — Park & Treeline
 
-A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. Sixty enclosed park arenas, including twelve new compact puzzles and eight larger scrolling courses. The first forty level definitions and saved progression are preserved. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
+A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. Sixty enclosed park arenas, including twelve new compact puzzles and eight larger scrolling courses. All sixty official definitions and saved progression are preserved. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
 
-The latest update implements the supplied Levels 41–60 package with a shared rendering/input camera, off-screen goal indicator and paused arena overview. See the [implementation, deviations and per-level test report](docs/VNEXT.md), [20-level contact sheet](docs/vnext-evidence/levels-41-60.jpg), and earlier [physics/mechanics expansion](docs/EXPANSION.md). Park & Treeline artwork and default physics are retained.
+The current update adds an internal visual **Level Studio** and player camera exploration. Open `?dev=1&editor=1`, or use Settings → Level Editor in developer mode. Drafts share the actual renderer and physics, support editable perimeters and concave obstacles, and save/export independently of official progress. See the [editor and exploration guide](docs/EDITOR.md) and [editor screenshot](docs/editor-evidence/editor-spring-route.jpg). The earlier [Levels 41–60 report](docs/VNEXT.md) documents the authored scrolling courses.
 
 **Play:** https://charliegghaccount.github.io/goal-in-one-test/
 
@@ -24,8 +24,8 @@ Open the address Vite prints (port 5173). In the cloud checkout run from `/works
 ```sh
 npm run build          # TypeScript + production build in dist/
 npm run preview        # Serve production output on port 4173
-npm test               # Physics, camera, enclosure, all sixty routes, mechanics, saves
-npm run test:browser   # Actual mouse/touch kicks, camera/UI, all sixty goals
+npm test               # Editor, physics, camera, sixty routes, mechanics, saves
+npm run test:browser   # Editor workflow, mouse/touch exploration, sixty goals
 npm run format:check
 npm run solve -- 6     # Search input-only routes with unchanged runtime physics
 ```
@@ -42,7 +42,7 @@ Playwright uses `/usr/bin/chromium` when available; otherwise run `npx playwrigh
 - The green surfaces accelerates/throws right; the orange surfaces throws left. Arrow marks show the direction. These automatic contacts do not count as extra player kicks.
 - Red strips in Level 10 and later challenges instantly restores the original ball start and zeroes its motion. It preserves every kick already taken and adds no free or penalty shot.
 - Retry resets the level, moving-block phase, position, count and effects. Pause/help freeze physics.
-- Levels 1–52 use a fixed, uniformly scaled view. Levels 53–60 follow the football horizontally, with full vertical tracking for the two tall courses and vertical safety tracking on shorter screens. A green arrow points towards an off-screen goal. The map button pauses play and shows the entire course; tap it again to resume. Drag power uses screen displacement so camera motion never changes a held kick. Resizing never changes physics coordinates.
+- Levels 1–52 use a fixed, uniformly scaled view. Levels 53–60 follow the football horizontally, with full vertical tracking for the two tall courses and vertical safety tracking on shorter screens. A green arrow points towards an off-screen goal. The map button pauses play and restores your previous view when closed. Use ✥ Explore to pan without kicking, ◎ Return to Ball to follow again, and + / −, wheel or touch pinch to zoom. Camera motion and zoom do not change a gesture’s kick power. Resizing never changes physics coordinates.
 
 **Precise aim** offers sliders and a kick button usable while moving. Keyboard when the canvas is focused: ↑/↓ angle, ←/→ power, Space kick, R retry, P pause, L levels, Escape cancel. Every essential action also has a mouse/touch control. Landscape and portrait layouts are supported; physical iPhones are unverified.
 

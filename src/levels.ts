@@ -4,8 +4,14 @@ import { extraLayouts } from './extra-layouts';
 import { vnextLevels } from './vnext';
 import type { CameraSpec } from './camera';
 export type Point = { x: number; y: number };
-export type Polygon = { id: string; points: Point[] };
-export type Surface = { x: number; y: number; w: number; kind: 'forward' | 'backward' | 'delete' };
+export type Polygon = { id: string; points: Point[]; rotation?: number };
+export type Surface = {
+  x: number;
+  y: number;
+  w: number;
+  kind: 'forward' | 'backward' | 'delete';
+  acceleration?: number;
+};
 export type Mover = {
   x: number;
   y: number;
@@ -14,6 +20,7 @@ export type Mover = {
   travel: number;
   period: number;
   axis?: 'x' | 'y';
+  angle?: number;
 };
 export type Goal = { x: number; y: number; w: number; h: number; roof: number; direction?: 1 | -1 };
 export type Level = {
@@ -26,6 +33,8 @@ export type Level = {
   start: Point;
   goal: Goal;
   outline: Point[];
+  /** Optional complete editable perimeter, without a duplicated closing vertex. */
+  boundary?: Point[];
   obstacles: Polygon[];
   surfaces: Surface[];
   movers: Mover[];
@@ -279,6 +288,41 @@ export type Segment = { id: string; a: Point; b: Point; kind: 'wall' | 'goal' };
 export function segments(l: Level): Segment[] {
   const g = l.goal,
     lines: Segment[] = [];
+  if (l.boundary) {
+    for (let i = 0; i < l.boundary.length; i++) {
+      const a = l.boundary[i],
+        b = l.boundary[(i + 1) % l.boundary.length];
+      if (
+        Math.abs(a.x - g.x) < 0.01 &&
+        Math.abs(b.x - g.x) < 0.01 &&
+        Math.min(a.y, b.y) <= g.y - g.h + 0.01 &&
+        Math.max(a.y, b.y) >= g.y - 0.01
+      ) {
+        const top = { x: g.x, y: g.y - g.h },
+          bottom = { x: g.x, y: g.y };
+        lines.push(
+          { id: `boundary-${i}-a`, a, b: a.y < b.y ? top : bottom, kind: 'wall' },
+          { id: `boundary-${i}-b`, a: a.y < b.y ? bottom : top, b, kind: 'wall' },
+        );
+      } else lines.push({ id: `boundary-${i}`, a, b, kind: 'wall' });
+    }
+    lines.push(
+      { id: 'goal-floor', a: { x: g.x, y: g.y }, b: { x: g.x + g.w, y: g.y }, kind: 'goal' },
+      {
+        id: 'goal-roof',
+        a: { x: g.x, y: g.y - g.h },
+        b: { x: g.x + g.roof, y: g.y - g.h },
+        kind: 'goal',
+      },
+      {
+        id: 'goal-back',
+        a: { x: g.x + g.roof, y: g.y - g.h },
+        b: { x: g.x + g.w, y: g.y },
+        kind: 'goal',
+      },
+    );
+    return lines.filter((s) => Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y) > 0.01);
+  }
   for (let i = 1; i < l.outline.length; i++)
     lines.push({ id: `wall-${i}`, a: l.outline[i - 1], b: l.outline[i], kind: 'wall' });
   // Weld the hand-drawn roof/right-wall junction to the exact mouth top.
@@ -305,6 +349,29 @@ export function segments(l: Level): Segment[] {
 }
 export function arenaPolygon(l: Level): Point[] {
   const g = l.goal;
+  if (l.boundary) {
+    const points: Point[] = [];
+    for (let i = 0; i < l.boundary.length; i++) {
+      const a = l.boundary[i],
+        b = l.boundary[(i + 1) % l.boundary.length];
+      points.push(a);
+      if (
+        Math.abs(a.x - g.x) < 0.01 &&
+        Math.abs(b.x - g.x) < 0.01 &&
+        Math.min(a.y, b.y) <= g.y - g.h + 0.01 &&
+        Math.max(a.y, b.y) >= g.y - 0.01
+      ) {
+        const net = [
+          { x: g.x, y: g.y - g.h },
+          { x: g.x + g.roof, y: g.y - g.h },
+          { x: g.x + g.w, y: g.y },
+          { x: g.x, y: g.y },
+        ];
+        points.push(...(a.y < b.y ? net : net.reverse()));
+      }
+    }
+    return points;
+  }
   return [
     ...l.outline,
     { x: g.x, y: g.y - g.h },

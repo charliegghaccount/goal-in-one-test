@@ -1,3 +1,6 @@
+import { LevelEditor } from './editor/ui';
+import { EditorSession } from './editor/model';
+import { ExplorationControls } from './camera-controls';
 import { developerPanel } from './developer';
 import { loadPhysics, type PhysicsConfig } from './physics';
 let activePhysics = loadPhysics();
@@ -14,7 +17,16 @@ const app = document.querySelector<HTMLDivElement>('#app')!;
 const audio = new Audio(),
   progress = readProgress();
 audio.enabled = progress.sound;
-let screen: 'home' | 'levels' | 'game' = 'home',
+let editorSession: EditorSession | null = null,
+  editorUI: LevelEditor | null = null,
+  draftTest: Level | null = null,
+  exploration: ExplorationControls | null = null;
+const escapeText = (v: string) =>
+  v.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  );
+let screen: 'home' | 'levels' | 'game' | 'editor' = 'home',
   sim: FootballSimulation,
   renderer: Renderer | null = null;
 let pull: Point | null = null,
@@ -76,6 +88,10 @@ function cancelDrag() {
 function cleanup() {
   cancelDrag();
   audio.stopVoice();
+  exploration?.destroy();
+  exploration = null;
+  editorUI?.destroy();
+  editorUI = null;
   renderer = null;
   sim?.destroy();
   document.querySelector('.modal-backdrop')?.remove();
@@ -115,23 +131,55 @@ function levelSelect() {
     .slice(levelPage * 20, levelPage * 20 + 20)
     .map(
       (l) =>
-        `<button class="level-card ${progress.best[l.id] ? 'level-done' : 'level-open'}" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${l.name}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${progress.best[l.id] ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${l.name}</h2><div><span>${progress.best[l.id] ? 'SCORED' : 'OPEN'} · PAR ${l.par} ${progress.best[l.id] ? `· BEST ${progress.best[l.id]}` : ''}</span>${stars(progress.best[l.id] ? rating(progress.best[l.id], l) : 0)}</div></div></button>`,
+        `<button class="level-card ${progress.best[l.id] ? 'level-done' : 'level-open'}" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${escapeText(l.name)}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${progress.best[l.id] ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${escapeText(l.name)}</h2><div><span>${progress.best[l.id] ? 'SCORED' : 'OPEN'} · PAR ${l.par} ${progress.best[l.id] ? `· BEST ${progress.best[l.id]}` : ''}</span>${stars(progress.best[l.id] ? rating(progress.best[l.id], l) : 0)}</div></div></button>`,
     )
     .join(
       '',
     )}</div><div class="level-paging">${levelPage > 0 ? '<button class="secondary" data-action="previous-page">PREVIOUS</button>' : ''}${(levelPage + 1) * 20 < levels.length ? '<button class="secondary" data-action="next-page">MORE ARENAS</button>' : ''}</div><p class="selection-note">All levels are open. Best scores save on this browser.${!storageOK ? ' Storage unavailable: progress lasts for this visit.' : ''}</p></main>`;
   bind();
 }
-function play(id: number) {
+function openEditor() {
+  if (!developerMode) return;
+  cleanup();
+  screen = 'editor';
+  draftTest = null;
+  editorSession ??= new EditorSession();
+  editorUI = new LevelEditor(app, editorSession, (level) => play(1, level), home, activePhysics);
+}
+function syncCameraControls() {
+  const camera = renderer?.camera;
+  if (!camera) return;
+  const overview = document.querySelector('[data-action="overview"]');
+  if (overview) {
+    overview.setAttribute(
+      'aria-label',
+      camera.overview ? 'Return to play' : 'Arena overview (pauses play)',
+    );
+    overview.setAttribute('aria-pressed', String(camera.overview));
+  }
+  const explore = document.querySelector('[data-action="explore"]');
+  explore?.setAttribute('aria-pressed', String(!!exploration?.explore));
+  if (explore)
+    explore.setAttribute(
+      'title',
+      exploration?.explore ? 'Kick mode (stop panning)' : 'Explore / pan camera',
+    );
+  const back = document.querySelector<HTMLElement>('[data-action="return-ball"]');
+  if (back) back.hidden = !camera.manual && !camera.returning;
+  renderer!.canvas.dataset.exploring = String(!!exploration?.explore);
+  renderer!.canvas.style.cursor = exploration?.explore ? 'grab' : 'crosshair';
+}
+function play(id: number, draft?: Level) {
   cleanup();
   screen = 'game';
+  draftTest = draft ? structuredClone(draft) : null;
   currentId = Math.max(1, Math.min(levels.length, id));
   resultShown = false;
   roundSerial++;
   precise = false;
-  sim = new FootballSimulation(levels[currentId - 1], activePhysics);
+  sim = new FootballSimulation(draftTest ?? levels[currentId - 1], activePhysics);
   const l = sim.level;
-  app.innerHTML = `${header()}<main class="game-page"><div class="game-heading"><div class="course-title"><button class="back-button" data-action="levels" aria-label="Back to levels">${icon('back')}</button><div><div class="eyebrow">LEVEL ${String(l.id).padStart(2, '0')} / ${String(levels.length).padStart(2, '0')} <span>·</span> FOOTBALL PHYSICS</div><h1>${l.name}</h1></div></div><div class="round-stats"><div><span>SHOTS</span><strong><b id="shots" aria-live="polite">0</b></strong></div><div><span>KICKS</span><strong class="unlimited">∞</strong></div><div class="par-stat"><span>PAR</span><strong>${l.par}</strong></div>${button('restart', 'Retry level (R)', 'restart')}${button('pause', 'Pause game (P)', 'pause')}</div></div><div class="game-stage"><canvas id="scene" tabindex="0" aria-label="Football puzzle. Drag backwards anywhere and release to kick into the net, even while moving." aria-describedby="level-tip"></canvas><div class="stage-topline"><span class="course-pill">${icon('net')} LEVEL ${String(l.id).padStart(2, '0')}</span><span class="status-pill" id="status">YOUR KICK. YOUR ANGLE.</span><button class="stage-help" data-action="help" aria-label="Show controls">${icon('mouse')}</button></div><div class="stage-bottomline"><span id="power-label">DRAG ANYWHERE TO KICK</span></div></div><div class="game-underbar"><p id="level-tip">${icon('help')} ${l.tip}</p><button class="text-button precise-toggle" data-action="precise" aria-expanded="false">${icon('aim')} PRECISE AIM</button></div><div id="precise-controls" class="precise-controls" hidden><label>Angle <input type="range" min="-30" max="210" value="35" id="angle"/><output id="angle-value">35°</output></label><label>Power <input type="range" min="5" max="100" value="75" id="power"/><output id="power-value">75%</output></label><button class="primary small" data-action="shoot" id="shoot-button">KICK ${icon('arrow')}</button></div><div class="game-footer"><div class="star-targets">${icon('star')} 3 STARS ≤ ${l.starShots[0]} ${l.starShots[0] === 1 ? 'KICK' : 'KICKS'} <span>·</span> 2 STARS ≤ ${l.starShots[1]} <span>·</span> UNLIMITED KICKS</div><nav aria-label="Levels">${levels
+  app.innerHTML = `${header()}<main class="game-page"><div class="game-heading"><div class="course-title"><button class="back-button" data-action="levels" aria-label="Back to levels">${icon('back')}</button><div><div class="eyebrow">LEVEL ${String(l.id).padStart(2, '0')} / ${String(levels.length).padStart(2, '0')} <span>·</span> FOOTBALL PHYSICS</div><h1>${escapeText(l.name)}</h1></div></div><div class="round-stats"><div><span>SHOTS</span><strong><b id="shots" aria-live="polite">0</b></strong></div><div><span>KICKS</span><strong class="unlimited">∞</strong></div><div class="par-stat"><span>PAR</span><strong>${l.par}</strong></div>${button('restart', 'Retry level (R)', 'restart')}${button('pause', 'Pause game (P)', 'pause')}</div></div><div class="game-stage"><canvas id="scene" tabindex="0" aria-label="Football puzzle. Drag backwards anywhere and release to kick into the net, even while moving." aria-describedby="level-tip"></canvas><div class="stage-topline"><span class="course-pill">${icon('net')} LEVEL ${String(l.id).padStart(2, '0')}</span><span class="status-pill" id="status">YOUR KICK. YOUR ANGLE.</span><button class="stage-help" data-action="help" aria-label="Show controls">${icon('mouse')}</button></div><div class="stage-bottomline"><span id="power-label">DRAG ANYWHERE TO KICK</span></div></div><div class="game-underbar"><p id="level-tip">${icon('help')} ${escapeText(l.tip)}</p><button class="text-button precise-toggle" data-action="precise" aria-expanded="false">${icon('aim')} PRECISE AIM</button></div><div id="precise-controls" class="precise-controls" hidden><label>Angle <input type="range" min="-30" max="210" value="35" id="angle"/><output id="angle-value">35°</output></label><label>Power <input type="range" min="5" max="100" value="75" id="power"/><output id="power-value">75%</output></label><button class="primary small" data-action="shoot" id="shoot-button">KICK ${icon('arrow')}</button></div><div class="game-footer"><div class="star-targets">${icon('star')} 3 STARS ≤ ${l.starShots[0]} ${l.starShots[0] === 1 ? 'KICK' : 'KICKS'} <span>·</span> 2 STARS ≤ ${l.starShots[1]} <span>·</span> UNLIMITED KICKS</div><nav aria-label="Levels">${levels
     .filter((x) => Math.floor((x.id - 1) / 10) === Math.floor((l.id - 1) / 10))
     .map(
       (x) =>
@@ -159,13 +207,34 @@ function play(id: number) {
       ),
     );
   }
+  const controls = document.querySelector('.round-stats')!;
+  controls.insertAdjacentHTML(
+    'afterbegin',
+    `<button class="icon-button camera-control" data-action="explore" aria-label="Explore / pan camera" title="Explore / pan camera" aria-pressed="false">✥</button><button class="icon-button camera-control" data-action="return-ball" aria-label="Return to Ball" title="Return to Ball" hidden>◎</button><button class="icon-button camera-control" data-action="zoom-in" aria-label="Zoom in" title="Zoom in">+</button><button class="icon-button camera-control" data-action="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>`,
+  );
+  if (draftTest) {
+    document.querySelector('.game-page')!.classList.add('draft-test');
+    document.querySelector('.course-title .eyebrow')!.textContent =
+      'TEST MODE · DRAFT · SCORES NOT SAVED';
+    const back = document.querySelector<HTMLButtonElement>('.back-button')!;
+    back.dataset.action = 'editor';
+    back.setAttribute('aria-label', 'Return to editor');
+    controls.insertAdjacentHTML(
+      'beforeend',
+      '<button class="secondary return-editor" data-action="editor">Return to editor</button>',
+    );
+    document.querySelector('.game-footer')!.innerHTML =
+      '<strong>TEST MODE · Official progress is untouched</strong>';
+  }
   const bounds =
     l.camera && l.camera.mode !== 'fixed'
       ? { w: l.camera.viewWidth, h: l.camera.viewHeight }
       : viewBounds(l);
   renderer.canvas.style.aspectRatio = String(bounds.w / bounds.h);
   bind();
+  exploration = new ExplorationControls(renderer, cancelDrag, syncCameraControls);
   bindCanvas();
+  syncCameraControls();
   syncAim();
   document.querySelector<HTMLInputElement>('#angle')!.addEventListener('input', (e) => {
     aimAngle = +(e.target as HTMLInputElement).value;
@@ -195,7 +264,7 @@ function syncAim() {
   }
 }
 function kick(p: Point) {
-  return renderer?.camera.overview ? false : sim.shoot(p);
+  return renderer?.camera.overview || exploration?.explore ? false : sim.shoot(p);
 }
 function bindCanvas() {
   const canvas = renderer!.canvas;
@@ -213,7 +282,7 @@ function bindCanvas() {
     dragging = true;
     activePointer = e.pointerId;
     aimOrigin = { x: e.clientX, y: e.clientY };
-    aimScale = renderer!.scale;
+    aimScale = renderer!.scale / renderer!.camera.userZoom;
     pull = { x: 0, y: 0 };
     canvas.setPointerCapture(e.pointerId);
   });
@@ -248,9 +317,17 @@ function action(a: string, el?: HTMLButtonElement) {
     levelSelect();
   }
   if (a === 'home') home();
-  if (a === 'levels') levelSelect();
+  if (a === 'levels') {
+    if (draftTest && screen === 'game') openEditor();
+    else levelSelect();
+  }
+  if (a === 'editor') openEditor();
+  if (a === 'explore') exploration?.toggle();
+  if (a === 'return-ball') exploration?.returnToBall();
+  if (a === 'zoom-in') exploration?.zoom(1.2);
+  if (a === 'zoom-out') exploration?.zoom(1 / 1.2);
   if (a === 'play') play(Number(el?.dataset.id));
-  if (a === 'restart') play(currentId);
+  if (a === 'restart') play(currentId, draftTest ?? undefined);
   if (a === 'next') play(currentId + 1);
   if (a === 'sound') {
     progress.sound = !progress.sound;
@@ -284,10 +361,6 @@ function action(a: string, el?: HTMLButtonElement) {
   if (a === 'overview' && renderer) {
     cancelDrag();
     renderer.camera.setOverview(!renderer.camera.overview);
-    if (!renderer.camera.overview) {
-      renderer.resize(sim.level);
-      renderer.camera.resetTo(sim.ball.position);
-    }
     accumulator = 0;
     if (el) {
       el.setAttribute(
@@ -349,14 +422,14 @@ function modal(content: string, label: string, closable = false) {
 function help() {
   if (document.querySelector('.modal-backdrop')) return;
   modal(
-    `<button class="modal-close icon-button" data-close aria-label="Close instructions">${icon('close')}</button><div class="modal-emblem">${icon('ball')}</div><div class="eyebrow">THE BEAUTIFUL GAME. A DIFFERENT ANGLE.</div><h2>FIND THE NET.</h2><p>Drag anywhere in the arena to set direction and power. Release to add a kick, at rest or in mid-air.</p><div class="help-rows"><p><strong>Aim & cancel</strong><span>Pull farther for more power. Return to the ball’s dead zone or press Escape to cancel.</span></p><p><strong>Kick any time</strong><span>Drag anywhere in the arena, even while the ball moves. Each kick adds to its existing momentum.</span></p><p><strong>Score properly</strong><span>The whole ball must cross the open left side of the net. Hitting its back or crossbar alone is not a goal.</span></p><p><strong>Unlimited kicks</strong><span>Par is a score target. You can always keep playing. The red strip resets position and keeps every shot already taken.</span></p><p><strong>Keyboard</strong><span>↑ ↓ angle · ← → power · Space kick<br>R retry · P pause · L levels<br>Compact arenas stay in view. Larger arenas follow the ball; use the map button to pause and see the whole course.</span></p></div><button class="primary" data-close>LET’S KICK IT ${icon('arrow')}</button>`,
+    `<button class="modal-close icon-button" data-close aria-label="Close instructions">${icon('close')}</button><div class="modal-emblem">${icon('ball')}</div><div class="eyebrow">THE BEAUTIFUL GAME. A DIFFERENT ANGLE.</div><h2>FIND THE NET.</h2><p>Drag anywhere in the arena to set direction and power. Release to add a kick, at rest or in mid-air.</p><div class="help-rows"><p><strong>Aim & cancel</strong><span>Pull farther for more power. Return to the ball’s dead zone or press Escape to cancel.</span></p><p><strong>Kick any time</strong><span>Drag anywhere in the arena, even while the ball moves. Each kick adds to its existing momentum.</span></p><p><strong>Score properly</strong><span>The whole ball must cross the open left side of the net. Hitting its back or crossbar alone is not a goal.</span></p><p><strong>Unlimited kicks</strong><span>Par is a score target. You can always keep playing. The red strip resets position and keeps every shot already taken.</span></p><p><strong>Keyboard</strong><span>↑ ↓ angle · ← → power · Space kick<br>R retry · P pause · L levels<br>Use ✥ Explore to drag the camera without kicking, ◎ Return to Ball to follow again, + / − or the mouse wheel to zoom, and the map button for an overview.</span></p></div><button class="primary" data-close>LET’S KICK IT ${icon('arrow')}</button>`,
     'How to play',
     true,
   );
 }
 function settings() {
   modal(
-    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this browser.</p>${developerMode ? '<button class="secondary" data-action="developer">DEVELOPER PHYSICS</button>' : ''}<button class="primary" data-close>BACK TO GAME</button></div>`,
+    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this browser.</p>${developerMode ? '<button class="secondary" data-action="developer">DEVELOPER PHYSICS</button><button class="secondary" data-action="editor">LEVEL EDITOR</button>' : ''}<button class="primary" data-close>BACK TO GAME</button></div>`,
     'Settings',
     true,
   );
@@ -372,6 +445,13 @@ function pause() {
 function result() {
   resultShown = true;
   app.dataset.celebration = sim.shots === 1 ? 'one-shot' : 'standard';
+  if (draftTest) {
+    modal(
+      `<div class="completion-kicker">TEST MODE · GOAL SCORED</div><div class="completion-stars">${stars(rating(sim.shots, sim.level))}</div><h2>${sim.shots === 1 ? 'GOAL IN ONE!' : 'TEST COMPLETE'}</h2><p>${sim.shots} kicks · draft only · no official score saved.</p><div class="completion-actions"><button class="primary" data-action="editor">RETURN TO EDITOR</button><button class="secondary" data-action="restart">RETRY TEST</button></div>`,
+      'Draft goal scored',
+    );
+    return;
+  }
   const l = sim.level,
     n = rating(sim.shots, l),
     prior = progress.best[l.id];
@@ -406,8 +486,11 @@ window.addEventListener('keydown', (e) => {
     syncAim();
   }
   const k = e.key.toLowerCase();
-  if (k === 'r') play(currentId);
-  if (k === 'l') levelSelect();
+  if (k === 'r') play(currentId, draftTest ?? undefined);
+  if (k === 'l') {
+    if (draftTest) openEditor();
+    else levelSelect();
+  }
   if (k === 'p') pause();
   if (e.key === 'Escape') {
     cancelDrag();
@@ -437,16 +520,19 @@ function frame(now: number) {
         if (e.type === 'win') audio.celebrate(sim.shots, roundSerial);
         else audio.play(e.type);
       }
+      syncCameraControls();
       document.querySelector('#shots')!.textContent = String(sim.shots);
       const status = document.querySelector('#status')!;
       status.textContent =
         sim.phase === 'scoring' || sim.phase === 'won'
           ? 'THAT’S A GOAL!'
-          : dragging
-            ? 'RELEASE TO ADD A KICK'
-            : sim.phase === 'moving'
-              ? 'KICK AGAIN ANY TIME'
-              : 'DRAG ANYWHERE TO KICK';
+          : exploration?.explore
+            ? 'EXPLORE · DRAG TO PAN · RETURN TO BALL TO FOLLOW'
+            : dragging
+              ? 'RELEASE TO ADD A KICK'
+              : sim.phase === 'moving'
+                ? 'KICK AGAIN ANY TIME'
+                : 'DRAG ANYWHERE TO KICK';
       document.querySelector('#power-label')!.textContent = pull
         ? `KICK POWER ${Math.min(100, Math.round((Math.hypot(pull.x, pull.y) / MAX_PULL) * 100))}% · ESC TO CANCEL`
         : sim.canKick
@@ -456,6 +542,7 @@ function frame(now: number) {
       if (shoot) shoot.disabled = !sim.canKick;
       if (sim.phase === 'won' && !resultShown) result();
     }
+    syncCameraControls();
     renderer.render(
       sim,
       modalOpen || renderer.camera.overview ? 0 : dt,
@@ -467,5 +554,6 @@ function frame(now: number) {
   }
   requestAnimationFrame(frame);
 }
-home();
+if (developerMode && new URLSearchParams(location.search).has('editor')) openEditor();
+else home();
 requestAnimationFrame(frame);

@@ -112,3 +112,71 @@ test('camera zoom and custom tracking bounds are configurable without changing p
     assert.ok(c.view.x + c.view.w <= 2231);
   }
 });
+
+test('manual horizontal and vertical exploration interrupts following until explicitly returned', () => {
+  const l = levels[53],
+    c = new Camera();
+  c.resize(l, 844, 390);
+  c.beginExplore();
+  c.panBy(-400, 120);
+  const explored = { ...c.view };
+  assert.ok(c.manual);
+  c.update(l.start, { x: 10, y: -5 }, 1);
+  assert.deepEqual(c.view, explored);
+  c.returnToBall();
+  c.update(l.start, { x: 0, y: 0 }, 1 / 60);
+  assert.ok(Math.hypot(c.view.x - explored.x, c.view.y - explored.y) > 0);
+  assert.ok(Math.abs(c.view.x - explored.x) < 100);
+  for (let n = 0; n < 180; n++) c.update(l.start, { x: 0, y: 0 }, 1 / 60);
+  assert.equal(c.returning, false);
+  assert.equal(c.manual, false);
+});
+test('manual zoom anchors the world point, survives resize and clamps extreme wheel input', () => {
+  const l = levels[59],
+    c = new Camera();
+  c.resize(l, 1000, 560);
+  c.panBy(-800, 0);
+  const anchor = { x: 500, y: 280 },
+    p = c.screenToWorld(anchor);
+  c.zoomBy(1.5, anchor);
+  const after = c.screenToWorld(anchor);
+  near(p.x, after.x);
+  near(p.y, after.y);
+  const center = { x: c.view.x + c.view.w / 2, y: c.view.y + c.view.h / 2 };
+  c.resize(l, 800, 400);
+  near(c.view.x + c.view.w / 2, center.x);
+  near(c.view.y + c.view.h / 2, center.y);
+  c.zoomBy(1e9);
+  assert.equal(c.userZoom, 2.8);
+  c.zoomBy(1e-9);
+  assert.equal(c.userZoom, 1);
+  assert.ok(Number.isFinite(c.scale));
+});
+test('overview restores the previous explored view and zoom rather than jumping to the start', () => {
+  const l = levels[57],
+    c = new Camera();
+  c.resize(l, 900, 450);
+  c.zoomBy(1.3);
+  c.panBy(-300, -120);
+  const before = { ...c.view },
+    zoom = c.userZoom;
+  c.setOverview(true);
+  c.resize(l, 900, 450);
+  assert.deepEqual(c.view, viewBounds(l));
+  c.setOverview(false);
+  c.resize(l, 900, 450);
+  assert.deepEqual(c.view, before);
+  assert.equal(c.userZoom, zoom);
+  assert.ok(c.manual);
+});
+test('an automatic red-pad reset does not steal a manually explored camera', () => {
+  const l = levels[55],
+    c = new Camera();
+  c.resize(l, 900, 450);
+  c.beginExplore();
+  c.panBy(-500, 0);
+  const before = { ...c.view };
+  c.resetTo(l.start);
+  assert.deepEqual(c.view, before);
+  assert.ok(c.manual);
+});

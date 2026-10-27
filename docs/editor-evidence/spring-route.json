@@ -1,0 +1,126 @@
+{
+  "format": "goal-in-one-level",
+  "version": 1,
+  "draftId": "f147f572-9fd8-4cc5-bc3c-1e0b96bf6b77",
+  "modified": "2026-10-27T12:00:01.390Z",
+  "difficulty": 2,
+  "tags": [],
+  "level": {
+    "id": 1001,
+    "name": "Five minute spring route",
+    "tip": "Find your route into the net.",
+    "par": 3,
+    "starShots": [3, 5],
+    "width": 1257,
+    "start": {
+      "x": 130,
+      "y": 618
+    },
+    "goal": {
+      "x": 1120,
+      "y": 640,
+      "w": 107,
+      "h": 100,
+      "roof": 82,
+      "direction": 1
+    },
+    "boundary": [
+      {
+        "x": 60,
+        "y": 640
+      },
+      {
+        "x": 60,
+        "y": 80
+      },
+      {
+        "x": 1120,
+        "y": 120
+      },
+      {
+        "x": 1120,
+        "y": 640
+      }
+    ],
+    "outline": [
+      {
+        "x": 60,
+        "y": 640
+      },
+      {
+        "x": 60,
+        "y": 80
+      },
+      {
+        "x": 1120,
+        "y": 120
+      },
+      {
+        "x": 1120,
+        "y": 640
+      }
+    ],
+    "obstacles": [
+      {
+        "id": "obstacle-1",
+        "points": [
+          {
+            "x": 626.8670386185148,
+            "y": 203.83966317117327
+          },
+          {
+            "x": 781.4151708247658,
+            "y": 245.25071038757656
+          },
+          {
+            "x": 773.1329613814852,
+            "y": 276.16033682882676
+          },
+          {
+            "x": 618.5848291752342,
+            "y": 234.74928961242344
+          }
+        ],
+        "rotation": 0.2617993877991494
+      },
+      {
+        "id": "obstacle-2",
+        "points": [
+          {
+            "x": 410,
+            "y": 640
+          },
+          {
+            "x": 590,
+            "y": 540
+          },
+          {
+            "x": 590,
+            "y": 640
+          }
+        ]
+      }
+    ],
+    "surfaces": [],
+    "movers": [],
+    "mechanics": {
+      "springs": [
+        {
+          "x": 215,
+          "y": 640,
+          "w": 90,
+          "angle": 70,
+          "strength": 17
+        }
+      ]
+    },
+    "camera": {
+      "mode": "fixed",
+      "viewWidth": 990,
+      "viewHeight": 560,
+      "minimumBallDiameterPx": 20,
+      "smoothing": 0.11
+    },
+    "experimental": true
+  }
+}

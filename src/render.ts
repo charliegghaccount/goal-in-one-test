@@ -134,17 +134,11 @@ export class Renderer {
       c.strokeStyle = '#344d5e66';
       c.lineWidth = 2;
       c.beginPath();
-      c.moveTo(m.x, m.y - m.travel - m.h / 2);
-      c.lineTo(m.x, m.y + m.travel + m.h / 2);
+      c.moveTo(m.x - (m.axis === 'x' ? m.travel : 0), m.y - (m.axis === 'x' ? 0 : m.travel));
+      c.lineTo(m.x + (m.axis === 'x' ? m.travel : 0), m.y + (m.axis === 'x' ? 0 : m.travel));
       c.stroke();
       c.restore();
-      const { x, y } = body.position;
-      wood(c, [
-        { x: x - m.w / 2, y: y - m.h / 2 },
-        { x: x + m.w / 2, y: y - m.h / 2 },
-        { x: x + m.w / 2, y: y + m.h / 2 },
-        { x: x - m.w / 2, y: y + m.h / 2 },
-      ]);
+      wood(c, body.vertices);
     }
     drawMechanics(c, sim, reduced);
     this.net(sim, reduced);
@@ -156,6 +150,14 @@ export class Renderer {
     for (const p of joints.values()) joint(c, p, WALL_WIDTH);
     const floor = walls.find((s) => s.id === 'floor');
     if (floor) turf(c, floor.a, floor.b);
+    if (l.boundary)
+      for (const s of walls.filter(
+        (s) =>
+          s.kind === 'wall' &&
+          Math.abs(s.a.y - s.b.y) < 0.01 &&
+          s.a.y === Math.max(...l.boundary!.map((p) => p.y)),
+      ))
+        turf(c, s.a.x < s.b.x ? s.a : s.b, s.a.x < s.b.x ? s.b : s.a);
     for (const s of l.surfaces) {
       const color =
         s.kind === 'forward' ? '#83d44b' : s.kind === 'backward' ? '#ed9e35' : '#ed4b52';
@@ -244,7 +246,7 @@ export class Renderer {
     c.globalAlpha = 1;
     c.restore();
     const indicator = this.camera.goalIndicator({ x: g.x, y: g.y - g.h / 2 });
-    if (l.camera && !menu && indicator) {
+    if ((l.camera || this.camera.manual || this.camera.userZoom > 1) && !menu && indicator) {
       c.save();
       c.translate(indicator.x, indicator.y);
       c.fillStyle = '#174c39ee';
@@ -271,8 +273,12 @@ export class Renderer {
       c.restore();
     }
     this.canvas.dataset.goalOffscreen = String(!!indicator);
-    this.canvas.dataset.cameraX = String(l.camera ? this.camera.view.x : 0);
-    this.canvas.dataset.cameraY = String(l.camera ? this.camera.view.y : 0);
+    this.canvas.dataset.cameraX = String(
+      l.camera || this.camera.manual || this.camera.userZoom !== 1 ? this.camera.view.x : 0,
+    );
+    this.canvas.dataset.cameraY = String(
+      l.camera || this.camera.manual || this.camera.userZoom !== 1 ? this.camera.view.y : 0,
+    );
     this.canvas.dataset.viewWidth = String(this.camera.view.w);
     this.canvas.dataset.viewHeight = String(this.camera.view.h);
     this.canvas.dataset.overview = String(this.camera.overview);
@@ -292,6 +298,23 @@ export class Renderer {
     this.canvas.dataset.velocityY = String(b.velocity.y);
     this.canvas.dataset.resets = String(sim.resetCount);
     this.canvas.dataset.simTime = String(sim.time);
+    this.canvas.dataset.ballWorldX = String(b.position.x);
+    this.canvas.dataset.ballWorldY = String(b.position.y);
+    this.canvas.dataset.cameraManual = String(this.camera.manual);
+    this.canvas.dataset.cameraReturning = String(this.camera.returning);
+    this.canvas.dataset.zoom = String(this.camera.userZoom);
+    this.canvas.dataset.rotors = JSON.stringify(sim.mechanics.rotors.map((r) => r.body.angle));
+    this.canvas.dataset.movers = JSON.stringify(sim.movers.map((m) => m.body.position));
+    this.canvas.dataset.windContact = String(
+      sim.mechanics.defs.winds?.some(
+        (w) =>
+          b.position.x >= w.x &&
+          b.position.x <= w.x + w.w &&
+          b.position.y >= w.y &&
+          b.position.y <= w.y + w.h,
+      ) ?? false,
+    );
+    this.canvas.dataset.iceContact = String(b.friction < sim.config.groundFriction);
   }
   private net(sim: FootballSimulation, reduced: boolean) {
     const c = this.ctx,

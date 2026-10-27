@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { vnextRoutes } from '../vnext-routes';
 import { levels } from '../../src/levels';
-const evidence = 'docs/vnext-evidence';
+const evidence = process.env.VNEXT_EVIDENCE ?? 'test-results/vnext-evidence';
 mkdirSync(evidence, { recursive: true });
 async function frozen(page: Page) {
   const time = new Date('2026-10-26T12:00:00Z');

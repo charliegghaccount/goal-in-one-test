@@ -2590,3 +2590,78 @@ body {
     padding: 2px;
   }
 }
+
+.camera-control {
+  font-size: 21px;
+  font-weight: 850;
+  line-height: 1;
+}
+.camera-control[hidden] {
+  display: none !important;
+}
+.camera-control[aria-pressed='true'] {
+  background: #25684e;
+  color: #e8ffd2;
+  box-shadow: inset 0 2px 6px #1238;
+}
+.game-stage:has(canvas[data-exploring='true']) {
+  outline: 3px solid #38977b;
+}
+.draft-test .return-editor {
+  white-space: nowrap;
+  padding: 8px 12px;
+  font-size: 12px;
+  min-height: 44px;
+}
+.draft-test .game-heading .eyebrow {
+  color: #8e4872;
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .round-stats {
+    gap: 4px;
+  }
+  .round-stats > .camera-control {
+    margin-left: 0;
+    flex-shrink: 0;
+  }
+  .round-stats > div:nth-of-type(2) {
+    display: none;
+  }
+  .round-stats > div + div {
+    padding-left: 6px;
+  }
+  .course-title {
+    min-width: 0;
+  }
+  .course-title > div {
+    min-width: 0;
+  }
+  .course-title h1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .draft-test .return-editor {
+    font-size: 10px;
+    padding: 5px;
+  }
+}
+.game-stage:has(canvas[data-exploring='true'])::after {
+  content: 'EXPLORE · DRAG TO PAN · TAP ✥ TO KICK';
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  width: max-content;
+  max-width: 90%;
+  padding: 7px 11px;
+  border-radius: 20px;
+  background: #effff3ed;
+  border: 1px solid #358268;
+  color: #185c43;
+  font-size: 11px;
+  font-weight: 800;
+  pointer-events: none;
+}
+canvas[data-exploring='true'] ~ .stage-bottomline {
+  display: none !important;
+}

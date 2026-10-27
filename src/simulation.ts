@@ -1,4 +1,5 @@
 import { MechanicRuntime } from './mechanics';
+import { convexParts, isConvex } from './geometry';
 import { defaultPhysics, sanitizePhysics, type PhysicsConfig } from './physics';
 import Matter from 'matter-js';
 import { segments, WALL_WIDTH, type Level, type Point, type Segment } from './levels';
@@ -70,15 +71,32 @@ export class FootballSimulation {
     for (const o of level.obstacles) {
       const points = Vertices.clockwiseSort(o.points.map((p) => ({ ...p })) as Matter.Vector[]);
       const centroid = Vertices.centre(points as Matter.Vertex[]);
-      const body = Bodies.fromVertices(
-        centroid.x,
-        centroid.y,
-        [points],
-        { ...material, label: o.id },
-        false,
-        0,
-        0,
-      );
+      const body = isConvex(o.points)
+        ? Bodies.fromVertices(
+            centroid.x,
+            centroid.y,
+            [points],
+            { ...material, label: o.id },
+            false,
+            0,
+            0,
+          )
+        : Body.create({
+            ...material,
+            label: o.id,
+            parts: convexParts(o.points).map((triangle) => {
+              const center = Vertices.centre(triangle as Matter.Vertex[]);
+              return Bodies.fromVertices(
+                center.x,
+                center.y,
+                [triangle],
+                { ...material, label: o.id },
+                false,
+                0,
+                0,
+              );
+            }),
+          });
       this.obstacles.push({ body, definition: o });
       Composite.add(this.engine.world, body);
     }
@@ -91,6 +109,7 @@ export class FootballSimulation {
         {
           ...material,
           label: 'moving-block',
+          angle: m.angle ?? 0,
         },
       );
       this.movers.push({ body, definition: m });
@@ -101,6 +120,7 @@ export class FootballSimulation {
         isStatic: true,
         isSensor: true,
         label: s.kind,
+        plugin: { acceleration: s.acceleration },
       });
       this.surfaces.push(body);
       Composite.add(this.engine.world, body);
@@ -147,7 +167,11 @@ export class FootballSimulation {
             Body.setVelocity(this.ball, {
               x:
                 this.ball.velocity.x +
-                (dir * this.config.boostAcceleration * fade * this.currentDt) / (1000 / 60),
+                (dir *
+                  (other.plugin.acceleration ?? this.config.boostAcceleration) *
+                  fade *
+                  this.currentDt) /
+                  (1000 / 60),
               y: this.ball.velocity.y,
             });
             this.boostApplied.add(other.id);
@@ -246,6 +270,29 @@ export class FootballSimulation {
               next = Math.min(old, Math.max(next, p.y + BALL_RADIUS + m.h / 2 + 1));
           }
         }
+        if (this.level.boundary && next !== old) {
+          // Editable floors can be stepped/sloped: protect contacts with any solid,
+          // instead of assuming the deepest floor is the surface beneath the ball.
+          const supported = this.engine.pairs.list.some(
+            (p: Matter.Pair) =>
+              p.isActive &&
+              !p.bodyA.isSensor &&
+              !p.bodyB.isSensor &&
+              (p.bodyA === this.ball || p.bodyB === this.ball) &&
+              p.bodyA !== body &&
+              p.bodyB !== body,
+          );
+          if (supported) {
+            const depth = () =>
+              Query.collides(this.ball, [body]).reduce((n, c) => Math.max(n, c.depth), 0);
+            const before = depth(),
+              previousPosition = { ...body.position };
+            Body.setPosition(body, { ...body.position, [axis]: next });
+            const after = depth();
+            Body.setPosition(body, previousPosition);
+            if (after > before + 0.005) next = old;
+          }
+        }
         Body.setPosition(body, { ...body.position, [axis]: next });
         Body.setVelocity(body, {
           x: axis === 'x' ? ((next - old) * (1000 / 60)) / dt : 0,
@@ -265,7 +312,10 @@ export class FootballSimulation {
           const dir = pad.label === 'forward' ? 1 : -1;
           const fade = Math.max(0, 1 - Math.max(0, dir * this.ball.velocity.x) / 18);
           Body.applyForce(this.ball, this.ball.position, {
-            x: ((dir * this.ball.mass * this.config.boostAcceleration) / (1000 / 60) ** 2) * fade,
+            x:
+              ((dir * this.ball.mass * (pad.plugin.acceleration ?? this.config.boostAcceleration)) /
+                (1000 / 60) ** 2) *
+              fade,
             y: 0,
           });
         }
