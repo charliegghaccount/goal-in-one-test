@@ -16,7 +16,7 @@ import {
   savedDrafts,
   storeDraft,
   syncBoundary,
-  repairGoal as snapGoal,
+  keepGoalPosition as snapGoal,
   uid,
   type Draft,
 } from './model';
@@ -118,7 +118,7 @@ export class LevelEditor {
         (this.$('#' + id) as HTMLInputElement).checked = value;
       (this.$('#ed-spacing') as HTMLInputElement).value = String(this.spacing);
       this.renderer.resize(this.sim.level);
-      this.renderer.camera.restoreWorkspace(workspace.view, workspace.zoom);
+      this.renderer.camera.restoreWorkspace(workspace.view, workspace.zoom, workspace.frame);
       this.rebuild();
     }
     this.inspect();
@@ -141,6 +141,7 @@ export class LevelEditor {
   destroy() {
     this.session.workspace = {
       view: { ...this.renderer.camera.view },
+      frame: this.renderer.camera.editorFrame ? { ...this.renderer.camera.editorFrame } : undefined,
       zoom: this.renderer.camera.userZoom,
       selection: structuredClone(this.selection),
       vertex: this.vertex,

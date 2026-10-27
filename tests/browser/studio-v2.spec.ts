@@ -515,11 +515,10 @@ test('tilt a goal wall, drag the net freely, reject overlaps and score the reloc
 }) => {
   await frozen(p);
   await p.locator('#ed-snap').uncheck();
+  let d = await exported(p);
   await command(p, 'Boundary');
   await dragWorld(p, { x: 1120, y: 120 }, { x: 1020, y: 180 });
-  await expect(p.locator('[data-command="Test Level"]')).toBeEnabled();
-  let d = await exported(p);
-  expect(d.level.goal.placement).toBe('free');
+  await expect(p.locator('[data-command="Test Level"]')).toBeDisabled();
   await p.getByRole('combobox', { name: 'Select object' }).selectOption('goal:0');
   const g = d.level.goal;
   await dragWorld(p, { x: g.x + 40, y: g.y - 40 }, { x: 740, y: 600 });
@@ -541,4 +540,43 @@ test('tilt a goal wall, drag the net freely, reject overlaps and score the reloc
   await expect(p.locator('#editor-validation')).toContainText('Goal/net must fit');
   await field(p, 'Goal X (entrance)', '700');
   await expect(p.locator('[data-command="Test Level"]')).toBeEnabled();
+});
+
+test('lowering roof vertices keeps objects, camera and background registration fixed', async ({
+  page: p,
+}) => {
+  await frozen(p);
+  await p.locator('#ed-snap').uncheck();
+  await place(p, 'Block', 500, 500);
+  const original = await exported(p);
+  const canvas = p.locator('#editor-canvas');
+  const before = await canvas.evaluate((c) => ({ ...c.dataset }));
+  await command(p, 'Boundary');
+  await dragWorld(p, { x: 60, y: 120 }, { x: 60, y: 330 });
+  await dragWorld(p, { x: 1120, y: 120 }, { x: 1120, y: 340 });
+  const after = await canvas.evaluate((c) => ({ ...c.dataset }));
+  for (const key of [
+    'scale',
+    'cameraX',
+    'cameraY',
+    'viewWidth',
+    'viewHeight',
+    'ballScreenX',
+    'ballScreenY',
+  ])
+    expect(after[key]).toBe(before[key]);
+  const changed = await exported(p);
+  expect(changed.level.start).toEqual(original.level.start);
+  expect(changed.level.goal).toEqual(original.level.goal);
+  expect(changed.level.obstacles).toEqual(original.level.obstacles);
+  await p.screenshot({ path: `${evidence}/fixed-roof-edit.jpg`, quality: 88 });
+  await command(p, 'Test Level');
+  await p.clock.runFor(100);
+  await p.getByRole('button', { name: 'Return to editor', exact: true }).first().click();
+  await p.clock.runFor(34);
+  const returned = await canvas.evaluate((c) => ({ ...c.dataset }));
+  for (const key of ['scale', 'cameraX', 'cameraY']) expect(returned[key]).toBe(before[key]);
+  await command(p, 'Fit');
+  await p.clock.runFor(34);
+  expect(await canvas.getAttribute('data-camera-y')).not.toBe(before.cameraY);
 });

@@ -183,6 +183,22 @@ export function syncBoundary(l: Level) {
   if (l.boundary) l.outline = structuredClone(l.boundary);
   l.width = Math.max(...l.outline.map((p) => p.x), l.goal.x + l.goal.w) + 30;
 }
+/** Boundary edits never translate the goal. Detach in place only when the complete net fits. */
+export function keepGoalPosition(l: Level, _requested?: Point) {
+  if (l.goal.placement === 'free') return;
+  const g = l.goal,
+    b = l.boundary ?? l.outline;
+  const attached = b.some((a, i) => {
+    const z = b[(i + 1) % b.length];
+    return (
+      Math.abs(a.x - g.x) < 0.01 &&
+      Math.abs(z.x - g.x) < 0.01 &&
+      Math.min(a.y, z.y) <= g.y - g.h + 0.01 &&
+      Math.max(a.y, z.y) >= g.y - 0.01
+    );
+  });
+  if (!attached && freeGoalFits(l)) l.goal.placement = 'free';
+}
 export function moveGoal(l: Level, p: Point) {
   l.goal.x = p.x;
   l.goal.y = p.y;
@@ -425,6 +441,7 @@ export class EditorSession {
   doc: Draft;
   workspace?: {
     view: Rect;
+    frame?: Rect;
     zoom: number;
     selection: Ref[];
     vertex: number;

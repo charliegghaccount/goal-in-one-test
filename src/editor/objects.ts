@@ -225,7 +225,7 @@ export function translate(l: Level, r: Ref, dx: number, dy: number) {
     }
     if (r.kind === 'boundary') {
       syncBoundary(l);
-      snapGoal(l, { x: l.goal.x + dx, y: l.goal.y + dy });
+      // Moving arena geometry does not move the goal or any other object.
     }
   } else {
     o.x += dx;

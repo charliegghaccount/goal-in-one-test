@@ -46,6 +46,8 @@ export class Camera {
   returning = false;
   userZoom = 1;
   editorWorkspace = false;
+  /** Authoring frame stays fixed until an explicit Fit, rather than following edited bounds. */
+  editorFrame: Rect | null = null;
   private previous: { view: Rect; zoom: number; manual: boolean } | null = null;
   private level: Level | null = null;
   private width = 1280;
@@ -57,6 +59,7 @@ export class Camera {
     const center = { x: this.view.x + this.view.w / 2, y: this.view.y + this.view.h / 2 };
     if (changed) {
       this.level = l;
+      this.editorFrame = null;
       this.initialized = false;
       this.overview = false;
       this.manual = this.editorWorkspace;
@@ -66,7 +69,7 @@ export class Camera {
     }
     this.width = Math.max(1, width);
     this.height = Math.max(1, height);
-    const whole = viewBounds(l);
+    const whole = this.editorWorkspace ? (this.editorFrame ??= viewBounds(l)) : viewBounds(l);
     this.bounds = l.camera?.bounds ?? whole;
     if (this.editorWorkspace)
       this.bounds = {
@@ -147,10 +150,12 @@ export class Camera {
     this.manual = this.editorWorkspace;
     this.returning = false;
     this.initialized = false;
+    this.editorFrame = null;
     this.resize(this.level, this.width, this.height);
   }
-  restoreWorkspace(view: Rect, zoom: number) {
+  restoreWorkspace(view: Rect, zoom: number, frame?: Rect) {
     if (!this.level) return;
+    if (this.editorWorkspace && frame) this.editorFrame = { ...frame };
     this.userZoom = clamp(zoom, 0.15, 8);
     this.manual = true;
     this.resize(this.level, this.width, this.height);
