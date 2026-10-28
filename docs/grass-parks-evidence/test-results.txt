@@ -1,0 +1,63 @@
+[WebServer] (node:457607) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 25 tests using 1 worker
+
+(node:457629) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:457629) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/background.spec.ts:2:1 › developer comparison and editor artwork toggles leave gameplay and geometry unchanged (2.8s)
+  ✓   2 tests/browser/background.spec.ts:27:1 › approved artwork loads once and renders across fixed, wide, tall, long and landscape views (8.9s)
+  ✓   3 tests/browser/background.spec.ts:80:1 › mirrored seams and extreme vertical extensions render opaque, continuous pixels (845ms)
+  ✓   4 tests/browser/background.spec.ts:153:3 › retina › approved art renders and a real drag scores at double pixel density (15.2s)
+  ✓   5 tests/browser/editor.spec.ts:63:1 › build a spring/ramp level visually, edit its perimeter, save, score, return, export and reopen (12.9s)
+  ✓   6 tests/browser/editor.spec.ts:162:1 › polygon vertices, resize and rotation handles, multi-selection and pan ownership work through the canvas (3.8s)
+  ✓   7 tests/browser/editor.spec.ts:274:1 › all mechanic families are editable, gate linking is a dropdown, and official copies stay isolated (20.6s)
+  ✓   8 tests/browser/editor.spec.ts:345:1 › invalid imports and self-intersecting polygons give useful feedback and cannot run (2.1s)
+  ✓   9 tests/browser/editor.spec.ts:374:1 › fan forces and moving/rotating objects actually run in draft test mode without spending kicks (3.4s)
+  ✓  10 tests/browser/editor.spec.ts:407:1 › forward/back pads, ice and red resets retain real behavior in official-copy test mode (9.0s)
+  ✓  11 tests/browser/exploration.spec.ts:27:1 › explore pans both axes with no kicks, overview restores it, and Return to Ball is smooth (3.7s)
+  ✓  12 tests/browser/exploration.spec.ts:62:1 › equal pixel drags kick accurately after exploration and at different zooms (2.6s)
+  ✓  13 tests/browser/exploration.spec.ts:92:1 › touch panning and two-finger pinch never turn into kicks on a landscape phone (2.4s)
+  ✓  14 tests/browser/exploration.spec.ts:150:1 › compact legacy arenas still fit by default and show goal guidance when zoomed and explored (6.8s)
+  ✓  15 tests/browser/studio-v2.spec.ts:86:1 › Level 9 draft/test/publish/reload, stable progress and complete campaign export/import (13.7s)
+  ✓  16 tests/browser/studio-v2.spec.ts:162:1 › publish a new middle level, drag campaign order, unpublish/archive/restore and revision history (12.4s)
+  ✓  17 tests/browser/studio-v2.spec.ts:231:1 › eight anchored resize handles, rotated resizing, boundary edge drag, vertices and Escape (9.5s)
+  ✓  18 tests/browser/studio-v2.spec.ts:281:1 › visual diagonal path, spring arrow, gate offset, speed controls and shared live preview (6.0s)
+  ✓  19 tests/browser/studio-v2.spec.ts:337:1 › Level 5 and other directional boost prototypes score using actual kicks with the new global baseline (25.9s)
+  ✓  20 tests/browser/studio-v2.spec.ts:361:1 › spring arrow alone launches up-left and small timed switch drives a diagonal 2s/1s gate (5.3s)
+  ✓  21 tests/browser/studio-v2.spec.ts:438:1 › quota failures block publication truthfully and still allow a complete downloadable backup (1.9s)
+  ✓  22 tests/browser/studio-v2.spec.ts:471:1 › corrupt stored campaign opens recoverable originals with a warning and is not overwritten by viewing the manager (914ms)
+  ✓  23 tests/browser/studio-v2.spec.ts:484:1 › metadata publication is validated and a newer draft status survives save/reload (2.0s)
+  ✓  24 tests/browser/studio-v2.spec.ts:513:1 › tilt a goal wall, drag the net freely, reject overlaps and score the relocated goal (7.6s)
+  ✓  25 tests/browser/studio-v2.spec.ts:545:1 › lowering roof vertices keeps objects, camera and background registration fixed (2.2s)
+
+  25 passed (3.1m)
+
+Retina capture follow-up:
+[WebServer] (node:459264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:459286) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:459286) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/background.spec.ts:153:3 › retina › approved art renders and a real drag scores at double pixel density (13.9s)
+
+  1 passed (15.8s)
+
+Runtime summary:
+ℹ tests 608
+ℹ suites 0
+ℹ pass 608
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3561.068542
+
+Production:
+{"httpStatus":200,"base":"/goal-in-one-test/","savedDraft":true,"publishedInMiddle":true,"reloadPersistence":true,"actualDragGoal":true,"stableId":"design-af16a387-fd55-45c9-beeb-95a5bfb1a32b","revision":"1","pageErrors":[],"failedRequests":[]}

@@ -6,6 +6,8 @@ A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and
 
 The current update adds **Campaign Manager and Level Studio V2**. Open `?dev=1&editor=1`, or use Settings → Level Editor in developer mode. Save Draft keeps gameplay unchanged; Publish to Game updates this browser’s playable campaign immediately and persists across refresh. Stable design IDs and revisioned scores keep progress attached to designs when reordering. See the [V2 operating guide](docs/STUDIO-V2.md), [current editor screenshots](docs/studio-v2-evidence/studio-overview.jpg), and [original editor/exploration guide](docs/EDITOR.md). The earlier [Levels 41–60 report](docs/VNEXT.md) documents the authored scrolling courses.
 
+**Grass Parks artwork V1:** the approved PNG is preserved with an optimised WebP, camera-relative mirrored scrolling and developer comparison controls. See the [integration report and screenshots](docs/GRASS-PARKS-V1.md).
+
 **Play:** https://charliegghaccount.github.io/goal-in-one-test/
 
 **Current rules:** unlimited kicks, including mid-flight. Kicks retain controlled momentum and meaningfully redirect the ball, even against its previous movement. Par affects stars only; it never ends a level or disables another kick. These rules supersede the original Flash game's shot limit and the previous remake's rest requirement.

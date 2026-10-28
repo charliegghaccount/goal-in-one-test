@@ -2,7 +2,7 @@ import { artworkEnabled, drawGrassParks } from './background';
 import { movementLine } from './motion';
 import { drawMechanics, drawMechanicSurfaces } from './mechanics-art';
 import type { PhysicsConfig } from './physics';
-import { scenery, wood, beam, joint, turf } from './art';
+import { wood, beam, joint, turf } from './art';
 import {
   BALL_RADIUS,
   MAX_PULL,
@@ -136,16 +136,14 @@ export class Renderer {
         center.y - this.backgroundOrigin.y,
       );
     if (!shown) {
-      if (!this.backgroundVisible || !artworkEnabled()) {
-        c.fillStyle = '#b5e7fb';
-        c.fillRect(0, 0, this.width, this.height);
-      } else scenery(c, this.width, this.height);
+      c.fillStyle = '#b5e7fb';
+      c.fillRect(0, 0, this.width, this.height);
     }
     this.canvas.dataset.background = shown
       ? 'grass-parks'
       : !this.backgroundVisible || !artworkEnabled()
         ? 'plain'
-        : 'legacy-awaiting-approved-source';
+        : 'loading-artwork';
     c.save();
     const corner = this.camera.worldToScreen(this.camera.view);
     c.beginPath();

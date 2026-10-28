@@ -1840,7 +1840,7 @@ button:focus-visible {
 body {
   background:
     linear-gradient(#6dbbef0c, #559e651c),
-    url('./assets/park.webp') center center/cover fixed no-repeat;
+    url('./assets/grass-parks/background.webp') center center/cover fixed no-repeat;
   min-height: 100dvh;
 }
 .topbar {

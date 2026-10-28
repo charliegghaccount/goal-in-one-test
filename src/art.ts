@@ -1,6 +1,5 @@
 import type { Point, Segment } from './levels';
-export const parkImage = new Image();
-parkImage.src = new URL('./assets/park.webp', import.meta.url).href;
+let parkImage: HTMLImageElement | undefined;
 const textures = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
 function timber(c: CanvasRenderingContext2D) {
   let p = textures.get(c);
@@ -43,6 +42,10 @@ function timber(c: CanvasRenderingContext2D) {
   return p;
 }
 export function scenery(c: CanvasRenderingContext2D, w: number, h: number) {
+  if (!parkImage) {
+    parkImage = new Image();
+    parkImage.src = new URL('./assets/park.webp', import.meta.url).href;
+  }
   if (parkImage.complete && parkImage.naturalWidth) {
     const s = Math.max(w / parkImage.width, h / parkImage.height);
     c.drawImage(

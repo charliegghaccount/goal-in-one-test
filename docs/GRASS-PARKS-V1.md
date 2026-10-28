@@ -1,14 +1,46 @@
-# Grass Parks V1 integration — source asset pending
+# Grass Parks background V1
 
-The supplied text brief was read in full. Its inline image is visible in chat, but no PNG/WebP attachment, downloadable image ID or image file was provided to this execution workspace. The new approved image has **not** been installed or replaced with generated/substitute art. Public deployment remains unchanged.
+The approved artwork from **Goal In One Final Background.png.zip** is now integrated in all Grass Parks gameplay, user-created/published levels, Studio and Test mode. The same source also supplies the surrounding page background. No level data, physics settings, mechanisms, scoring, progress or campaign schema changed.
 
-Prepared implementation:
+## Asset and implementation
 
-- `src/background-layout.ts`: shared scale, horizontal/vertical parallax, placement, sky colour and maximum landscape rise. Pure layout math preserves source aspect ratio, wraps mirrored tile pairs for arbitrarily positive/negative horizontal offsets, and never tiles landscape vertically.
-- `src/background.ts`: a single shared image load, illustrated/plain preference, mirrored horizontal drawing, source-edge sky/ground extensions and capped landscape rise so looking down does not push all sky out of view. `approvedGrassParksUrl` deliberately remains null until the approved source file is available.
-- `src/render.ts`: background rendered before world objects, using only camera-centre displacement from a stable initial reference. No modifications to the physics camera, geometry, mechanisms, scoring or campaign data. Original scenery remains the explicit temporary fallback while the source is missing.
-- Developer Settings has **BACKGROUND: ARTWORK / PLAIN**. Studio has an **Artwork** checkbox; its stationary canvas redraws when the shared asset loads. These controls currently compare the existing fallback with plain colour, not the missing approved image.
+- `src/assets/grass-parks/original.png`: exact original bytes extracted from the ZIP, 1672×941, 1,747,156 bytes. SHA-256: `50c09fa6a68f049765012abbcf60babe6162cc96ec14c4fae307df92be311543`.
+- `src/assets/grass-parks/background.webp`: same dimensions, WebP quality 92, 172,242 bytes (about 90% smaller). Original retained for reference; this is an optimised derivative, not replacement artwork.
+- `src/background.ts`: one shared image resource and cached two-image mirrored Canvas pattern per drawing context. The background draws before boundaries, mechanisms, net, football, aiming guides and overlays. No collision bodies are created. Unloaded/disabled artwork uses a plain blue placeholder; the old park image is no longer eagerly loaded.
+- `src/background-layout.ts`: central settings for scale, horizontal/vertical parallax, vertical offset, maximum landscape rise and fill colour.
+- `src/render.ts`, `src/editor/ui.ts`, `src/main.ts`, `src/art.ts`, `src/style.css`: shared renderer integration, developer comparison control, editor visibility toggle/load redraw, lazy legacy scenery and page background URL.
+- `tests/background.test.ts`, `tests/browser/background.spec.ts`: aspect/scroll math, graphical coverage/seams, resource requests, comparison controls and Retina scoring.
 
-Build passed. All **608 runtime tests** passed, including 21 aspect-ratio, horizontal coverage, mirrored adjacency and vertical-layout checks. Two Chromium cases passed for developer/editor toggles and stable roof-edit framing. These checks do **not** establish approved-image fidelity, seamless appearance, mobile readability or image loading for the missing source.
+The source aspect ratio is preserved. Canvas rendering uses CSS pixels beneath the existing DPR transform; background zoom stays independent of gameplay zoom. Motion is based on camera-centre displacement from a stable initial reference. Editing arena vertices therefore does not reposition the background or other objects.
 
-To finish: obtain the original approved PNG/WebP, preserve its original bytes under an organised Grass Parks source directory, create an optimised derivative, set its static Vite asset URL in `background.ts`, then visually verify fixed, wide, tall, multi-section, Studio/Test and resized/mobile canvases before committing the finished asset integration and deploying it. Mirrored edge continuity is implemented mathematically; recognisable mirrored scenery/seam appearance still needs inspection with the exact artwork. A future layered version could separate sky/clouds, distant trees and foreground hills for independent parallax.
+## Scrolling and seams
+
+Horizontal movement repeats an original/mirrored pair with moderate parallax. A single continuous Canvas pattern prevents subpixel gaps from separately drawn tile rectangles. Reflection makes adjoining image borders continuous; it is **not an artist-authored seamless texture**, and repeated/mirrored tree forms can still be recognisable. The actual fixed, panned and mobile captures were inspected for hard joins and blank regions.
+
+Vertical movement shifts one landscape band. Above it, the top source-image row extends the matching sky; below it, the bottom row extends the ground. The park landscape never repeats vertically. Upward travel can become open blue sky. Downward movement is capped so the trees/horizon do not scroll entirely above the viewport and leave only grass. These fills are a V1 compromise: extreme extensions lose cloud/ground detail and may look flatter than the original composition.
+
+A future proper layered version could separate sky/clouds, distant treeline and foreground hills into independently looping/parallax layers, with artist-made tile edges. That would reduce recognisable reflection and improve very tall views without changing level geometry.
+
+## Compare or hide artwork
+
+- Open `?dev=1`, then **Settings → BACKGROUND: ARTWORK / PLAIN**. The preference persists locally and applies to gameplay and Studio. This is a visual setting, separate from saved levels and physics. The comparison affects the arena canvas; the decorative page backdrop remains illustrated.
+- Studio also has an **Artwork** checkbox, enabled by default, to hide its background while editing. This checkbox only affects that editor view; Test mode uses the developer comparison preference.
+
+## Verification and evidence
+
+The build, all 608 runtime tests and the complete 25-case background/editor/camera browser regression set passed, including the existing sixty level routes and camera/physics checks. Focused layout tests cover common aspect ratios, large positive/negative horizontal movement, preserved aspect ratio and reversible vertical movement. Browser checks cover:
+
+- ordinary fixed level 1;
+- horizontal level 53, vertical level 54 and multi-section level 60, including Explore/Return;
+- desktop resizing to 844×390 landscape;
+- Studio and Test mode, artwork/plain comparison and unchanged object coordinates;
+- one artwork request across multiple levels/editor screens, with no failed requests/page errors;
+- opaque coverage at extreme horizontal/vertical offsets and mirrored-edge pixel symmetry;
+- double pixel density and a completed real mouse-drag goal;
+- existing editor, campaign publishing, touch/pinch and fixed roof-edit framing regressions.
+
+See the [ordinary arena](grass-parks-evidence/level-1.jpg), [horizontal exploration](grass-parks-evidence/explored-53.jpg), [vertical exploration](grass-parks-evidence/explored-54.jpg), [multi-section course](grass-parks-evidence/level-60.jpg), [mobile landscape](grass-parks-evidence/landscape.jpg), [Studio](grass-parks-evidence/studio.jpg) and [Retina aiming guide](grass-parks-evidence/aiming-retina.jpg).
+
+Physical iPhone/Android hardware, Safari/Firefox and prolonged performance at very large authoring collections remain unverified. No claim of human playtesting or a full layered-parallax art system is made.
+
+The production Pages subpath was checked in Chromium: the approved artwork loaded, a draft was published into the active campaign, persisted after reload and scored via a real drag. No page errors or failed requests occurred. [Machine-readable verification](grass-parks-evidence/validation.json).

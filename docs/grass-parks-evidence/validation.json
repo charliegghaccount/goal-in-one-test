@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-28",
+  "sourcePNG": "src/assets/grass-parks/original.png",
+  "sourceSHA256": "50c09fa6a68f049765012abbcf60babe6162cc96ec14c4fae307df92be311543",
+  "dimensions": [1672, 941],
+  "originalBytes": 1747156,
+  "runtimeWebPBytes": 172242,
+  "runtimeTests": {
+    "passed": 608,
+    "failed": 0
+  },
+  "browserRegression": {
+    "passed": 25,
+    "failed": 0
+  },
+  "retinaAimingCaptureFollowup": {
+    "passed": 1,
+    "failed": 0
+  },
+  "visualChecks": [
+    "Fixed level 1",
+    "Horizontal level 53 and Explore/Return",
+    "Vertical level 54 and Explore/Return",
+    "Multi-section level 60",
+    "844x390 landscape resize",
+    "Studio and Test mode",
+    "DPR 2 real mouse-drag goal and aiming guide",
+    "Opaque extreme-offset backgrounds and mirrored border symmetry"
+  ],
+  "production": {
+    "httpStatus": 200,
+    "base": "/goal-in-one-test/",
+    "savedDraft": true,
+    "publishedInMiddle": true,
+    "reloadPersistence": true,
+    "actualDragGoal": true,
+    "stableId": "design-af16a387-fd55-45c9-beeb-95a5bfb1a32b",
+    "revision": "1",
+    "pageErrors": [],
+    "failedRequests": []
+  },
+  "limitations": [
+    "Recognisable mirrored/repeated trees",
+    "Flat edge-row sky/ground extensions in extreme vertical views",
+    "Physical phones and Safari/Firefox unverified"
+  ],
+  "physicsOrLevelDataChanges": false
+}
