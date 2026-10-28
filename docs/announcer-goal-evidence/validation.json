@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-28",
+  "runtimeTests": {
+    "passed": 620,
+    "failed": 0
+  },
+  "browserTests": {
+    "passed": 36,
+    "failed": 0,
+    "scope": "announcer-goal, background, editor, exploration, mechanic-art, studio-v2, wood"
+  },
+  "production": {
+    "httpStatus": 200,
+    "base": "/goal-in-one-test/",
+    "savedDraft": true,
+    "publishedInMiddle": true,
+    "reloadPersistence": true,
+    "actualDragGoal": true,
+    "stableId": "design-a57df7f2-c3cd-471c-b6b8-bc6216440e22",
+    "revision": "1",
+    "pageErrors": [],
+    "failedRequests": [],
+    "woodAssets": [
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/texture-BHMlxGTA.webp",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/texture-BHMlxGTA.webp",
+        "status": 304
+      }
+    ],
+    "voiceAssets": [
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/goal-in-one-DGbCgd3M.mp3",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/goal-D4PDueL5.mp3",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/solid-effort-DXPf-RiP.mp3",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/should-have-done-better-CrZMbrnL.mp3",
+        "status": 200
+      }
+    ],
+    "voiceStarts": [2.507755102040816]
+  },
+  "originalMp3BytesVerified": true,
+  "referenceAndGameplayScreenshotsCompared": true,
+  "goalEntranceTransparentPixelChecks": "pass in both orientations",
+  "collisionAndLayoutChanges": false,
+  "manualListeningPerformed": false,
+  "physicalPhonesTested": false,
+  "fullSixtyLevelBrowserTourRepeated": false
+}

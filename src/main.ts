@@ -1,3 +1,4 @@
+import { announcementFor, completionTitle } from './celebration';
 import { artworkEnabled, setArtworkEnabled } from './background';
 import { LevelEditor } from './editor/ui';
 import { EditorSession } from './editor/model';
@@ -448,9 +449,10 @@ function pause() {
 function result() {
   resultShown = true;
   app.dataset.celebration = sim.shots === 1 ? 'one-shot' : 'standard';
+  app.dataset.announcement = announcementFor(sim.shots, sim.level) ?? 'none';
   if (draftTest) {
     modal(
-      `<div class="completion-kicker">TEST MODE · GOAL SCORED</div><div class="completion-stars">${stars(rating(sim.shots, sim.level))}</div><h2>${sim.shots === 1 ? 'GOAL IN ONE!' : 'TEST COMPLETE'}</h2><p>${sim.shots} kicks · draft only · no official score saved.</p><div class="completion-actions"><button class="primary" data-action="editor">RETURN TO EDITOR</button><button class="secondary" data-action="restart">RETRY TEST</button></div>`,
+      `<div class="completion-kicker">TEST MODE · GOAL SCORED</div><div class="completion-stars">${stars(rating(sim.shots, sim.level))}</div><h2>${completionTitle(sim.shots, sim.level)}</h2><p>${sim.shots} kicks · draft only · no official score saved.</p><div class="completion-actions"><button class="primary" data-action="editor">RETURN TO EDITOR</button><button class="secondary" data-action="restart">RETRY TEST</button></div>`,
       'Draft goal scored',
     );
     return;
@@ -461,7 +463,7 @@ function result() {
   recordLevelBest(progress, l, sim.shots);
   persist();
   modal(
-    `<div class="completion-kicker">${icon('net')} LEVEL COMPLETE · ${String(l.id).padStart(2, '0')}</div><div class="completion-stars">${stars(n)}</div><h2>${sim.shots === 1 ? 'GOAL IN ONE!' : l.id === levels.length ? 'FINAL WHISTLE!' : 'GOOOAL!'}</h2><p>Through the opening. Into the net. Keep finding your angle.</p><div class="completion-stats"><div><span>SHOTS</span><strong>${sim.shots}</strong></div><div><span>PAR</span><strong>${l.par}</strong></div><div><span>BEST</span><strong>${best(l)}</strong></div></div><div class="personal-best">${!prior || sim.shots < prior ? 'NEW PERSONAL BEST' : 'A GOAL WORTH REPLAYING'}</div><div class="completion-actions"><button class="primary" data-action="${l.id === levels.length ? 'levels' : 'next'}">${l.id === levels.length ? 'ALL LEVELS' : 'NEXT LEVEL'} ${icon('arrow')}</button><button class="secondary" data-action="restart">PLAY AGAIN</button><button class="text-button" data-action="levels">BACK TO LEVELS</button></div>${!storageOK ? '<small>Browser storage is unavailable. Progress lasts for this visit.</small>' : ''}`,
+    `<div class="completion-kicker">${icon('net')} LEVEL COMPLETE · ${String(l.id).padStart(2, '0')}</div><div class="completion-stars">${stars(n)}</div><h2>${completionTitle(sim.shots, l)}</h2><p>Through the opening. Into the net. Keep finding your angle.</p><div class="completion-stats"><div><span>SHOTS</span><strong>${sim.shots}</strong></div><div><span>PAR</span><strong>${l.par}</strong></div><div><span>BEST</span><strong>${best(l)}</strong></div></div><div class="personal-best">${!prior || sim.shots < prior ? 'NEW PERSONAL BEST' : 'A GOAL WORTH REPLAYING'}</div><div class="completion-actions"><button class="primary" data-action="${l.id === levels.length ? 'levels' : 'next'}">${l.id === levels.length ? 'ALL LEVELS' : 'NEXT LEVEL'} ${icon('arrow')}</button><button class="secondary" data-action="restart">PLAY AGAIN</button><button class="text-button" data-action="levels">BACK TO LEVELS</button></div>${!storageOK ? '<small>Browser storage is unavailable. Progress lasts for this visit.</small>' : ''}`,
     'Goal scored',
   );
 }
@@ -520,7 +522,7 @@ function frame(now: number) {
       }
       for (const e of sim.events.splice(0)) {
         if (!reducedMotion) renderer.effect(e);
-        if (e.type === 'win') audio.celebrate(sim.shots, roundSerial);
+        if (e.type === 'win') audio.celebrate(sim.shots, roundSerial, sim.level);
         else audio.play(e.type);
       }
       syncCameraControls();

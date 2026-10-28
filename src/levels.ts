@@ -4,7 +4,7 @@ import { extraLayouts } from './extra-layouts';
 import { vnextLevels } from './vnext';
 import type { CameraSpec } from './camera';
 export type Point = { x: number; y: number };
-export type Polygon = { id: string; points: Point[]; rotation?: number };
+export type Polygon = { id: string; points: Point[]; rotation?: number; grass?: boolean };
 export type Surface = {
   x: number;
   y: number;
@@ -13,6 +13,7 @@ export type Surface = {
   acceleration?: number;
 };
 export type Mover = {
+  grass?: boolean;
   x: number;
   y: number;
   w: number;
@@ -35,6 +36,8 @@ export type Goal = {
   direction?: 1 | -1;
 };
 export type Level = {
+  /** Cosmetic arena-floor edging; legacy levels keep it enabled by default. */
+  grass?: boolean;
   /** Campaign identity and revision are independent of the display number. */
   boostVersion?: 2;
   campaignId?: string;

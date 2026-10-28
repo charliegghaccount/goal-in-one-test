@@ -1,0 +1,18 @@
+{
+  "shots": 4,
+  "stars": 1,
+  "announcement": "disappointed",
+  "events": [
+    {
+      "type": "start",
+      "duration": 1.8808163265306121
+    }
+  ],
+  "requests": [
+    "http://127.0.0.1:5173/src/assets/announcer/goal-in-one.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/goal.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/solid-effort.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/should-have-done-better.mp3"
+  ],
+  "pageErrors": []
+}

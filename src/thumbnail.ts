@@ -16,7 +16,7 @@ export function levelThumbnail(l: Level, cls = 'mini-course') {
   )
     .map(
       (s) =>
-        `<path d="M${s.a.x} ${s.a.y}L${s.b.x} ${s.b.y}" stroke="${s.kind === 'goal' ? '#48bc35' : '#82502b'}" stroke-width="${WALL_WIDTH}" stroke-linecap="round"/>`,
+        `<path d="M${s.a.x} ${s.a.y}L${s.b.x} ${s.b.y}" stroke="${s.kind === 'goal' ? '#f4f7fa' : '#82502b'}" stroke-width="${WALL_WIDTH}" stroke-linecap="round"/>`,
     )
     .join(
       '',

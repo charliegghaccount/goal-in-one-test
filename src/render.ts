@@ -1,3 +1,4 @@
+import { drawGoalFrame, drawGoalNet } from './goal-art';
 import { artworkEnabled, drawGrassParks } from './background';
 import { movementLine } from './motion';
 import { drawMechanics, drawMechanicSurfaces } from './mechanics-art';
@@ -155,7 +156,7 @@ export class Renderer {
     this.path(arenaPolygon(l));
     c.fillStyle = 'rgba(238,249,255,.14)';
     c.fill();
-    for (const o of l.obstacles) wood(c, o.points, true, o.rotation ?? 0);
+    for (const o of l.obstacles) wood(c, o.points, true, o.rotation ?? 0, o.grass === true);
     for (const { body, definition: m } of sim.movers) {
       c.save();
       c.setLineDash([5, 8]);
@@ -167,19 +168,19 @@ export class Renderer {
       c.lineTo(line.end.x, line.end.y);
       c.stroke();
       c.restore();
-      wood(c, body.vertices, true, body.angle);
+      wood(c, body.vertices, true, body.angle, m.grass === true);
     }
     drawMechanics(c, sim, reduced);
     this.net(sim, reduced);
     const walls = segments(l);
-    for (const s of walls) beam(c, s, WALL_WIDTH);
+    for (const s of walls.filter((s) => s.kind === 'wall')) beam(c, s, WALL_WIDTH);
     const joints = new Map<string, Point>();
     for (const s of walls.filter((s) => s.kind === 'wall'))
       for (const p of [s.a, s.b]) joints.set(`${p.x},${p.y}`, p);
     for (const p of joints.values()) joint(c, p, WALL_WIDTH);
     const floor = walls.find((s) => s.id === 'floor');
-    if (floor) turf(c, floor.a, floor.b);
-    if (l.boundary)
+    if (floor && l.grass !== false) turf(c, floor.a, floor.b);
+    if (l.boundary && l.grass !== false)
       for (const s of walls.filter(
         (s) =>
           s.kind === 'wall' &&
@@ -187,6 +188,7 @@ export class Renderer {
           s.a.y === Math.max(...l.boundary!.map((p) => p.y)),
       ))
         turf(c, s.a.x < s.b.x ? s.a : s.b, s.a.x < s.b.x ? s.b : s.a);
+    drawGoalFrame(c, l.goal, WALL_WIDTH);
     for (const s of l.surfaces) drawBoostStrip(c, s);
     drawMechanicSurfaces(c, sim, reduced);
     if (!menu && sim.phase === 'moving') {
@@ -320,44 +322,7 @@ export class Renderer {
     this.canvas.dataset.iceContact = String(b.friction < sim.config.groundFriction);
   }
   private net(sim: FootballSimulation, reduced: boolean) {
-    const c = this.ctx,
-      g = sim.level.goal;
-    const points = [
-      { x: g.x, y: g.y - g.h },
-      { x: g.x + g.roof, y: g.y - g.h },
-      { x: g.x + g.w, y: g.y },
-      { x: g.x, y: g.y },
-    ];
-    this.path(points);
-    c.fillStyle = '#e8fff021';
-    c.fill();
-    c.save();
-    c.clip();
-    const t = sim.time - sim.goalTime,
-      ripple = !reduced && t >= 0 && t < 1.4 ? Math.sin(t * 24) * Math.exp(-t * 3) * 4 : 0;
-    c.strokeStyle = '#ffffffdf';
-    c.lineWidth = 1.3;
-    for (let x = Math.min(g.x, g.x + g.w); x < Math.max(g.x, g.x + g.w); x += 13) {
-      c.beginPath();
-      c.moveTo(x, g.y - g.h);
-      c.quadraticCurveTo(x + ripple, g.y - g.h / 2, x, g.y);
-      c.stroke();
-    }
-    for (let y = g.y - g.h; y < g.y; y += 13) {
-      c.beginPath();
-      c.moveTo(g.x, y);
-      c.quadraticCurveTo(g.x + g.w / 2, y + ripple, g.x + g.w, y);
-      c.stroke();
-    }
-    c.restore();
-    c.strokeStyle = '#67c895';
-    c.lineWidth = 2;
-    c.setLineDash([5, 7]);
-    c.beginPath();
-    c.moveTo(g.x, g.y - g.h + 12);
-    c.lineTo(g.x, g.y - 12);
-    c.stroke();
-    c.setLineDash([]);
+    drawGoalNet(this.ctx, sim.level.goal, sim.time - sim.goalTime, reduced);
   }
   private football(x: number, y: number, angle: number, size: number) {
     const c = this.ctx;

@@ -6,6 +6,7 @@ const { Bodies, Body, Composite, Query } = Matter;
 export type Spring = { x: number; y: number; w: number; angle: number; strength: number };
 export type Wind = { x: number; y: number; w: number; h: number; angle: number; strength: number };
 export type Breakable = {
+  grass?: boolean;
   id: string;
   x: number;
   y: number;
@@ -14,6 +15,7 @@ export type Breakable = {
   threshold: number;
 };
 export type Gate = {
+  grass?: boolean;
   id: string;
   x: number;
   y: number;
@@ -34,6 +36,7 @@ export type Switch = {
   duration?: number;
 };
 export type Rotor = {
+  grass?: boolean;
   x: number;
   y: number;
   w: number;

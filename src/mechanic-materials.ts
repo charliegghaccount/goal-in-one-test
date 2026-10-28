@@ -1,3 +1,4 @@
+import { drawObjectGrass } from './grass-art';
 // Scalable side-view artwork only: no bodies, sensors, definitions or state are changed here.
 import { bolt, wood } from './art';
 import type { Gate, Spring, Switch, Wind } from './mechanics';
@@ -225,6 +226,7 @@ export function drawTimberGate(c: C, g: Gate, x: number, y: number, angle: numbe
     rail = Math.min(10, w * 0.16),
     edge = Math.min(6, h * 0.12);
   // All decorative fittings stay inside the existing rectangular collision footprint.
+  c.save();
   c.beginPath();
   c.rect(x0, y0, w, h);
   c.clip();
@@ -261,5 +263,13 @@ export function drawTimberGate(c: C, g: Gate, x: number, y: number, angle: numbe
   for (const bx of [x0 + rail / 2, w / 2 - rail / 2])
     for (const by of [y0 + Math.min(9, h * 0.18), h / 2 - Math.min(9, h * 0.18)])
       bolt(c, bx, by, Math.min(2.7, rail * 0.25, h * 0.1));
+  c.restore();
+  if (g.grass === true)
+    drawObjectGrass(c, [
+      { x: x0, y: y0 },
+      { x: w / 2, y: y0 },
+      { x: w / 2, y: h / 2 },
+      { x: x0, y: h / 2 },
+    ]);
   c.restore();
 }

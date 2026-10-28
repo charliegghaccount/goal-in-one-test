@@ -343,6 +343,16 @@ export function parseDraft(text: string): Draft | Draft[] {
       points.some((p: Point) => !p || typeof p.x !== 'number' || typeof p.y !== 'number')
     )
       throw Error('Polygons need numeric x/y vertices (maximum 128).');
+  for (const o of [
+    l,
+    ...l.obstacles,
+    ...l.movers,
+    ...(m.breakables ?? []),
+    ...(m.gates ?? []),
+    ...(m.rotors ?? []),
+  ])
+    if (o.grass !== undefined && typeof o.grass !== 'boolean')
+      throw Error('Grass edging must be true or false.');
   const converted = !l.boundary;
   if (converted) {
     l.boundary = [...l.outline];

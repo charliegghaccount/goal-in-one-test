@@ -1,11 +1,25 @@
-import { CompletionCelebration, oneShotVoiceFile } from './celebration';
+import {
+  CompletionCelebration,
+  announcementFor,
+  type Announcement,
+  type CompletionLevel,
+} from './celebration';
+const voiceFiles: Record<Announcement, string> = {
+  'one-shot': new URL('./assets/announcer/goal-in-one.mp3', import.meta.url).href,
+  goal: new URL('./assets/announcer/goal.mp3', import.meta.url).href,
+  'solid-effort': new URL('./assets/announcer/solid-effort.mp3', import.meta.url).href,
+  disappointed: new URL('./assets/announcer/should-have-done-better.mp3', import.meta.url).href,
+};
 export class Audio {
   context: AudioContext | null = null;
   private muted = false;
   private output: GainNode | null = null;
-  private voice: AudioBuffer | null = null;
+  private voices = new Map<Announcement, AudioBuffer>();
+  private loads = new Map<Announcement, Promise<AudioBuffer | null>>();
+  private voiceEpoch = 0;
+  private tones = new Set<OscillatorNode>();
+  private duckUntil = 0;
   private speaking: AudioBufferSourceNode | null = null;
-  private loading = false;
   private celebration = new CompletionCelebration();
   voiceVolume = 0.8;
   get enabled() {
@@ -26,23 +40,31 @@ export class Audio {
         this.output.connect(this.context.destination);
       }
       if (this.context.state === 'suspended') void this.context.resume().catch(() => {});
-      if (oneShotVoiceFile && !this.loading) {
-        this.loading = true;
-        const url = new URL(oneShotVoiceFile, new URL(import.meta.env.BASE_URL, location.href));
-        void fetch(url)
-          .then((r) => {
-            if (!r.ok) throw new Error('Voice unavailable');
-            return r.arrayBuffer();
-          })
-          .then((b) => this.context!.decodeAudioData(b))
-          .then((b) => {
-            this.voice = b;
-          })
-          .catch(() => {});
-      }
+      // Decode once following a user gesture. All four original clips total only 184 KB.
+      for (const key of Object.keys(voiceFiles) as Announcement[]) void this.loadVoice(key);
     } catch {
       /* Silent play remains available. */
     }
+  }
+  private loadVoice(key: Announcement): Promise<AudioBuffer | null> {
+    if (this.voices.has(key)) return Promise.resolve(this.voices.get(key)!);
+    const existing = this.loads.get(key);
+    if (existing) return existing;
+    const ctx = this.context;
+    if (!ctx) return Promise.resolve(null);
+    const load = fetch(voiceFiles[key])
+      .then((r) => {
+        if (!r.ok) throw Error('Voice unavailable');
+        return r.arrayBuffer();
+      })
+      .then((data) => ctx.decodeAudioData(data))
+      .then((buffer) => {
+        this.voices.set(key, buffer);
+        return buffer;
+      })
+      .catch(() => null);
+    this.loads.set(key, load);
+    return load;
   }
   private tone(
     freq: number,
@@ -60,14 +82,26 @@ export class Audio {
     osc.frequency.setValueAtTime(freq, t);
     osc.frequency.exponentialRampToValueAtTime(Math.max(50, freq * 0.6), t + duration);
     gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(volume, t + 0.008);
+    gain.gain.linearRampToValueAtTime(volume * (t < this.duckUntil ? 0.22 : 1), t + 0.008);
     gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
     osc.connect(gain);
     gain.connect(this.output ?? ctx.destination);
+    this.tones.add(osc);
+    osc.onended = () => this.tones.delete(osc);
     osc.start(t);
     osc.stop(t + duration + 0.02);
   }
   stopVoice() {
+    this.voiceEpoch++;
+    this.duckUntil = 0;
+    for (const tone of this.tones) {
+      try {
+        tone.stop();
+      } catch {
+        /* Already ended. */
+      }
+    }
+    this.tones.clear();
     try {
       this.speaking?.stop();
     } catch {
@@ -75,14 +109,25 @@ export class Audio {
     }
     this.speaking = null;
   }
-  celebrate(shots: number, round: number) {
+  celebrate(shots: number, round: number, level?: CompletionLevel) {
     const kind = this.celebration.take(shots, round);
     if (!kind || !this.enabled) return;
     this.stopVoice();
-    if (kind === 'one-shot' && this.context && this.voice) {
+    const line = level ? announcementFor(shots, level) : shots === 1 ? 'one-shot' : null;
+    if (!line || !this.context) {
+      this.play('win');
+      return;
+    }
+    const epoch = this.voiceEpoch;
+    const speak = (buffer: AudioBuffer | null) => {
+      if (!this.enabled || epoch !== this.voiceEpoch) return;
+      if (!buffer || !this.context) {
+        this.play('win');
+        return;
+      }
       const source = this.context.createBufferSource(),
         gain = this.context.createGain();
-      source.buffer = this.voice;
+      source.buffer = buffer;
       gain.gain.value = Math.max(0, Math.min(1, this.voiceVolume));
       source.connect(gain);
       gain.connect(this.output ?? this.context.destination);
@@ -90,11 +135,16 @@ export class Audio {
         if (this.speaking === source) this.speaking = null;
       };
       this.speaking = source;
+      this.duckUntil = this.context.currentTime + buffer.duration + 0.12;
       source.start();
-      // Short chime after the phrase; a single active source prevents overlapping announcements.
-      this.tone(1046.5, 0.2, 'triangle', 0.05, Math.min(this.voice.duration, 2));
-    } else this.play('win');
+      // Keep the familiar goal jingle underneath the recording, with no delayed tail.
+      this.play('win');
+    };
+    const ready = this.voices.get(line);
+    if (ready) speak(ready);
+    else void this.loadVoice(line).then(speak);
   }
+
   play(type: string) {
     if (type === 'spring') {
       this.tone(230, 0.12, 'triangle');

@@ -46,7 +46,7 @@ export function drawMechanics(
   }
   for (const b of m.breakables)
     if (!b.broken) {
-      wood(c, b.body.vertices);
+      wood(c, b.body.vertices, true, b.body.angle, b.def.grass === true);
       const { x, y } = b.body.position;
       c.strokeStyle = '#704024';
       c.lineWidth = 2;
@@ -90,12 +90,18 @@ export function drawMechanics(
     c.save();
     c.translate(r.body.position.x, r.body.position.y);
     c.rotate(r.body.angle);
-    wood(c, [
-      { x: -r.def.w / 2, y: -r.def.h / 2 },
-      { x: r.def.w / 2, y: -r.def.h / 2 },
-      { x: r.def.w / 2, y: r.def.h / 2 },
-      { x: -r.def.w / 2, y: r.def.h / 2 },
-    ]);
+    wood(
+      c,
+      [
+        { x: -r.def.w / 2, y: -r.def.h / 2 },
+        { x: r.def.w / 2, y: -r.def.h / 2 },
+        { x: r.def.w / 2, y: r.def.h / 2 },
+        { x: -r.def.w / 2, y: r.def.h / 2 },
+      ],
+      true,
+      0,
+      r.def.grass === true,
+    );
     c.restore();
     bolt(c, r.body.position.x, r.body.position.y, 7);
   }

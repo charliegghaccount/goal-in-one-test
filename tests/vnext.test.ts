@@ -294,7 +294,7 @@ test('record deterministic new-level route diagnostics for review', () => {
   );
 });
 
-test('the optional recorded-voice hook never overlaps, repeats, or ignores mute', () => {
+test('the recorded announcer never overlaps, repeats, or ignores mute', () => {
   const a = new Audio();
   let starts = 0,
     stops = 0,
@@ -317,8 +317,8 @@ test('the optional recorded-voice hook never overlaps, repeats, or ignores mute'
     createGain: () => ({ gain: { value: 0 }, connect: () => {} }),
   } as unknown as AudioContext;
   // A fake decoded buffer tests orchestration. It is NOT a shipped voice asset.
-  const hook = a as unknown as { voice: AudioBuffer; tone: () => void };
-  hook.voice = { duration: 1.4 } as AudioBuffer;
+  const hook = a as unknown as { voices: Map<string, AudioBuffer>; tone: () => void };
+  hook.voices.set('one-shot', { duration: 1.4 } as AudioBuffer);
   hook.tone = () => {};
   a.play = () => {
     jingles++;
@@ -336,6 +336,6 @@ test('the optional recorded-voice hook never overlaps, repeats, or ignores mute'
   assert.equal(starts, 2);
   a.enabled = true;
   a.celebrate(2, 4);
-  assert.equal(jingles, 1);
+  assert.equal(jingles, 3); // Two ducked voice jingles, then the ordinary multi-shot celebration.
   assert.equal(starts, 2);
 });

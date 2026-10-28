@@ -12,6 +12,8 @@ The current update adds **Campaign Manager and Level Studio V2**. Open `?dev=1&e
 
 **Gameplay mechanics artwork V1:** scalable cartoon pads, animated springs and side-view fans, low pressure plates and timber gates with charcoal fittings. See [artwork notes and screenshots](docs/MECHANICS-ART-V1.md).
 
+**Announcer and training goal V1:** four supplied performance-based voice recordings, a shaded white open-mouth goal and per-object Studio grass edging. See [rules, controls and verification](docs/ANNOUNCER-GOAL-V1.md).
+
 **Play:** https://charliegghaccount.github.io/goal-in-one-test/
 
 **Current rules:** unlimited kicks, including mid-flight. Kicks retain controlled momentum and meaningfully redirect the ball, even against its previous movement. Par affects stars only; it never ends a level or disables another kick. These rules supersede the original Flash game's shot limit and the previous remake's rest requirement.

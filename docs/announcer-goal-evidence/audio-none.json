@@ -1,0 +1,13 @@
+{
+  "shots": 2,
+  "stars": 3,
+  "announcement": "none",
+  "events": [],
+  "requests": [
+    "http://127.0.0.1:5173/src/assets/announcer/goal-in-one.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/goal.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/solid-effort.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/should-have-done-better.mp3"
+  ],
+  "pageErrors": []
+}

@@ -1,0 +1,18 @@
+{
+  "shots": 1,
+  "stars": 3,
+  "announcement": "one-shot",
+  "events": [
+    {
+      "type": "start",
+      "duration": 2.507755102040816
+    }
+  ],
+  "requests": [
+    "http://127.0.0.1:5173/src/assets/announcer/goal-in-one.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/goal.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/solid-effort.mp3",
+    "http://127.0.0.1:5173/src/assets/announcer/should-have-done-better.mp3"
+  ],
+  "pageErrors": []
+}

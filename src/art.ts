@@ -1,3 +1,4 @@
+import { drawObjectGrass } from './grass-art';
 import { woodFill } from './wood-material';
 import { area } from './geometry';
 import type { Point, Segment } from './levels';
@@ -25,7 +26,13 @@ export function scenery(c: CanvasRenderingContext2D, w: number, h: number) {
     c.fillRect(0, 0, w, h);
   }
 }
-export function wood(c: CanvasRenderingContext2D, points: Point[], bolts = true, textureAngle = 0) {
+export function wood(
+  c: CanvasRenderingContext2D,
+  points: Point[],
+  bolts = true,
+  textureAngle = 0,
+  grass = false,
+) {
   c.save();
   c.beginPath();
   points.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
@@ -85,6 +92,7 @@ export function wood(c: CanvasRenderingContext2D, points: Point[], bolts = true,
     }
   }
   c.restore();
+  if (grass) drawObjectGrass(c, points, textureAngle);
 }
 export function bolt(c: CanvasRenderingContext2D, x: number, y: number, r = 2) {
   c.fillStyle = '#344651';
@@ -111,16 +119,16 @@ export function beam(c: CanvasRenderingContext2D, s: Segment, width: number) {
   c.rotate(Math.atan2(dy, dx));
   c.lineCap = 'round';
   if (s.kind === 'goal') {
-    c.strokeStyle = '#127c35';
+    c.strokeStyle = '#465360';
     c.lineWidth = width;
     c.beginPath();
     c.moveTo(0, 0);
     c.lineTo(len, 0);
     c.stroke();
-    c.strokeStyle = '#58ef45';
+    c.strokeStyle = '#f4f7fa';
     c.lineWidth = width * 0.68;
     c.stroke();
-    c.strokeStyle = '#c0ffa1';
+    c.strokeStyle = '#ffffff';
     c.lineWidth = width * 0.15;
     c.beginPath();
     c.moveTo(0, -width * 0.22);

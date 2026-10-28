@@ -387,6 +387,8 @@ export class LevelEditor {
           html += `<h4>Edge after selected vertex</h4>${n('Edge length', 'edgeLength', Math.hypot(b.x - a.x, b.y - a.y))}<button data-command="Align horizontal">Make horizontal</button><button data-command="Align vertical">Make vertical</button><small>Length holds the first endpoint fixed; alignment changes the next endpoint.</small>`;
         }
       }
+      if (['boundary', 'obstacle', 'mover', 'breakable', 'gate', 'rotor'].includes(r.kind))
+        html += `<label><input type="checkbox" data-field="grass" aria-label="Grass edging" ${(r.kind === 'boundary' ? l.grass !== false : o.grass === true) ? 'checked' : ''}> Grass edging</label>`;
       if (r.kind === 'surface') {
         html += sel('Surface type', 'kind', o.kind, [
           ['forward', 'Forward'],
@@ -517,7 +519,11 @@ export class LevelEditor {
         this.session.begin();
         this.property(
           el.dataset.field!,
-          el instanceof HTMLInputElement && el.type === 'number' ? el.valueAsNumber : el.value,
+          el instanceof HTMLInputElement && el.type === 'checkbox'
+            ? el.checked
+            : el instanceof HTMLInputElement && el.type === 'number'
+              ? el.valueAsNumber
+              : el.value,
         );
         this.changed(false);
       });
@@ -577,6 +583,10 @@ export class LevelEditor {
       return;
     }
     if (!r || !o) return;
+    if (key === 'grass' && r.kind === 'boundary') {
+      l.grass = value === true;
+      return;
+    }
     if (key === 'acceleration') l.boostVersion = 2;
     if (key === 'x' || key === 'y') {
       const prev = r.kind === 'obstacle' || (r.kind === 'rotor' && o.pivot) ? center(l, r) : o;

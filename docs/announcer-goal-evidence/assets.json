@@ -1,0 +1,26 @@
+[
+  {
+    "source": "Goal In One Audio.mp3",
+    "asset": "goal-in-one.mp3",
+    "bytes": 57061,
+    "sha256": "944cc6bcf19f6e2404af92577af6cc5ed1d2ee70dcfcfd514c00d5160426fa51"
+  },
+  {
+    "source": "Goal Audio.mp3",
+    "asset": "goal.mp3",
+    "bytes": 36581,
+    "sha256": "ded958d88bd9c49882af35e710a874f5a4071cca17bfdce666ab5938875600e6"
+  },
+  {
+    "source": "A Solid Effort Audio.mp3",
+    "asset": "solid-effort.mp3",
+    "bytes": 43268,
+    "sha256": "f849b4d6c723dbc79bae6b9a0ced449189616169ac3fe9e66218315372ef22b5"
+  },
+  {
+    "source": "1* Should Have Done Better There.mp3",
+    "asset": "should-have-done-better.mp3",
+    "bytes": 47030,
+    "sha256": "e23c644b49451fa00049181a7b76e59b44b0d80e432c2a0c1d4d34f64c724c4b"
+  }
+]
