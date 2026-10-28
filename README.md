@@ -8,6 +8,8 @@ The current update adds **Campaign Manager and Level Studio V2**. Open `?dev=1&e
 
 **Grass Parks artwork V1:** the approved PNG is preserved with an optimised WebP, camera-relative mirrored scrolling and developer comparison controls. See the [integration report and screenshots](docs/GRASS-PARKS-V1.md).
 
+**Wood material V1:** supplied cartoon wood repeats at a fixed world scale across arena beams, shapes and wooden mechanisms. See [implementation and screenshots](docs/WOOD-V1.md).
+
 **Play:** https://charliegghaccount.github.io/goal-in-one-test/
 
 **Current rules:** unlimited kicks, including mid-flight. Kicks retain controlled momentum and meaningfully redirect the ball, even against its previous movement. Par affects stars only; it never ends a level or disables another kick. These rules supersede the original Flash game's shot limit and the previous remake's rest requirement.

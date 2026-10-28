@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-28",
+  "sourcePNG": "src/assets/wood/original.png",
+  "originalSHA256": "9e51e731be0f14adcc45d0cac9f5211a176f613264edae79ec7cd28bd0d9b51d",
+  "sourceDimensions": [1254, 1254],
+  "runtimeDimensions": [512, 512],
+  "runtimeWebPBytes": 43196,
+  "worldTileSize": 256,
+  "runtimeTestsPassed": 608,
+  "browserTestsPassed": 27,
+  "production": {
+    "httpStatus": 200,
+    "base": "/goal-in-one-test/",
+    "savedDraft": true,
+    "publishedInMiddle": true,
+    "reloadPersistence": true,
+    "actualDragGoal": true,
+    "stableId": "design-988c8a85-132c-45b0-a459-280c31cd69a4",
+    "revision": "1",
+    "pageErrors": [],
+    "failedRequests": [],
+    "woodAssets": [
+      {
+        "url": "http://127.0.0.1:4176/goal-in-one-test/assets/texture-BHMlxGTA.webp",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4176/goal-in-one-test/assets/texture-BHMlxGTA.webp",
+        "status": 304
+      }
+    ]
+  },
+  "checks": [
+    "Resize-invariant polygon interior pixels",
+    "Resize-invariant beam interior pixels",
+    "Transparent concave notches and exterior",
+    "Rotated block and custom polygon editing",
+    "Moving blocks, rotors, gates and breakables in Test",
+    "Actual Level 2 mouse-drag goal",
+    "Existing camera, mobile, campaign and editor regressions"
+  ],
+  "physicsLevelOrCameraDataChanged": false,
+  "limitations": [
+    "Recognisable repeated/mirrored grain on large surfaces",
+    "Subtle grain on narrow borders",
+    "Legacy polygons without rotation metadata use horizontal grain",
+    "Physical phone hardware and Safari/Firefox unverified"
+  ]
+}
