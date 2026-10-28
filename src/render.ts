@@ -1,3 +1,4 @@
+import { artworkEnabled, drawGrassParks } from './background';
 import { movementLine } from './motion';
 import { drawMechanics, drawMechanicSurfaces } from './mechanics-art';
 import type { PhysicsConfig } from './physics';
@@ -35,6 +36,8 @@ export class Renderer {
   trail: Point[] = [];
   camera = new Camera();
   private resets = 0;
+  backgroundVisible = true;
+  private backgroundOrigin: { level: Level; x: number; y: number } | null = null;
   constructor(public canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d')!;
   }
@@ -117,7 +120,32 @@ export class Renderer {
     const c = this.ctx,
       l = sim.level,
       g = l.goal;
-    scenery(c, this.width, this.height);
+    const center = {
+      x: this.camera.view.x + this.camera.view.w / 2,
+      y: this.camera.view.y + this.camera.view.h / 2,
+    };
+    if (this.backgroundOrigin?.level !== l) this.backgroundOrigin = { level: l, ...center };
+    const shown =
+      this.backgroundVisible &&
+      artworkEnabled() &&
+      drawGrassParks(
+        c,
+        this.width,
+        this.height,
+        center.x - this.backgroundOrigin.x,
+        center.y - this.backgroundOrigin.y,
+      );
+    if (!shown) {
+      if (!this.backgroundVisible || !artworkEnabled()) {
+        c.fillStyle = '#b5e7fb';
+        c.fillRect(0, 0, this.width, this.height);
+      } else scenery(c, this.width, this.height);
+    }
+    this.canvas.dataset.background = shown
+      ? 'grass-parks'
+      : !this.backgroundVisible || !artworkEnabled()
+        ? 'plain'
+        : 'legacy-awaiting-approved-source';
     c.save();
     const corner = this.camera.worldToScreen(this.camera.view);
     c.beginPath();

@@ -1,3 +1,4 @@
+import { artworkEnabled, setArtworkEnabled } from './background';
 import { LevelEditor } from './editor/ui';
 import { EditorSession } from './editor/model';
 import { ExplorationControls } from './camera-controls';
@@ -338,6 +339,11 @@ function action(a: string, el?: HTMLButtonElement) {
     });
   }
   if (a === 'help') help();
+  if (a === 'background') {
+    setArtworkEnabled(!artworkEnabled());
+    document.querySelector('.modal-backdrop')?.remove();
+    settings();
+  }
   if (a === 'settings') settings();
   if (a === 'developer') {
     document.querySelector('.modal-backdrop')?.remove();
@@ -426,7 +432,7 @@ function help() {
 }
 function settings() {
   modal(
-    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this browser.</p>${developerMode ? '<button class="secondary" data-action="developer">DEVELOPER PHYSICS</button><button class="secondary" data-action="editor">LEVEL EDITOR</button>' : ''}<button class="primary" data-close>BACK TO GAME</button></div>`,
+    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this browser.</p>${developerMode ? '<button class="secondary" data-action="developer">DEVELOPER PHYSICS</button><button class="secondary" data-action="editor">LEVEL EDITOR</button><button class="secondary" data-action="background">BACKGROUND: ' + (artworkEnabled() ? 'ARTWORK' : 'PLAIN') + '</button>' : ''}<button class="primary" data-close>BACK TO GAME</button></div>`,
     'Settings',
     true,
   );
