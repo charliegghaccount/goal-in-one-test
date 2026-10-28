@@ -1,5 +1,11 @@
 import type { FootballSimulation } from './simulation';
 import { wood, bolt } from './art';
+import {
+  drawSideFan,
+  drawSpringLauncher,
+  drawPressurePlate,
+  drawTimberGate,
+} from './mechanic-materials';
 export function drawMechanics(
   c: CanvasRenderingContext2D,
   s: FootballSimulation,
@@ -36,23 +42,7 @@ export function drawMechanics(
         c.stroke();
       }
     c.restore();
-    const x = w.x + 16,
-      y = w.y + w.h - 18;
-    c.save();
-    c.translate(x, y);
-    c.fillStyle = '#2d738c';
-    c.beginPath();
-    c.arc(0, 0, 15, 0, Math.PI * 2);
-    c.fill();
-    c.rotate(t * 4);
-    for (let i = 0; i < 3; i++) {
-      c.rotate((Math.PI * 2) / 3);
-      c.fillStyle = '#c9f8ff';
-      c.beginPath();
-      c.ellipse(0, -7, 4, 7, 0.4, 0, Math.PI * 2);
-      c.fill();
-    }
-    c.restore();
+    drawSideFan(c, w, t);
   }
   for (const b of m.breakables)
     if (!b.broken) {
@@ -69,19 +59,8 @@ export function drawMechanics(
       c.strokeStyle = b.damage > 0.4 ? '#fff1b3' : '#f4cb85';
       c.strokeRect(x - b.def.w / 2 + 4, y - b.def.h / 2 + 4, b.def.w - 8, b.def.h - 8);
     }
-  for (const g of m.gates) {
-    wood(c, g.body.vertices);
-    const { x, y } = g.body.position;
-    c.strokeStyle = '#3298d1';
-    c.lineWidth = 6;
-    c.beginPath();
-    c.moveTo(x - g.def.w / 2 + 6, y - g.def.h / 2 + 12);
-    c.lineTo(x + g.def.w / 2 - 6, y + g.def.h / 2 - 12);
-    c.moveTo(x + g.def.w / 2 - 6, y - g.def.h / 2 + 12);
-    c.lineTo(x - g.def.w / 2 + 6, y + g.def.h / 2 - 12);
-    c.stroke();
-    bolt(c, x, y, 5);
-  }
+  for (const g of m.gates)
+    drawTimberGate(c, g.def, g.body.position.x, g.body.position.y, g.body.angle);
   for (const sw of m.switches) {
     const g = m.gates.find((g) => g.def.id === sw.def.gateId);
     c.save();
@@ -95,26 +74,7 @@ export function drawMechanics(
       c.stroke();
     }
     c.setLineDash([]);
-    c.fillStyle = g?.target ? '#7af14b' : '#42bdf5';
-    c.strokeStyle = '#176083';
-    c.lineWidth = 4;
-    c.beginPath();
-    if (sw.def.w !== undefined || sw.def.h !== undefined)
-      c.roundRect(
-        sw.def.x - (sw.def.w ?? 36) / 2,
-        sw.def.y - (sw.def.h ?? 36) / 2,
-        sw.def.w ?? 36,
-        sw.def.h ?? 36,
-        4,
-      );
-    else c.arc(sw.def.x, sw.def.y, 16, 0, Math.PI * 2);
-    c.fill();
-    c.stroke();
-    c.fillStyle = 'white';
-    const glyphSize = Math.max(6, Math.min(18, Math.min(sw.def.w ?? 36, sw.def.h ?? 36) * 0.65));
-    c.font = `bold ${glyphSize}px sans-serif`;
-    c.textAlign = 'center';
-    c.fillText(sw.def.mode === 'timed' ? '◷' : '↥', sw.def.x, sw.def.y + glyphSize * 0.32);
+    drawPressurePlate(c, sw.def, sw.active);
     c.restore();
   }
   for (const r of m.rotors) {
@@ -168,38 +128,5 @@ export function drawMechanicSurfaces(
     }
     c.restore();
   }
-  for (const sp of s.mechanics.springs) {
-    const p = sp.def;
-    const squash = !reduced ? Math.max(0, 1 - (s.time - sp.last) / 0.3) : 0;
-    c.save();
-    c.translate(p.x + p.w / 2, p.y - 8);
-    c.strokeStyle = '#6c3e9b';
-    c.lineWidth = 11;
-    c.beginPath();
-    c.moveTo(-p.w / 2, 0);
-    c.lineTo(p.w / 2, 0);
-    c.stroke();
-    c.strokeStyle = '#dba0ff';
-    c.lineWidth = 7;
-    c.stroke();
-    c.strokeStyle = '#fff1fc';
-    c.lineWidth = 2;
-    c.beginPath();
-    for (let x = -p.w / 2 + 10; x < p.w / 2 - 5; x += 10)
-      c.lineTo(x, -3 - (x % 20 ? 3 : 0) * (1 - squash));
-    c.stroke();
-    const a = (p.angle * Math.PI) / 180,
-      dx = Math.cos(a),
-      dy = -Math.sin(a);
-    c.strokeStyle = '#62368e';
-    c.lineWidth = 4;
-    c.beginPath();
-    c.moveTo(-dx * 7, dy * -7 - 12);
-    c.lineTo(dx * 18, dy * 18 - 12);
-    c.lineTo(dx * 18 - dx * 8 + dy * 6, dy * 18 - dy * 8 - dx * 6 - 12);
-    c.moveTo(dx * 18, dy * 18 - 12);
-    c.lineTo(dx * 18 - dx * 8 - dy * 6, dy * 18 - dy * 8 + dx * 6 - 12);
-    c.stroke();
-    c.restore();
-  }
+  for (const sp of s.mechanics.springs) drawSpringLauncher(c, sp.def, s.time - sp.last, reduced);
 }

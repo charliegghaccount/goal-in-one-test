@@ -441,7 +441,16 @@ export function add(l: Level, t: Tool, p: Point): Ref[] {
       }),
     ];
   if (t === 'wind' || t === 'fan')
-    return [mk('wind', { x: p.x - 100, y: p.y - 100, w: 200, h: 200, angle: 70, strength: 1.3 })];
+    return [
+      mk('wind', {
+        x: p.x - 100,
+        y: p.y - 100,
+        w: 200,
+        h: 200,
+        angle: t === 'fan' ? 90 : 70,
+        strength: 1.3,
+      }),
+    ];
   if (t === 'breakable')
     return [
       mk('breakable', { id: unique(l, 'breakable'), x: p.x, y: p.y, w: 48, h: 120, threshold: 5 }),

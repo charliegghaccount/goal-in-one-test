@@ -1,6 +1,7 @@
 import { artworkEnabled, drawGrassParks } from './background';
 import { movementLine } from './motion';
 import { drawMechanics, drawMechanicSurfaces } from './mechanics-art';
+import { drawBoostStrip } from './mechanic-materials';
 import type { PhysicsConfig } from './physics';
 import { wood, beam, joint, turf } from './art';
 import {
@@ -186,44 +187,7 @@ export class Renderer {
           s.a.y === Math.max(...l.boundary!.map((p) => p.y)),
       ))
         turf(c, s.a.x < s.b.x ? s.a : s.b, s.a.x < s.b.x ? s.b : s.a);
-    for (const s of l.surfaces) {
-      const color =
-        s.kind === 'forward' ? '#83d44b' : s.kind === 'backward' ? '#ed9e35' : '#ed4b52';
-      c.strokeStyle =
-        s.kind === 'forward' ? '#1f702c' : s.kind === 'backward' ? '#8b4f15' : '#8f243b';
-      c.lineWidth = 12;
-      c.beginPath();
-      c.moveTo(s.x, s.y - 6);
-      c.lineTo(s.x + s.w, s.y - 6);
-      c.stroke();
-      c.strokeStyle = color;
-      c.lineWidth = 8;
-      c.beginPath();
-      c.moveTo(s.x, s.y - 6);
-      c.lineTo(s.x + s.w, s.y - 6);
-      c.stroke();
-      if (s.kind === 'delete') {
-        c.strokeStyle = '#fff5';
-        c.lineWidth = 2;
-        for (let x = s.x + 9; x < s.x + s.w - 4; x += 18) {
-          c.beginPath();
-          c.moveTo(x, s.y - 10);
-          c.lineTo(x + 5, s.y - 2);
-          c.stroke();
-        }
-      } else {
-        const dir = s.kind === 'forward' ? 1 : -1;
-        c.strokeStyle = '#fffef0';
-        c.lineWidth = 2.2;
-        for (let x = s.x + 16; x < s.x + s.w - 10; x += 30) {
-          c.beginPath();
-          c.moveTo(x - dir * 4, s.y - 9);
-          c.lineTo(x + dir * 1, s.y - 6);
-          c.lineTo(x - dir * 4, s.y - 3);
-          c.stroke();
-        }
-      }
-    }
+    for (const s of l.surfaces) drawBoostStrip(c, s);
     drawMechanicSurfaces(c, sim, reduced);
     if (!menu && sim.phase === 'moving') {
       this.trail.push({ ...sim.ball.position });
