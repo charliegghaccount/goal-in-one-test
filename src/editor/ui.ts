@@ -1,3 +1,4 @@
+import { woodImage } from '../wood-material';
 import { grassParksImage } from '../background';
 import './editor.css';
 import { campaign } from '../campaign';
@@ -99,6 +100,10 @@ export class LevelEditor {
       this.renderer.backgroundVisible = (e.target as HTMLInputElement).checked;
       this.dirty = true;
     });
+    if (woodImage)
+      this.listen(woodImage, 'load', () => {
+        this.dirty = true;
+      });
     if (grassParksImage)
       this.listen(grassParksImage, 'load', () => {
         this.dirty = true;

@@ -154,7 +154,7 @@ export class Renderer {
     this.path(arenaPolygon(l));
     c.fillStyle = 'rgba(238,249,255,.14)';
     c.fill();
-    for (const o of l.obstacles) wood(c, o.points);
+    for (const o of l.obstacles) wood(c, o.points, true, o.rotation ?? 0);
     for (const { body, definition: m } of sim.movers) {
       c.save();
       c.setLineDash([5, 8]);
@@ -166,7 +166,7 @@ export class Renderer {
       c.lineTo(line.end.x, line.end.y);
       c.stroke();
       c.restore();
-      wood(c, body.vertices);
+      wood(c, body.vertices, true, body.angle);
     }
     drawMechanics(c, sim, reduced);
     this.net(sim, reduced);
