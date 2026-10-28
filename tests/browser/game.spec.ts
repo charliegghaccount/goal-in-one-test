@@ -13,16 +13,16 @@ async function frozen(page: Page) {
 }
 async function select(page: Page, id: number) {
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
-  const targetPage = Math.floor((id - 1) / 20);
+  const targetPage = Math.floor((id - 1) / 25);
   let currentPage = Math.floor(
-    (Number(await page.locator('.level-card').first().getAttribute('data-id')) - 1) / 20,
+    (Number(await page.locator('.level-card').first().getAttribute('data-id')) - 1) / 25,
   );
   while (currentPage < targetPage) {
-    await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+    await page.getByRole('button', { name: 'Next chapter', exact: true }).click();
     currentPage++;
   }
   while (currentPage > targetPage) {
-    await page.getByRole('button', { name: 'PREVIOUS', exact: true }).click();
+    await page.getByRole('button', { name: 'Previous chapter', exact: true }).click();
     currentPage--;
   }
   await page.locator(`.level-card[data-id="${id}"]`).click();
@@ -82,9 +82,9 @@ test('all forty levels: screenshot, actual drag completion, stars, reload', asyn
   }
   await page.reload();
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
-  await expect(page.locator('.completed-mark')).toHaveCount(20);
-  await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
-  await expect(page.locator('.completed-mark')).toHaveCount(20);
+  await expect(page.locator('.completed-mark')).toHaveCount(25);
+  await page.getByRole('button', { name: 'Next chapter', exact: true }).click();
+  await expect(page.locator('.completed-mark')).toHaveCount(15);
 });
 test('moving-ball drag and more than ten kicks remain enabled', async ({ page }) => {
   await frozen(page);

@@ -1,3 +1,4 @@
+import { cameraClick } from './ui-helpers';
 import { test, expect, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { vnextRoutes } from '../vnext-routes';
@@ -17,16 +18,16 @@ async function select(page: Page, id: number) {
     await result.getByRole('button', { name: 'BACK TO LEVELS', exact: true }).click();
   else if (await back.isVisible()) await back.click();
   else await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
-  const targetPage = Math.floor((id - 1) / 20);
+  const targetPage = Math.floor((id - 1) / 25);
   let currentPage = Math.floor(
-    (Number(await page.locator('.level-card').first().getAttribute('data-id')) - 1) / 20,
+    (Number(await page.locator('.level-card').first().getAttribute('data-id')) - 1) / 25,
   );
   while (currentPage < targetPage) {
-    await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+    await page.getByRole('button', { name: 'Next chapter', exact: true }).click();
     currentPage++;
   }
   while (currentPage > targetPage) {
-    await page.getByRole('button', { name: 'PREVIOUS', exact: true }).click();
+    await page.getByRole('button', { name: 'Previous chapter', exact: true }).click();
     currentPage--;
   }
   await page.locator(`.level-card[data-id="${id}"]`).click();
@@ -86,10 +87,10 @@ test('all twenty authored levels complete through real browser drags with puzzle
     await snapshot(page, `start-${id}`);
     await page.screenshot({ quality: 88, path: `${evidence}/level-${id}.jpg`, fullPage: true });
     if (l.camera!.mode !== 'fixed') {
-      await page.getByRole('button', { name: 'Arena overview (pauses play)', exact: true }).click();
+      await cameraClick(page, 'Arena overview (pauses play)');
       await page.clock.runFor(17);
       await snapshot(page, `overview-${id}`);
-      await page.getByRole('button', { name: 'Return to play', exact: true }).click();
+      await cameraClick(page, 'Return to play');
       await page.clock.runFor(17);
     } else await snapshot(page, `overview-${id}`);
     let maxCameraX = 0,
@@ -149,7 +150,7 @@ test('all twenty authored levels complete through real browser drags with puzzle
       goalAreaCaptured: goalArea,
     });
     console.log(`Browser goal ${id}: ${l.name}, ${route.length} kicks`);
-    await dialog.getByRole('button', { name: 'PLAY AGAIN', exact: true }).click();
+    await dialog.getByRole('button', { name: 'REPLAY', exact: true }).click();
     await page.clock.runFor(17);
     await expect(page.locator('#shots')).toHaveText('0');
     await expect(page.locator('#scene')).toHaveAttribute('data-switches', '');
@@ -162,8 +163,8 @@ test('all twenty authored levels complete through real browser drags with puzzle
   await page.reload();
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
   for (let n = 0; n < 2; n++)
-    await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
-  await expect(page.locator('.completed-mark')).toHaveCount(20);
+    await page.getByRole('button', { name: 'Next chapter', exact: true }).click();
+  await expect(page.locator('.completed-mark')).toHaveCount(10);
   const best = await page.evaluate(
     () => JSON.parse(localStorage.getItem('goal-in-one:grass:v5')!).best,
   );
@@ -233,14 +234,14 @@ test('a held moving-camera drag keeps its power, and map overview pauses instant
   await page.mouse.up();
   await page.clock.runFor(17);
   await expect(page.locator('#shots')).toHaveText('2');
-  await page.getByRole('button', { name: 'Arena overview (pauses play)', exact: true }).click();
+  await cameraClick(page, 'Arena overview (pauses play)');
   await page.clock.runFor(17);
   const time = await c.getAttribute('data-sim-time');
   await drag(page, 0, 100);
   await page.clock.runFor(1000);
   expect(await c.getAttribute('data-sim-time')).toBe(time);
   await expect(page.locator('#shots')).toHaveText('2');
-  await page.getByRole('button', { name: 'Return to play', exact: true }).click();
+  await cameraClick(page, 'Return to play');
   await page.clock.runFor(100);
   expect(await c.getAttribute('data-sim-time')).not.toBe(time);
   await assertBallVisible(page);
@@ -263,7 +264,7 @@ test('scrolling touch input scores a two-switch level in real time and respects 
   await page.goto('/');
   await page.getByRole('button', { name: 'LEVELS', exact: true }).click();
   for (let n = 0; n < 2; n++)
-    await page.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+    await page.getByRole('button', { name: 'Next chapter', exact: true }).click();
   await page.locator('.level-card[data-id="55"]').click();
   await page.waitForTimeout(150);
   const c = page.locator('#scene'),
@@ -282,7 +283,7 @@ test('scrolling touch input scores a two-switch level in real time and respects 
   await expect(page.getByRole('heading', { name: 'GOAL IN ONE!', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'GOAL IN ONE!', exact: true })).toBeInViewport();
   await expect(page.getByRole('button', { name: 'NEXT LEVEL', exact: true })).toBeInViewport();
-  await expect(page.getByRole('button', { name: 'PLAY AGAIN', exact: true })).toBeInViewport();
+  await expect(page.getByRole('button', { name: 'REPLAY', exact: true })).toBeInViewport();
   await expect(page.locator('#app')).toHaveAttribute('data-celebration', 'one-shot');
   await page.screenshot({ quality: 88, path: `${evidence}/touch-scroll-goal.jpg`, fullPage: true });
   await context.close();

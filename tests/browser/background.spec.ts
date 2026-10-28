@@ -1,3 +1,4 @@
+import { cameraClick } from './ui-helpers';
 import { test, expect } from '@playwright/test';
 test('developer comparison and editor artwork toggles leave gameplay and geometry unchanged', async ({
   page: p,
@@ -48,7 +49,7 @@ test('approved artwork loads once and renders across fixed, wide, tall, long and
     await expect(c).toHaveAttribute('data-background', 'grass-parks');
     await p.screenshot({ path: `${dir}/level-${id}.jpg`, quality: 88 });
     if (id !== 1) {
-      await p.getByRole('button', { name: 'Explore / pan camera', exact: true }).click();
+      await cameraClick(p, 'Explore / pan camera');
       const box = (await c.boundingBox())!;
       for (let i = 0; i < 3; i++) {
         await p.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.7);
@@ -58,7 +59,7 @@ test('approved artwork loads once and renders across fixed, wide, tall, long and
       }
       await expect(p.locator('#shots')).toHaveText('0');
       await p.screenshot({ path: `${dir}/explored-${id}.jpg`, quality: 88 });
-      await p.getByRole('button', { name: 'Return to Ball', exact: true }).click();
+      await cameraClick(p, 'Return to Ball');
     }
   }
   await p.setViewportSize({ width: 844, height: 390 });

@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-28",
+  "runtimeTests": {
+    "passed": 623,
+    "failed": 0
+  },
+  "browserTests": {
+    "distinctCasesVerified": 59,
+    "primaryPassed": 58,
+    "primaryFailed": 1,
+    "primaryFailure": "Cached assertion expected visible course name and BEST text on redesigned number/star tile",
+    "correctedStudioCaseRerunPassed": 1,
+    "correctedStudioCaseRerunFailed": 0,
+    "unresolvedFailures": 0,
+    "freshActualDragCompletions": [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+      27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+      50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60
+    ]
+  },
+  "responsiveViewports": [
+    [1440, 900],
+    [960, 540],
+    [932, 430],
+    [844, 390],
+    [740, 360]
+  ],
+  "notchPaddingFixture": {
+    "width": 932,
+    "left": 44,
+    "right": 34
+  },
+  "playableLevelsPreserved": 60,
+  "chapterSlots": 100,
+  "unpublishedSlots": [
+    61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,
+    85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100
+  ],
+  "allReferencesAndScreenshotsCompared": true,
+  "physicsCameraAudioAndLevelSourcesChanged": false,
+  "production": {
+    "httpStatus": 200,
+    "base": "/goal-in-one-test/",
+    "savedDraft": true,
+    "publishedInMiddle": true,
+    "reloadPersistence": true,
+    "actualDragGoal": true,
+    "stableId": "design-fa203a59-a822-4720-8d03-b405dc026f9a",
+    "revision": "1",
+    "pageErrors": [],
+    "failedRequests": [],
+    "woodAssets": [
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/texture-BHMlxGTA.webp",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/texture-BHMlxGTA.webp",
+        "status": 304
+      }
+    ],
+    "voiceAssets": [
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/goal-in-one-DGbCgd3M.mp3",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/goal-D4PDueL5.mp3",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/solid-effort-DXPf-RiP.mp3",
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4178/goal-in-one-test/assets/should-have-done-better-CrZMbrnL.mp3",
+        "status": 200
+      }
+    ],
+    "voiceStarts": [2.507755102040816]
+  },
+  "physicalDeviceTestingPerformed": false,
+  "newDependencies": 0
+}

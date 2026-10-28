@@ -105,7 +105,10 @@ test('Level 9 draft/test/publish/reload, stable progress and complete campaign e
   await command(p, 'Save Draft');
   await command(p, 'Exit');
   await p.getByRole('button', { name: 'LEVEL SELECT', exact: true }).click();
-  await expect(p.locator('.level-card[data-id="9"]')).toContainText('Moving target');
+  await expect(p.locator('.level-card[data-id="9"]')).toHaveAttribute(
+    'aria-label',
+    /Moving target/,
+  );
   await enter(p);
   await command(p, 'Test Level');
   await p.clock.runFor(100);
@@ -154,8 +157,12 @@ test('Level 9 draft/test/publish/reload, stable progress and complete campaign e
   await p.locator('#ed-apply-import').click();
   await command(p, 'Exit');
   await p.getByRole('button', { name: 'LEVEL SELECT', exact: true }).click();
-  await expect(p.locator('.level-card[data-id="10"]')).toContainText('Nine published from Studio');
-  await expect(p.locator('.level-card[data-id="10"]')).toContainText('BEST 1');
+  await expect(p.locator('.level-card[data-id="10"]')).toHaveAttribute(
+    'aria-label',
+    /Nine published from Studio/,
+  );
+  await expect(p.locator('.level-card[data-id="10"]')).toHaveClass(/level-done/);
+  await expect(p.locator('.level-card[data-id="10"]').getByLabel('3 out of 3 stars')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -217,9 +224,8 @@ test('publish a new middle level, drag campaign order, unpublish/archive/restore
   await p.clock.runFor(34);
   await command(p, 'Exit');
   await p.getByRole('button', { name: 'LEVEL SELECT', exact: true }).click();
-  await p.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
-  await p.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
-  await p.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+  await p.getByRole('button', { name: 'Next chapter', exact: true }).click();
+  await p.getByRole('button', { name: 'Next chapter', exact: true }).click();
   await p.locator('.level-card[data-id="61"]').click();
   await p.clock.runFor(100);
   await kick(p, 0, 80);

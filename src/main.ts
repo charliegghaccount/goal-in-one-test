@@ -7,7 +7,6 @@ import { developerPanel } from './developer';
 import { loadPhysics, type PhysicsConfig } from './physics';
 let activePhysics = loadPhysics();
 const developerMode = new URLSearchParams(location.search).has('dev');
-const logoUrl = new URL('./assets/logo.svg', import.meta.url).href;
 const ballArtUrl = new URL('./assets/football.svg', import.meta.url).href;
 import './style.css';
 import { arenaPolygon, segments, WALL_WIDTH, type Level, type Point } from './levels';
@@ -16,7 +15,14 @@ import { Renderer, viewBounds } from './render';
 import { Audio } from './audio';
 import { readProgress, recordLevelBest, bestFor, saveProgress } from './progress';
 import { campaign } from './campaign';
-import { levelThumbnail } from './thumbnail';
+import {
+  chapterSlots,
+  chapterStars,
+  chapterCount,
+  continueLevel,
+  CHAPTER_SIZE,
+} from './ui-campaign';
+import { menuArtwork } from './ui-art';
 let levels = campaign().playable();
 const best = (l: Level) => bestFor(progress, l);
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -67,11 +73,19 @@ const paths: Record<string, string> = {
   aim: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   zoom: '<path d="M3 8V3h5m8 0h5v5M3 16v5h5m8 0h5v-5"/>',
+  plus: '<path d="M5 12h14M12 5v14"/>',
+  minus: '<path d="M5 12h14"/>',
+  lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/>',
+  settings:
+    '<path d="m9 3-1 3-3 1v4l-2 1 2 3v3l3 1 1 2h5l1-2 3-1v-3l2-3-2-1V7l-3-1-1-3z"/><circle cx="11.5" cy="12" r="3"/>',
   play: '<path d="m8 4 12 8-12 8z"/>',
   mouse: '<rect x="6" y="2" width="12" height="20" rx="6"/><path d="M12 2v7"/>',
 };
+let iconSerial = 0;
 function icon(name: string, cls = '') {
-  return `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.ball}</svg>`;
+  const id = `gold-${iconSerial++}`;
+  const gold = name === 'star' && cls.includes('earned');
+  return `<svg class="icon ${cls}" data-icon="${name}" viewBox="0 0 24 24" fill="${name === 'star' ? (gold ? `url(#${id})` : '#493627') : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${gold ? `<defs><linearGradient id="${id}" x2="0.25" y2="1"><stop stop-color="#fff8a5"/><stop offset=".4" stop-color="#ffe34b"/><stop offset=".45" stop-color="#ffd023"/><stop offset="1" stop-color="#f39a0b"/></linearGradient></defs>` : ''}${paths[name] || paths.ball}${gold ? '<path d="m12 3-3 6-6 1 5 4-2 6 6-4V3" fill="#fffbd1" stroke="none" opacity=".32"/>' : ''}</svg>`;
 }
 function stars(n: number) {
   return `<span class="stars" aria-label="${n} out of 3 stars">${[1, 2, 3].map((i) => icon('star', i <= n ? 'earned' : '')).join('')}</span>`;
@@ -80,7 +94,11 @@ function button(action: string, label: string, i: string, cls = 'icon-button') {
   return `<button type="button" data-action="${action}" class="${cls}" title="${label}" aria-label="${label}">${icon(i)}</button>`;
 }
 function header() {
-  return `<header class="topbar"><button class="brand" data-action="home" aria-label="Goal In One home"><span class="brand-mark">${icon('ball')}</span><span>GOAL<span class="brand-in">IN</span>ONE<span class="brand-dot">.</span><small>FOOTBALL PHYSICS.</small></span></button><span class="nav-tag">BIG IDEAS. BEAUTIFUL GOALS.</span><nav aria-label="Main navigation"><button class="text-button" data-action="levels">${icon('grid')} <span>LEVELS</span></button><span class="nav-divider"></span>${button('sound', progress.sound ? 'Mute sound' : 'Enable sound', progress.sound ? 'sound' : 'mute', 'icon-button sound-button')}${button('settings', 'Settings', 'aim')}${button('help', 'How to play', 'help')}</nav></header>`;
+  if (screen === 'game') return '';
+  return `<header class="screen-utilities" aria-label="Game controls">${button('levels', 'LEVELS', 'grid')}${button('sound', progress.sound ? 'Mute sound' : 'Enable sound', progress.sound ? 'sound' : 'mute', 'icon-button sound-button')}${button('settings', 'Settings', 'settings')}${button('help', 'How to play', 'help')}</header>`;
+}
+function markScreen() {
+  app.dataset.screen = screen;
 }
 function persist() {
   storageOK = saveProgress(progress);
@@ -109,34 +127,40 @@ function totalStars() {
 function home() {
   cleanup();
   screen = 'home';
+  markScreen();
   levels = campaign().playable();
   const completed = levels.filter((l) => best(l)).length,
-    next = levels.find((l) => !best(l))?.id ?? 1;
-  app.innerHTML = `${header()}<main class="home park-home"><section class="hero-copy"><div class="eyebrow">PARK & TREELINE</div><h1><img class="game-logo" src="${logoUrl}" alt="Goal In One"/></h1><p>One ball. ${levels.length} goals. Your perfect shot.</p><div class="hero-actions"><button class="primary" data-action="play" data-id="${next}">${icon('play')} ${completed ? 'CONTINUE' : 'PLAY'}</button><button class="secondary" data-action="levels">${icon('grid')} LEVEL SELECT</button><button class="secondary" data-action="settings">${icon('aim')} SETTINGS</button></div><div class="hero-note">DRAG BACK. LET GO. GOAL.</div>${completed ? `<div class="home-progress">${completed} / ${levels.length} GOALS · ${totalStars()} STARS</div>` : ''}</section><img class="park-football" src="${ballArtUrl}" alt="" aria-hidden="true"/></main><footer class="site-footer"><span>${levels.length} ARENAS · UNLIMITED KICKS</span><span>ONE MORE PERFECT SHOT.</span></footer>`;
-
+    next = continueLevel(levels, progress);
+  app.innerHTML = `${header()}<main class="home park-home"><canvas class="menu-art" aria-hidden="true"></canvas><section class="hero-copy"><h1 class="wood-logo grass-trim" aria-label="Goal In One"><span class="logo-goal">G<img src="${ballArtUrl}" alt=""/>AL</span><span class="logo-in-one">IN ONE</span></h1><div class="hero-actions"><button class="primary play-button grass-trim" data-action="play" data-id="${next ?? 1}" ${next === null ? 'disabled' : ''}>${icon('play')} PLAY</button><button class="secondary" data-action="levels">${icon('grid')} LEVEL SELECT</button><button class="secondary" data-action="settings">${icon('settings')} SETTINGS</button></div><p class="home-progress">${completed ? `${completed} / ${levels.length} GOALS · ${totalStars()} STARS` : 'DRAG BACK. LET GO. GOAL.'}</p></section></main>`;
+  menuArtwork(document.querySelector('.menu-art')!);
   bind();
 }
-const miniLevel = levelThumbnail;
 function levelSelect() {
   cleanup();
   screen = 'levels';
+  markScreen();
   levels = campaign().playable();
-  levelPage = Math.min(levelPage, Math.max(0, Math.ceil(levels.length / 20) - 1));
-  app.innerHTML = `${header()}<main class="select-page"><div class="section-heading"><div><div class="eyebrow">PARK & TREELINE</div><h1>PICK YOUR <em>PERFECT SHOT.</em></h1><p>${levels.length} grass arenas. Unlimited kicks in every level.</p></div><div class="progress-card">${icon('star')}<strong>${totalStars()}<span> / ${levels.length * 3}</span></strong><span>STARS COLLECTED</span></div></div><div class="level-grid">${levels
-    .slice(levelPage * 20, levelPage * 20 + 20)
-    .map(
-      (l) =>
-        `<button class="level-card ${best(l) ? 'level-done' : 'level-open'}" data-action="play" data-id="${l.id}" aria-label="Play level ${l.id}: ${escapeText(l.name)}, unlimited kicks, par ${l.par}"><div class="level-art"><span class="level-number">${String(l.id).padStart(2, '0')}</span>${miniLevel(l)}${best(l) ? `<span class="completed-mark">${icon('check')}</span>` : ''}</div><div class="level-card-copy"><h2>${escapeText(l.name)}</h2><div><span>${best(l) ? 'SCORED' : 'OPEN'} · PAR ${l.par} ${best(l) ? `· BEST ${best(l)}` : ''}</span>${stars(best(l) ? rating(best(l)!, l) : 0)}</div></div></button>`,
-    )
+  levelPage = Math.max(0, Math.min(levelPage, chapterCount(levels) - 1));
+  const next = continueLevel(levels, progress);
+  app.innerHTML = `${header()}<main class="select-page"><div class="chapter-heading">${button('home', 'Goal In One home', 'back')}<div class="chapter-sign wood-panel grass-trim"><h1>GRASS PARKS</h1><p>CHAPTER ${levelPage + 1} <span>· ${levelPage * 25 + 1}–${levelPage * 25 + 25}</span></p></div><nav class="chapter-navigation" aria-label="Chapter navigation"><button class="icon-button" data-action="previous-page" aria-label="Previous chapter" ${levelPage === 0 ? 'disabled' : ''}>${icon('back')}</button><div class="chapter-total wood-pill" aria-label="Chapter stars"><strong>${chapterStars(levels, progress, levelPage)}</strong><span>/ 75</span>${icon('star', 'earned')}</div><button class="icon-button" data-action="next-page" aria-label="Next chapter" ${levelPage + 1 >= chapterCount(levels) ? 'disabled' : ''}>${icon('arrow')}</button></nav></div><div class="level-grid" aria-label="Chapter ${levelPage + 1} levels">${chapterSlots(
+    levels,
+    levelPage,
+  )
+    .map(({ number, level: l, longHole }) => {
+      const done = l ? best(l) : undefined,
+        earned = l && done ? rating(done, l) : 0;
+      return `<button class="level-card ${!l ? 'level-locked' : done ? 'level-done' : 'level-open'} ${number === next ? 'level-current' : ''} ${longHole ? 'long-hole' : ''}" ${l ? `data-action="play" data-id="${l.id}"` : 'disabled'} aria-label="${l ? `Play level ${number}: ${escapeText(l.name)}, unlimited kicks, par ${l.par}` : `Level ${number} locked: coming soon`}"><span class="level-number">${number}</span>${stars(earned)}${!l ? `<span class="level-lock">${icon('lock')}</span>` : ''}${done ? '<span class="completed-mark sr-only">Completed</span>' : ''}${longHole ? '<span class="long-hole-label">LONG HOLE</span>' : ''}</button>`;
+    })
     .join(
       '',
-    )}</div><div class="level-paging">${levelPage > 0 ? '<button class="secondary" data-action="previous-page">PREVIOUS</button>' : ''}${(levelPage + 1) * 20 < levels.length ? '<button class="secondary" data-action="next-page">MORE ARENAS</button>' : ''}</div><p class="selection-note">All levels are open. Best scores save on this browser.${!storageOK ? ' Storage unavailable: progress lasts for this visit.' : ''}</p></main>`;
+    )}</div><p class="selection-note">${levelPage * 25 >= levels.length ? 'New arenas coming soon.' : 'All existing arenas remain open.'} <span>Stars save on this browser.${!storageOK ? ' Storage unavailable: this session only.' : ''}</span></p></main>`;
   bind();
 }
 function openEditor() {
   if (!developerMode) return;
   cleanup();
   screen = 'editor';
+  markScreen();
   draftTest = null;
   editorSession ??= new EditorSession();
   editorUI = new LevelEditor(app, editorSession, (level) => play(1, level), home, activePhysics);
@@ -171,59 +195,28 @@ function play(id: number, draft?: Level) {
   }
   cleanup();
   screen = 'game';
+  markScreen();
   draftTest = draft ? structuredClone(draft) : null;
   currentId = Math.max(1, Math.min(levels.length, id));
+  if (!draft) levelPage = Math.floor((currentId - 1) / CHAPTER_SIZE);
   resultShown = false;
   roundSerial++;
   precise = false;
   sim = new FootballSimulation(draftTest ?? levels[currentId - 1], activePhysics);
   const l = sim.level;
-  app.innerHTML = `${header()}<main class="game-page"><div class="game-heading"><div class="course-title"><button class="back-button" data-action="levels" aria-label="Back to levels">${icon('back')}</button><div><div class="eyebrow">LEVEL ${String(l.id).padStart(2, '0')} / ${String(levels.length).padStart(2, '0')} <span>·</span> FOOTBALL PHYSICS</div><h1>${escapeText(l.name)}</h1></div></div><div class="round-stats"><div><span>SHOTS</span><strong><b id="shots" aria-live="polite">0</b></strong></div><div><span>KICKS</span><strong class="unlimited">∞</strong></div><div class="par-stat"><span>PAR</span><strong>${l.par}</strong></div>${button('restart', 'Retry level (R)', 'restart')}${button('pause', 'Pause game (P)', 'pause')}</div></div><div class="game-stage"><canvas id="scene" tabindex="0" aria-label="Football puzzle. Drag backwards anywhere and release to kick into the net, even while moving." aria-describedby="level-tip"></canvas><div class="stage-topline"><span class="course-pill">${icon('net')} LEVEL ${String(l.id).padStart(2, '0')}</span><span class="status-pill" id="status">YOUR KICK. YOUR ANGLE.</span><button class="stage-help" data-action="help" aria-label="Show controls">${icon('mouse')}</button></div><div class="stage-bottomline"><span id="power-label">DRAG ANYWHERE TO KICK</span></div></div><div class="game-underbar"><p id="level-tip">${icon('help')} ${escapeText(l.tip)}</p><button class="text-button precise-toggle" data-action="precise" aria-expanded="false">${icon('aim')} PRECISE AIM</button></div><div id="precise-controls" class="precise-controls" hidden><label>Angle <input type="range" min="-30" max="210" value="35" id="angle"/><output id="angle-value">35°</output></label><label>Power <input type="range" min="5" max="100" value="75" id="power"/><output id="power-value">75%</output></label><button class="primary small" data-action="shoot" id="shoot-button">KICK ${icon('arrow')}</button></div><div class="game-footer"><div class="star-targets">${icon('star')} 3 STARS ≤ ${l.starShots[0]} ${l.starShots[0] === 1 ? 'KICK' : 'KICKS'} <span>·</span> 2 STARS ≤ ${l.starShots[1]} <span>·</span> UNLIMITED KICKS</div><nav aria-label="Levels">${levels
-    .filter((x) => Math.floor((x.id - 1) / 10) === Math.floor((l.id - 1) / 10))
-    .map(
-      (x) =>
-        `<button data-action="play" data-id="${x.id}" aria-label="Level ${x.id}" ${x.id === l.id ? 'aria-current="step"' : ''} class="${best(x) ? 'done' : ''}">${best(x) ? icon('check') : String(x.id).padStart(2, '0')}</button>`,
-    )
-    .join(
-      '',
-    )}</nav><span class="save-note">${icon(storageOK ? 'check' : 'help')} ${storageOK ? 'SAVED ON THIS BROWSER' : 'SESSION ONLY'}</span></div></main>`;
+  app.innerHTML = `<main class="game-page"><div class="game-heading"><div class="course-title wood-pill">${button('levels', 'LEVELS', 'back', 'back-button')}<div class="hud-level">LEVEL <strong>${l.id}</strong></div><h1 class="sr-only">${escapeText(l.name)}</h1><span class="eyebrow sr-only">${draftTest ? 'TEST MODE · DRAFT · SCORES NOT SAVED' : 'FOOTBALL PHYSICS'}</span></div><div class="round-stats"><div class="hud-scoreboard wood-pill"><span>SHOTS: <b id="shots" aria-live="polite">0</b></span><span>PAR: <strong>${l.par}</strong></span></div><div class="hud-actions">${button('sound', progress.sound ? 'Mute sound' : 'Enable sound', progress.sound ? 'sound' : 'mute', 'icon-button sound-button')}${button('restart', 'Retry level (R)', 'restart')}${button('pause', 'Pause game (P)', 'pause')}</div></div></div><div class="game-stage"><canvas id="scene" tabindex="0" aria-label="Football puzzle. Drag backwards anywhere and release to kick into the net, even while moving." aria-describedby="level-tip"></canvas><span id="status" class="sr-only" aria-live="polite">YOUR KICK. YOUR ANGLE.</span><div class="stage-bottomline"><span id="power-label">DRAG ANYWHERE TO KICK</span></div></div><div class="game-underbar"><p id="level-tip">${draftTest ? 'TEST MODE · ' : ''}${escapeText(l.tip)}</p><nav class="camera-dock" aria-label="Camera and game tools"><details class="camera-tools"><summary aria-label="Camera tools" title="Camera tools">${icon('zoom')}</summary><div class="camera-popover wood-panel">${button('overview', 'Arena overview (pauses play)', 'zoom')}${button('explore', 'Explore / pan camera', 'mouse', 'icon-button camera-control')}<button class="icon-button camera-control" data-action="return-ball" aria-label="Return to Ball" hidden>◎</button>${button('zoom-out', 'Zoom out', 'minus', 'icon-button camera-control')}${button('zoom-in', 'Zoom in', 'plus', 'icon-button camera-control')}${button('precise', 'Precise aim', 'aim', 'icon-button precise-toggle')}${button('help', 'Show controls', 'help')}</div></details>${button('settings', 'Settings', 'settings')}${draftTest ? '<button class="secondary return-editor" data-action="editor">Return to editor</button>' : ''}</nav></div><div id="precise-controls" class="precise-controls wood-panel" hidden><label>Angle <input type="range" min="-30" max="210" value="35" id="angle"/><output id="angle-value">35°</output></label><label>Power <input type="range" min="5" max="100" value="75" id="power"/><output id="power-value">75%</output></label><button class="primary small" data-action="shoot" id="shoot-button">KICK ${icon('arrow')}</button></div><div class="game-footer sr-only"><div class="star-targets">3 STARS ≤ ${l.starShots[0]} KICKS · 2 STARS ≤ ${l.starShots[1]} · UNLIMITED KICKS</div></div></main>`;
+  // Keep tools in the compact HUD, leaving the full remaining viewport to the camera.
+  const dock = document.querySelector('.camera-dock')!;
+  document.querySelector('.hud-actions')!.append(dock);
+  dock.querySelector('.return-editor')?.remove();
+  document.querySelector('.game-underbar')!.classList.add('sr-only');
   renderer = new Renderer(document.querySelector('#scene')!);
-  if (l.camera) {
-    document.querySelector('.game-page')!.classList.add('vnext-game');
-    const stats = document.querySelector('.round-stats')!;
-    if (l.camera.mode !== 'fixed')
-      stats.insertAdjacentHTML(
-        'afterbegin',
-        button('overview', 'Arena overview (pauses play)', 'zoom'),
-      );
-    stats.insertAdjacentHTML(
-      'beforeend',
-      button(
-        'sound',
-        progress.sound ? 'Mute sound' : 'Enable sound',
-        progress.sound ? 'sound' : 'mute',
-        'icon-button sound-button arena-sound',
-      ),
-    );
-  }
-  const controls = document.querySelector('.round-stats')!;
-  controls.insertAdjacentHTML(
-    'afterbegin',
-    `<button class="icon-button camera-control" data-action="explore" aria-label="Explore / pan camera" title="Explore / pan camera" aria-pressed="false">✥</button><button class="icon-button camera-control" data-action="return-ball" aria-label="Return to Ball" title="Return to Ball" hidden>◎</button><button class="icon-button camera-control" data-action="zoom-in" aria-label="Zoom in" title="Zoom in">+</button><button class="icon-button camera-control" data-action="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>`,
-  );
+  if (l.camera) document.querySelector('.game-page')!.classList.add('vnext-game');
   if (draftTest) {
     document.querySelector('.game-page')!.classList.add('draft-test');
-    document.querySelector('.course-title .eyebrow')!.textContent =
-      'TEST MODE · DRAFT · SCORES NOT SAVED';
     const back = document.querySelector<HTMLButtonElement>('.back-button')!;
     back.dataset.action = 'editor';
     back.setAttribute('aria-label', 'Return to editor');
-    controls.insertAdjacentHTML(
-      'beforeend',
-      '<button class="secondary return-editor" data-action="editor">Return to editor</button>',
-    );
-    document.querySelector('.game-footer')!.innerHTML =
-      '<strong>TEST MODE · Official progress is untouched</strong>';
   }
   const bounds =
     l.camera && l.camera.mode !== 'fixed'
@@ -276,6 +269,7 @@ function bindCanvas() {
     )
       return;
     e.preventDefault();
+    document.querySelector<HTMLDetailsElement>('.camera-tools')?.removeAttribute('open');
     audio.unlock();
     canvas.focus({ preventScroll: true });
     dragging = true;
@@ -384,13 +378,13 @@ function action(a: string, el?: HTMLButtonElement) {
     kick(getAim());
   }
 }
-function modal(content: string, label: string, closable = false) {
+function modal(content: string, label: string, closable = false, cls = '') {
   cancelDrag();
   accumulator = 0;
   const previous = document.activeElement as HTMLElement | null,
     overlay = document.createElement('div');
   overlay.className = 'modal-backdrop';
-  overlay.innerHTML = `<section class="modal" role="dialog" aria-modal="true" aria-label="${label}">${content}</section>`;
+  overlay.innerHTML = `<section class="modal ${cls}" role="dialog" aria-modal="true" aria-label="${label}">${content}</section>`;
   app.append(overlay);
   const close = () => {
     overlay.remove();
@@ -450,21 +444,21 @@ function result() {
   resultShown = true;
   app.dataset.celebration = sim.shots === 1 ? 'one-shot' : 'standard';
   app.dataset.announcement = announcementFor(sim.shots, sim.level) ?? 'none';
-  if (draftTest) {
-    modal(
-      `<div class="completion-kicker">TEST MODE · GOAL SCORED</div><div class="completion-stars">${stars(rating(sim.shots, sim.level))}</div><h2>${completionTitle(sim.shots, sim.level)}</h2><p>${sim.shots} kicks · draft only · no official score saved.</p><div class="completion-actions"><button class="primary" data-action="editor">RETURN TO EDITOR</button><button class="secondary" data-action="restart">RETRY TEST</button></div>`,
-      'Draft goal scored',
-    );
-    return;
-  }
   const l = sim.level,
     n = rating(sim.shots, l),
     prior = best(l);
-  recordLevelBest(progress, l, sim.shots);
-  persist();
+  if (!draftTest) {
+    recordLevelBest(progress, l, sim.shots);
+    persist();
+  }
+  const sparkles = reducedMotion
+    ? ''
+    : `<div class="celebration-sparkles" aria-hidden="true">${Array.from({ length: sim.shots === 1 ? 18 : 8 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--delay:${(i % 5) * 0.07}s;--turn:${i * 47}deg"></i>`).join('')}</div>`;
   modal(
-    `<div class="completion-kicker">${icon('net')} LEVEL COMPLETE · ${String(l.id).padStart(2, '0')}</div><div class="completion-stars">${stars(n)}</div><h2>${completionTitle(sim.shots, l)}</h2><p>Through the opening. Into the net. Keep finding your angle.</p><div class="completion-stats"><div><span>SHOTS</span><strong>${sim.shots}</strong></div><div><span>PAR</span><strong>${l.par}</strong></div><div><span>BEST</span><strong>${best(l)}</strong></div></div><div class="personal-best">${!prior || sim.shots < prior ? 'NEW PERSONAL BEST' : 'A GOAL WORTH REPLAYING'}</div><div class="completion-actions"><button class="primary" data-action="${l.id === levels.length ? 'levels' : 'next'}">${l.id === levels.length ? 'ALL LEVELS' : 'NEXT LEVEL'} ${icon('arrow')}</button><button class="secondary" data-action="restart">PLAY AGAIN</button><button class="text-button" data-action="levels">BACK TO LEVELS</button></div>${!storageOK ? '<small>Browser storage is unavailable. Progress lasts for this visit.</small>' : ''}`,
-    'Goal scored',
+    `${sparkles}<div class="completion-level wood-pill">${draftTest ? 'TEST LEVEL' : 'LEVEL'} <strong>${l.id}</strong></div><div class="completion-kicker">${draftTest ? 'DRAFT · SCORES NOT SAVED' : 'LEVEL COMPLETE'}</div><h2>${completionTitle(sim.shots, l)}</h2><div class="completion-stars">${stars(n)}</div><div class="completion-stats wood-pill"><span>SHOTS: <strong>${sim.shots}</strong></span><span>PAR: <strong>${l.par}</strong></span></div><div class="completion-actions"><button class="secondary" data-action="restart">${icon('restart')}${draftTest ? 'RETRY TEST' : 'REPLAY'}</button><button class="primary" data-action="${draftTest ? 'editor' : l.id === levels.length ? 'levels' : 'next'}">${icon(draftTest ? 'back' : 'play')}${draftTest ? 'RETURN TO EDITOR' : l.id === levels.length ? 'ALL LEVELS' : 'NEXT LEVEL'}</button></div>${draftTest ? '' : `<button class="icon-button completion-back" data-action="levels" aria-label="BACK TO LEVELS" title="Back to levels">${icon('back')}</button><p class="personal-best">${!prior || sim.shots < prior ? 'NEW PERSONAL BEST' : `BEST: ${best(l)} KICKS`}${!storageOK ? ' · SESSION ONLY' : ''}</p>`}`,
+    draftTest ? 'Draft goal scored' : 'Goal scored',
+    false,
+    `completion-panel grass-trim ${sim.shots === 1 ? 'one-shot' : ''}`,
   );
 }
 window.addEventListener('keydown', (e) => {

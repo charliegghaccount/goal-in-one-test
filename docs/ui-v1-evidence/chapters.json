@@ -1,0 +1,22 @@
+[
+  {
+    "chapter": 1,
+    "available": 25,
+    "locked": 0
+  },
+  {
+    "chapter": 2,
+    "available": 25,
+    "locked": 0
+  },
+  {
+    "chapter": 3,
+    "available": 10,
+    "locked": 15
+  },
+  {
+    "chapter": 4,
+    "available": 0,
+    "locked": 25
+  }
+]

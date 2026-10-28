@@ -1,3 +1,4 @@
+import { cameraClick } from './ui-helpers';
 import { test, expect, type Page } from '@playwright/test';
 async function frozen(p: Page, id: number) {
   const t = new Date('2026-10-27T12:00:00Z');
@@ -5,8 +6,8 @@ async function frozen(p: Page, id: number) {
   await p.clock.pauseAt(new Date(+t + 1000));
   await p.goto('/');
   await p.getByRole('button', { name: 'LEVELS', exact: true }).click();
-  for (let i = 0; i < Math.floor((id - 1) / 20); i++)
-    await p.getByRole('button', { name: 'MORE ARENAS', exact: true }).click();
+  for (let i = 0; i < Math.floor((id - 1) / 25); i++)
+    await p.getByRole('button', { name: 'Next chapter', exact: true }).click();
   await p.locator(`.level-card[data-id="${id}"]`).click();
   await p.clock.runFor(300);
 }
@@ -29,7 +30,7 @@ test('explore pans both axes with no kicks, overview restores it, and Return to 
 }) => {
   await frozen(p, 54);
   const initial = await data(p);
-  await p.getByRole('button', { name: 'Explore / pan camera', exact: true }).click();
+  await cameraClick(p, 'Explore / pan camera');
   await pan(p, -400, 130);
   const free = await data(p);
   expect(+free.cameraX!).toBeGreaterThan(+initial.cameraX! + 100);
@@ -39,10 +40,10 @@ test('explore pans both axes with no kicks, overview restores it, and Return to 
   const held = await data(p);
   expect(held.cameraX).toBe(free.cameraX);
   expect(held.cameraY).toBe(free.cameraY);
-  await p.getByRole('button', { name: 'Arena overview (pauses play)', exact: true }).click();
+  await cameraClick(p, 'Arena overview (pauses play)');
   await p.clock.runFor(34);
   await expect(p.locator('#scene')).toHaveAttribute('data-overview', 'true');
-  await p.getByRole('button', { name: 'Return to play', exact: true }).click();
+  await cameraClick(p, 'Return to play');
   await p.clock.runFor(34);
   expect((await data(p)).cameraX).toBe(free.cameraX);
   await p.screenshot({
@@ -50,7 +51,7 @@ test('explore pans both axes with no kicks, overview restores it, and Return to 
     quality: 88,
     fullPage: true,
   });
-  await p.getByRole('button', { name: 'Return to Ball', exact: true }).click();
+  await cameraClick(p, 'Return to Ball');
   await p.clock.runFor(17);
   const mid = await data(p);
   expect(+mid.cameraX!).toBeLessThan(+free.cameraX!);
@@ -78,14 +79,14 @@ test('equal pixel drags kick accurately after exploration and at different zooms
   const normal = await kick();
   await p.getByRole('button', { name: 'Retry level (R)' }).click();
   await p.clock.runFor(300);
-  await p.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  await cameraClick(p, 'Zoom in');
   await p.clock.runFor(34);
   const zoomed = await kick();
   expect(Math.abs(normal - zoomed)).toBeLessThan(0.1);
   await expect(p.locator('#shots')).toHaveText('1');
-  await p.getByRole('button', { name: 'Explore / pan camera', exact: true }).click();
+  await cameraClick(p, 'Explore / pan camera');
   await pan(p, -200, 0);
-  await p.getByRole('button', { name: 'Explore / pan camera', exact: true }).click();
+  await cameraClick(p, 'Explore / pan camera');
   await kick();
   await expect(p.locator('#shots')).toHaveText('2');
 });
@@ -103,7 +104,7 @@ test('touch panning and two-finger pinch never turn into kicks on a landscape ph
     x = r.x + r.width * 0.6,
     y = r.y + r.height * 0.55,
     cdp = await context.newCDPSession(p);
-  await p.getByRole('button', { name: 'Explore / pan camera', exact: true }).click();
+  await cameraClick(p, 'Explore / pan camera');
   await cdp.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
     touchPoints: [{ x, y, id: 1 }],
@@ -115,7 +116,7 @@ test('touch panning and two-finger pinch never turn into kicks on a landscape ph
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await p.clock.runFor(34);
   await expect(p.locator('#shots')).toHaveText('0');
-  await p.getByRole('button', { name: 'Return to Ball', exact: true }).click();
+  await cameraClick(p, 'Return to Ball');
   await p.clock.runFor(2000);
   await cdp.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
@@ -154,14 +155,14 @@ test('compact legacy arenas still fit by default and show goal guidance when zoo
   const c = p.locator('#scene'),
     before = await data(p);
   expect(before.cameraX).toBe('0');
-  await p.getByRole('button', { name: 'Zoom in', exact: true }).click();
-  await p.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  await cameraClick(p, 'Zoom in');
+  await cameraClick(p, 'Zoom in');
   await p.clock.runFor(34);
   await expect(c).toHaveAttribute('data-goal-offscreen', 'true');
-  await p.getByRole('button', { name: 'Explore / pan camera', exact: true }).click();
+  await cameraClick(p, 'Explore / pan camera');
   await pan(p, -150, 0);
   await expect(p.locator('#shots')).toHaveText('0');
-  await p.getByRole('button', { name: 'Return to Ball', exact: true }).click();
+  await cameraClick(p, 'Return to Ball');
   await p.clock.runFor(2000);
   await expect(c).toHaveAttribute('data-camera-manual', 'false');
   const r = (await c.boundingBox())!,

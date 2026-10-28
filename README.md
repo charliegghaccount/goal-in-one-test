@@ -1,10 +1,12 @@
 # Goal In One ⚽ — Park & Treeline
 
+**Timber UI V1:** [Play](https://charliegghaccount.github.io/goal-in-one-test/?v=timber-ui-v1) · [Screen designs, chapter rules and verification](docs/UI-V1.md). A wooden main menu, compact HUD, 25-tile chapters and performance-based completion panel. The 60 existing arenas remain open; slots 61–100 are reserved for future courses.
+
 **Level Studio V2:** [Open editor](https://charliegghaccount.github.io/goal-in-one-test/?dev=1&editor=1&v=studio2) · [Campaign publishing and controls guide](docs/STUDIO-V2.md). Edit, test and publish levels locally, organise the active campaign, export releases and backups. Global boost acceleration now defaults to 2.0.
 
 A browser-based football physics puzzler using TypeScript, Canvas, Matter.js and Vite. The default campaign contains sixty enclosed park prototypes, including twelve compact puzzles and eight larger scrolling courses. All original definitions remain recoverable; the active campaign can now be edited, published and reordered locally. Rebound off solid walls, ceilings, ramps and obstacles, then enter the football goal through its opening.
 
-The current update adds **Campaign Manager and Level Studio V2**. Open `?dev=1&editor=1`, or use Settings → Level Editor in developer mode. Save Draft keeps gameplay unchanged; Publish to Game updates this browser’s playable campaign immediately and persists across refresh. Stable design IDs and revisioned scores keep progress attached to designs when reordering. See the [V2 operating guide](docs/STUDIO-V2.md), [current editor screenshots](docs/studio-v2-evidence/studio-overview.jpg), and [original editor/exploration guide](docs/EDITOR.md). The earlier [Levels 41–60 report](docs/VNEXT.md) documents the authored scrolling courses.
+The campaign tools include **Campaign Manager and Level Studio V2**. Open `?dev=1&editor=1`, or use Settings → Level Editor in developer mode. Save Draft keeps gameplay unchanged; Publish to Game updates this browser’s playable campaign immediately and persists across refresh. Stable design IDs and revisioned scores keep progress attached to designs when reordering. See the [V2 operating guide](docs/STUDIO-V2.md), [current editor screenshots](docs/studio-v2-evidence/studio-overview.jpg), and [original editor/exploration guide](docs/EDITOR.md). The earlier [Levels 41–60 report](docs/VNEXT.md) documents the authored scrolling courses.
 
 **Grass Parks artwork V1:** the approved PNG is preserved with an optimised WebP, camera-relative mirrored scrolling and developer comparison controls. See the [integration report and screenshots](docs/GRASS-PARKS-V1.md).
 
