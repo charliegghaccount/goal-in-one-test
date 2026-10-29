@@ -422,3 +422,11 @@ body:has(.level-editor) {
 .campaign-card button {
   cursor: pointer;
 }
+
+/* The editor stays mounted underneath: selection, camera and undo are untouched. */
+.godot-preview { width: 96vw; max-width: none; height: 94vh; max-height: none; padding: 0; border: 3px solid #674329; border-radius: 12px; background: #203d42; color: #fff4d7; }
+.godot-preview::backdrop { background: #071b28dd; }
+.godot-preview header { display: flex; gap: 18px; align-items: center; padding: 8px 14px; min-height: 48px; }
+.godot-preview header span { white-space: pre-wrap; overflow: auto; max-height: 110px; }
+.godot-preview iframe { display: block; width: 100%; height: calc(100% - 68px); border: 0; background: #203d42; }
+.godot-preview header button { color: #fff2d1; background: #80542f; border: 1px solid #dcb17b; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-weight: 700; }

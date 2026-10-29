@@ -1,3 +1,4 @@
+import { testInGodot } from './godot-preview';
 import { woodImage } from '../wood-material';
 import { grassParksImage } from '../background';
 import './editor.css';
@@ -93,7 +94,7 @@ export class LevelEditor {
     private exit: () => void,
     private config: PhysicsConfig = defaultPhysics,
   ) {
-    root.innerHTML = `<main class="level-editor"><header class="editor-top"><div><strong>LEVEL STUDIO</strong><span class="edit-badge">EDIT MODE</span><span id="editor-title" class="editor-draft-title"></span></div><nav aria-label="Editor toolbar">${['Campaign', 'New', 'Save Draft', 'Publish to Game', 'Load', 'Undo', 'Redo', 'Test Level', 'Export', 'Import', 'Backup All', 'Exit'].map((t) => `<button data-command="${t}">${t}</button>`).join('')}</nav></header><div class="editor-columns"><aside class="object-library" aria-label="Object library"><h2>OBJECT LIBRARY</h2><p>Drag onto the canvas, or choose an item and click to place.</p>${library.map(([heading, items]) => `<h3>${heading}</h3><div class="library-group">${items.map(([id, name]) => `<button draggable="${id !== 'polygon'}" data-tool="${id}" title="${name}">${name}</button>`).join('')}</div>`).join('')}</aside><section class="editor-workspace"><div class="editor-tools"><button data-command="Select" aria-pressed="true">Select (V)</button><button data-command="Pan">Pan (H)</button><button data-command="Boundary">Arena vertices</button><button data-command="Finish polygon" hidden>Finish polygon</button><button data-command="Fit">Fit arena</button><button data-command="Zoom out" aria-label="Editor zoom out">−</button><button data-command="Zoom in" aria-label="Editor zoom in">+</button><button data-command="Settings">Level settings</button><button data-command="Preview">▶ Play preview</button></div><div class="editor-toggles"><label><input type="checkbox" id="ed-artwork" checked> Artwork</label><label><input type="checkbox" id="ed-grid" checked> Grid</label><label><input type="checkbox" id="ed-snap" checked> Snap</label><label>Step <input type="number" id="ed-spacing" aria-label="Grid spacing" min="1" max="200" value="20"></label><label><input type="checkbox" id="ed-collisions"> Collisions</label><label><input type="checkbox" id="ed-coordinates"> Coordinates</label><label><input type="checkbox" id="ed-regions" checked> Camera views</label></div><canvas id="editor-canvas" tabindex="0" aria-label="Level editing canvas"></canvas><div class="editor-status" role="status" id="editor-status">Select, drag and resize. Space or middle-drag pans; wheel zooms.</div><div class="editor-validation" id="editor-validation" aria-live="polite"></div></section><aside class="editor-properties" aria-label="Properties"><h2>PROPERTIES</h2><label>Object <select id="ed-object" aria-label="Select object"></select></label><div id="ed-inspector"></div></aside></div></main>`;
+    root.innerHTML = `<main class="level-editor"><header class="editor-top"><div><strong>LEVEL STUDIO</strong><span class="edit-badge">EDIT MODE</span><span id="editor-title" class="editor-draft-title"></span></div><nav aria-label="Editor toolbar">${['Campaign', 'New', 'Save Draft', 'Publish to Game', 'Load', 'Undo', 'Redo', 'Test Level', 'Test in Godot', 'Export', 'Import', 'Backup All', 'Exit'].map((t) => `<button data-command="${t}">${t}</button>`).join('')}</nav></header><div class="editor-columns"><aside class="object-library" aria-label="Object library"><h2>OBJECT LIBRARY</h2><p>Drag onto the canvas, or choose an item and click to place.</p>${library.map(([heading, items]) => `<h3>${heading}</h3><div class="library-group">${items.map(([id, name]) => `<button draggable="${id !== 'polygon'}" data-tool="${id}" title="${name}">${name}</button>`).join('')}</div>`).join('')}</aside><section class="editor-workspace"><div class="editor-tools"><button data-command="Select" aria-pressed="true">Select (V)</button><button data-command="Pan">Pan (H)</button><button data-command="Boundary">Arena vertices</button><button data-command="Finish polygon" hidden>Finish polygon</button><button data-command="Fit">Fit arena</button><button data-command="Zoom out" aria-label="Editor zoom out">−</button><button data-command="Zoom in" aria-label="Editor zoom in">+</button><button data-command="Settings">Level settings</button><button data-command="Preview">▶ Play preview</button></div><div class="editor-toggles"><label><input type="checkbox" id="ed-artwork" checked> Artwork</label><label><input type="checkbox" id="ed-grid" checked> Grid</label><label><input type="checkbox" id="ed-snap" checked> Snap</label><label>Step <input type="number" id="ed-spacing" aria-label="Grid spacing" min="1" max="200" value="20"></label><label><input type="checkbox" id="ed-collisions"> Collisions</label><label><input type="checkbox" id="ed-coordinates"> Coordinates</label><label><input type="checkbox" id="ed-regions" checked> Camera views</label></div><canvas id="editor-canvas" tabindex="0" aria-label="Level editing canvas"></canvas><div class="editor-status" role="status" id="editor-status">Select, drag and resize. Space or middle-drag pans; wheel zooms.</div><div class="editor-validation" id="editor-validation" aria-live="polite"></div></section><aside class="editor-properties" aria-label="Properties"><h2>PROPERTIES</h2><label>Object <select id="ed-object" aria-label="Select object"></select></label><div id="ed-inspector"></div></aside></div></main>`;
     this.renderer = new Renderer(root.querySelector('#editor-canvas')!);
     this.renderer.camera.editorWorkspace = true;
     this.listen(this.$('#ed-artwork'), 'change', (e) => {
@@ -272,7 +273,7 @@ export class LevelEditor {
     this.$('#editor-validation').innerHTML = issues.length
       ? `<details ${errors.length ? 'open' : ''}><summary>${errors.length ? `${errors.length} error(s) — fix before Test / Export` : 'Ready to test · validation notes'}</summary>${issues.map((i) => `<p class="${i.severity}">${esc(i.message)}</p>`).join('')}</details>`
       : 'Ready to test';
-    for (const label of ['Test Level', 'Export', 'Publish to Game'])
+    for (const label of ['Test Level', 'Test in Godot', 'Export', 'Publish to Game'])
       this.root.querySelector<HTMLButtonElement>(`[data-command="${label}"]`)!.disabled =
         errors.length > 0;
     for (const label of ['Undo', 'Redo'])
@@ -1395,6 +1396,10 @@ export class LevelEditor {
       this.selection = [];
       this.vertex = -1;
       this.changed();
+      return;
+    }
+    if (name === 'Test in Godot') {
+      testInGodot(structuredClone(this.session.doc));
       return;
     }
     if (name === 'Test Level') {

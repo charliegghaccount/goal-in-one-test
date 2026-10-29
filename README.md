@@ -1,3 +1,7 @@
+## Godot testing in Level Studio
+
+The existing Studio now includes **Test in Godot** beside **Test Level**, with an embedded native engine preview and Return to Editor. Read [the beginner integration guide](docs/GODOT_STUDIO.md) for supported objects, examples and deployment. The original Matter.js testing workflow remains available.
+
 # Goal In One ⚽ — Park & Treeline
 
 **Timber UI V1:** [Play](https://charliegghaccount.github.io/goal-in-one-test/?v=timber-ui-v1) · [Screen designs, chapter rules and verification](docs/UI-V1.md). A wooden main menu, compact HUD, 25-tile chapters and performance-based completion panel. The 60 existing arenas remain open; slots 61–100 are reserved for future courses.

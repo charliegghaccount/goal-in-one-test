@@ -1,0 +1,98 @@
+{
+  "format": "goal-in-one-level",
+  "version": 1,
+  "draftId": "bridge-mechanics",
+  "modified": "2026-10-29T05:07:01.902Z",
+  "difficulty": 2,
+  "tags": [],
+  "level": {
+    "id": 1001,
+    "boostVersion": 2,
+    "name": "Bridge B: Boost & spring",
+    "tip": "Find your route into the net.",
+    "par": 3,
+    "starShots": [
+      3,
+      5
+    ],
+    "width": 1257,
+    "start": {
+      "x": 130,
+      "y": 618
+    },
+    "goal": {
+      "x": 1120,
+      "y": 640,
+      "w": 107,
+      "h": 100,
+      "roof": 82,
+      "direction": 1
+    },
+    "boundary": [
+      {
+        "x": 60,
+        "y": 640
+      },
+      {
+        "x": 60,
+        "y": 120
+      },
+      {
+        "x": 1120,
+        "y": 120
+      },
+      {
+        "x": 1120,
+        "y": 640
+      }
+    ],
+    "outline": [
+      {
+        "x": 60,
+        "y": 640
+      },
+      {
+        "x": 60,
+        "y": 120
+      },
+      {
+        "x": 1120,
+        "y": 120
+      },
+      {
+        "x": 1120,
+        "y": 640
+      }
+    ],
+    "obstacles": [],
+    "surfaces": [
+      {
+        "x": 230,
+        "y": 640,
+        "w": 220,
+        "kind": "forward",
+        "acceleration": 2
+      }
+    ],
+    "movers": [],
+    "mechanics": {
+      "springs": [
+        {
+          "x": 480,
+          "y": 640,
+          "w": 100,
+          "angle": 70,
+          "strength": 21
+        }
+      ]
+    },
+    "camera": {
+      "mode": "fixed",
+      "viewWidth": 990,
+      "viewHeight": 560,
+      "minimumBallDiameterPx": 20,
+      "smoothing": 0.11
+    },
+    "experimental": true
+  }
+}
