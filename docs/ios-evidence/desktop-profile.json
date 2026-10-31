@@ -1,0 +1,12 @@
+{
+  "environment": "Linux headless Chromium, software rendering; concurrent tests running; NOT iOS",
+  "viewport": [932, 430],
+  "interactiveObservedMs": 431.5,
+  "samples": 600,
+  "averageFrameGapMs": 16.666,
+  "averagePhysicsMs": 0.14833333293596904,
+  "averageFrameWorkMs": 1.798166666875283,
+  "longFrames": 0,
+  "levelLoadsMs": [8.599999994039536],
+  "heapBytes": 8743840
+}

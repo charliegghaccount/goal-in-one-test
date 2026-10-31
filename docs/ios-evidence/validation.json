@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-31",
+  "platform": "Linux",
+  "capacitor": "8.6.0",
+  "runtimeTests": {
+    "passed": 627,
+    "failed": 0
+  },
+  "fullBrowserSuite": {
+    "passed": 62,
+    "failed": 0
+  },
+  "finalNativeAndAudioChecks": {
+    "passed": 11,
+    "failed": 0,
+    "distinctBrowserCasesAcrossRuns": 63
+  },
+  "all60LevelsActuallyDragCompleted": true,
+  "nativeSync": true,
+  "nativeAssetCheck": {
+    "bundledFiles": 14,
+    "mp3": 4,
+    "identicalNativeCopy": true,
+    "landscapeOnly": true,
+    "remoteServer": false
+  },
+  "pagesBuild": true,
+  "xcodeProjectParsed": true,
+  "xcodeBuildPerformed": false,
+  "simulatorTestPerformed": false,
+  "physicalIPhoneTestPerformed": false,
+  "nativeBridgeTests": "mocked official plugin interface",
+  "offlineBrowserTests": "secure synthetic origin serving packaged files while offline",
+  "livePagesChanged": false,
+  "branch": "feature/capacitor-ios-prototype",
+  "announcerDefault": "off, independently persisted",
+  "formatting": "changed files pass; six existing Godot/example warnings left untouched"
+}

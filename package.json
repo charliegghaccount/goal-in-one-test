@@ -14,12 +14,22 @@
     "format:check": "prettier --check .",
     "build:pages": "npm run build -- --base=/goal-in-one-test/",
     "deploy:pages": "npm run build:pages && node scripts/publish-pages.mjs",
-    "campaign:bundle": "tsx scripts/bundle-campaign.ts"
+    "campaign:bundle": "tsx scripts/bundle-campaign.ts",
+    "build:native": "npm run build -- --base=./ --outDir=dist-native",
+    "ios:sync": "npm run build:native && cap sync ios",
+    "ios:open": "cap open ios",
+    "ios:run": "npm run ios:sync && cap run ios",
+    "ios:check": "node scripts/check-native.mjs"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
+    "@capacitor/preferences": "^8.0.1",
     "matter-js": "0.20.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
     "@playwright/test": "1.58.2",
     "@types/matter-js": "0.20.2",
     "@types/node": "22.19.15",

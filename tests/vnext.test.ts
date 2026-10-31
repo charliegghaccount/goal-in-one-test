@@ -266,6 +266,7 @@ test('one-kick and ordinary celebrations dispatch once per round, including mute
   assert.equal(c.take(100, 3), 'standard');
   assert.equal(c.take(1, 4), 'one-shot');
   const a = new Audio();
+  a.announcerEnabled = true;
   let count = 0,
     stops = 0;
   a.play = () => {
@@ -296,6 +297,7 @@ test('record deterministic new-level route diagnostics for review', () => {
 
 test('the recorded announcer never overlaps, repeats, or ignores mute', () => {
   const a = new Audio();
+  a.announcerEnabled = true;
   let starts = 0,
     stops = 0,
     jingles = 0;

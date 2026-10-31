@@ -4,6 +4,7 @@ import { levels } from './levels';
 export type Progress = {
   best: Record<string, number>;
   sound: boolean;
+  announcer?: boolean;
   records?: Record<string, number>;
 };
 const KEY = 'goal-in-one:grass:v5';
@@ -37,6 +38,7 @@ export function readProgress(storage?: Pick<Storage, 'getItem'>): Progress {
     return {
       best,
       sound: raw?.sound !== false,
+      ...(raw?.announcer === true ? { announcer: true } : {}),
       ...(Object.keys(records).length ? { records } : {}),
     };
   } catch {

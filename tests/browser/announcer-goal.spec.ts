@@ -50,6 +50,12 @@ async function kick(p: Page, pull: number) {
 }
 async function audioProbe(p: Page) {
   await p.addInitScript(() => {
+    const key = 'goal-in-one:grass:v5';
+    const data = JSON.parse(localStorage.getItem(key) || '{}');
+    data.announcer = true;
+    localStorage.setItem(key, JSON.stringify(data));
+  });
+  await p.addInitScript(() => {
     const w = window as any;
     w.__voiceEvents = [];
     w.__decoded = [];

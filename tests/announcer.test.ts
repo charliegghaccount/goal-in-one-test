@@ -28,6 +28,7 @@ function harness() {
     started: string[] = [],
     stopped: string[] = [],
     played: string[] = [];
+  a.announcerEnabled = true;
   a.context = {
     currentTime: 1,
     destination: {},

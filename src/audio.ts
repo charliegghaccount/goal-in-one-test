@@ -22,6 +22,19 @@ export class Audio {
   private speaking: AudioBufferSourceNode | null = null;
   private celebration = new CompletionCelebration();
   voiceVolume = 0.8;
+  private voiceEnabled = false;
+  get announcerEnabled() {
+    return this.voiceEnabled;
+  }
+  set announcerEnabled(value: boolean) {
+    this.voiceEnabled = value;
+    if (!value) this.stopVoice();
+    else if (this.context && this.enabled) this.unlock();
+  }
+  suspend() {
+    this.stopVoice();
+    void this.context?.suspend().catch(() => {});
+  }
   get enabled() {
     return !this.muted;
   }
@@ -39,9 +52,11 @@ export class Audio {
         this.output = this.context.createGain();
         this.output.connect(this.context.destination);
       }
-      if (this.context.state === 'suspended') void this.context.resume().catch(() => {});
+      if (this.context.state !== 'running' && this.context.state !== 'closed')
+        void this.context.resume().catch(() => {});
       // Decode once following a user gesture. All four original clips total only 184 KB.
-      for (const key of Object.keys(voiceFiles) as Announcement[]) void this.loadVoice(key);
+      if (this.announcerEnabled)
+        for (const key of Object.keys(voiceFiles) as Announcement[]) void this.loadVoice(key);
     } catch {
       /* Silent play remains available. */
     }
@@ -114,13 +129,13 @@ export class Audio {
     if (!kind || !this.enabled) return;
     this.stopVoice();
     const line = level ? announcementFor(shots, level) : shots === 1 ? 'one-shot' : null;
-    if (!line || !this.context) {
+    if (!this.announcerEnabled || !line || !this.context) {
       this.play('win');
       return;
     }
     const epoch = this.voiceEpoch;
     const speak = (buffer: AudioBuffer | null) => {
-      if (!this.enabled || epoch !== this.voiceEpoch) return;
+      if (!this.enabled || !this.announcerEnabled || epoch !== this.voiceEpoch) return;
       if (!buffer || !this.context) {
         this.play('win');
         return;

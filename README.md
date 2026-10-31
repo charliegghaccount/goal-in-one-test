@@ -4,6 +4,8 @@ The existing Studio now includes **Test in Godot** beside **Test Level**, with a
 
 # Goal In One ⚽ — Park & Treeline
 
+**Capacitor iOS prototype (feature branch only):** [Mac/iPhone setup, announcer option and feasibility report](docs/IOS-PROTOTYPE.md). Run `npm run ios:sync` then `npm run ios:open` on a Mac. The live Pages game stays unchanged.
+
 **Timber UI V1:** [Play](https://charliegghaccount.github.io/goal-in-one-test/?v=timber-ui-v1) · [Screen designs, chapter rules and verification](docs/UI-V1.md). A wooden main menu, compact HUD, 25-tile chapters and performance-based completion panel. The 60 existing arenas remain open; slots 61–100 are reserved for future courses.
 
 **Level Studio V2:** [Open editor](https://charliegghaccount.github.io/goal-in-one-test/?dev=1&editor=1&v=studio2) · [Campaign publishing and controls guide](docs/STUDIO-V2.md). Edit, test and publish levels locally, organise the active campaign, export releases and backups. Global boost acceleration now defaults to 2.0.

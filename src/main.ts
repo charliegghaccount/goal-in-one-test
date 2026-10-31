@@ -1,3 +1,5 @@
+import { installLifecycle } from './native-runtime';
+import { diagnostics } from './performance';
 import { announcementFor, completionTitle } from './celebration';
 import { artworkEnabled, setArtworkEnabled } from './background';
 import { LevelEditor } from './editor/ui';
@@ -29,6 +31,7 @@ const app = document.querySelector<HTMLDivElement>('#app')!;
 const audio = new Audio(),
   progress = readProgress();
 audio.enabled = progress.sound;
+audio.announcerEnabled = progress.announcer === true;
 let editorSession: EditorSession | null = null,
   editorUI: LevelEditor | null = null,
   draftTest: Level | null = null,
@@ -189,6 +192,7 @@ function syncCameraControls() {
   renderer!.canvas.style.cursor = exploration?.explore ? 'grab' : 'crosshair';
 }
 function play(id: number, draft?: Level) {
+  const loadStart = diagnostics ? performance.now() : 0;
   if (!draft && !levels.length) {
     levelSelect();
     return;
@@ -228,6 +232,7 @@ function play(id: number, draft?: Level) {
   bindCanvas();
   syncCameraControls();
   syncAim();
+  diagnostics?.levelLoaded(performance.now() - loadStart);
   document.querySelector<HTMLInputElement>('#angle')!.addEventListener('input', (e) => {
     aimAngle = +(e.target as HTMLInputElement).value;
     syncAim();
@@ -322,6 +327,15 @@ function action(a: string, el?: HTMLButtonElement) {
   if (a === 'play') play(Number(el?.dataset.id));
   if (a === 'restart') play(currentId, draftTest ?? undefined);
   if (a === 'next') play(currentId + 1);
+  if (a === 'announcer') {
+    progress.announcer = !progress.announcer;
+    audio.announcerEnabled = progress.announcer;
+    persist();
+    if (el) {
+      el.textContent = `ANNOUNCER: ${progress.announcer ? 'ON' : 'OFF'}`;
+      el.setAttribute('aria-pressed', String(progress.announcer));
+    }
+  }
   if (a === 'sound') {
     progress.sound = !progress.sound;
     audio.enabled = progress.sound;
@@ -427,7 +441,7 @@ function help() {
 }
 function settings() {
   modal(
-    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this browser.</p>${developerMode ? '<button class="secondary" data-action="developer">DEVELOPER PHYSICS</button><button class="secondary" data-action="editor">LEVEL EDITOR</button><button class="secondary" data-action="background">BACKGROUND: ' + (artworkEnabled() ? 'ARTWORK' : 'PLAIN') + '</button>' : ''}<button class="primary" data-close>BACK TO GAME</button></div>`,
+    `<button class="modal-close icon-button" data-close aria-label="Close settings">${icon('close')}</button><div class="modal-emblem">${icon('aim')}</div><h2>YOUR GAME.</h2><p>Grass arenas · mouse, touch or keyboard.<br>Unlimited kicks. Correct your shot in mid-air.</p><div class="completion-actions"><button class="secondary sound-button" data-action="sound">${icon(progress.sound ? 'sound' : 'mute')}</button><p>Sound preference saves on this device.</p><button class="secondary" data-action="announcer" aria-pressed="${progress.announcer === true}">ANNOUNCER: ${progress.announcer ? 'ON' : 'OFF'}</button><p>Optional voice lines. Off by default; sound effects stay independent.</p>${developerMode ? '<button class="secondary" data-action="developer">DEVELOPER PHYSICS</button><button class="secondary" data-action="editor">LEVEL EDITOR</button><button class="secondary" data-action="background">BACKGROUND: ' + (artworkEnabled() ? 'ARTWORK' : 'PLAIN') + '</button>' : ''}<button class="primary" data-close>BACK TO GAME</button></div>`,
     'Settings',
     true,
   );
@@ -498,22 +512,41 @@ window.addEventListener('keydown', (e) => {
   }
 });
 window.addEventListener('blur', cancelDrag);
-document.addEventListener('visibilitychange', () => {
+let appActive = true;
+void installLifecycle((active) => {
+  appActive = active;
   last = performance.now();
   accumulator = 0;
   cancelDrag();
+  if (!active) {
+    audio.suspend();
+    pause();
+  }
+}).catch(() => {
+  /* Document visibility remains available if native registration fails. */
 });
 function frame(now: number) {
-  const dt = Math.min((now - last) / 1000, 0.05);
+  const frameGap = now - last;
+  const frameStart = diagnostics ? performance.now() : 0;
+  let physicsTime = 0;
+  const dt = Math.min(frameGap / 1000, 0.05);
   last = now;
   if (renderer && sim) {
     const modalOpen = !!document.querySelector('.modal-backdrop');
-    if (screen === 'game' && !document.hidden && !modalOpen && !renderer.camera.overview) {
+    if (
+      screen === 'game' &&
+      appActive &&
+      !document.hidden &&
+      !modalOpen &&
+      !renderer.camera.overview
+    ) {
       accumulator += dt * 1000;
+      const physicsStart = diagnostics ? performance.now() : 0;
       while (accumulator >= STEP) {
         sim.step();
         accumulator -= STEP;
       }
+      physicsTime = diagnostics ? performance.now() - physicsStart : 0;
       for (const e of sim.events.splice(0)) {
         if (!reducedMotion) renderer.effect(e);
         if (e.type === 'win') audio.celebrate(sim.shots, roundSerial, sim.level);
@@ -544,13 +577,14 @@ function frame(now: number) {
     syncCameraControls();
     renderer.render(
       sim,
-      modalOpen || renderer.camera.overview ? 0 : dt,
+      !appActive || modalOpen || renderer.camera.overview ? 0 : dt,
       pull ?? (precise && sim.canKick ? getAim() : null),
       screen === 'home',
       reducedMotion,
       dragging || modalOpen,
     );
   }
+  diagnostics?.frame(frameGap, physicsTime, performance.now() - frameStart);
   requestAnimationFrame(frame);
 }
 if (developerMode && new URLSearchParams(location.search).has('editor')) openEditor();
